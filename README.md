@@ -3,6 +3,7 @@
 
 An implementation of the game of Susan, invented by Stephen Linhart in 1994.
 
+
     "SO WHY CALL A BOARD GAME SUSAN?" (an advertising blurb)
 
     Well, I'll tell you.  One day, me and my friend Michael were having lunch at
@@ -12,13 +13,24 @@ An implementation of the game of Susan, invented by Stephen Linhart in 1994.
     'Ah... Susan'.  Anyway, the name stuck, and it must be a good one because
     everybody asks "So why call a board game SUSAN?"
 
-Right, trademark has been claimed, so I did the same thing. Me and my wife were 
-having a beer at my favorite bar. I was developing this game and asked the
-waitress what she was called, she said 'Mado', which rhimes with to Go, i.e.
-job done.
 
-Powered by MCTS-AI.
+Right, trademark has been claimed by Stephen Linhart (see below), so I decided to 
+do the exact same thing. Me and my wife were having a beer at my favorite bar. I was 
+developing this game and asked the waitress what she was called, she said 'Mado', 
+we ordered another round and called it a job well done. The rest is history.
 
+I decided to get rid of the Hexagonal representation and go with a board of circles
+ordered along a triangular pattern (hexagons in disguise).
+
+
+Powered by MCTS-AI (TBD)
+
+
+## How to play
+
+
+Below a copy of the original (copyrighted) documet published by Stephen Linhart. 
+[The original is available at his web-site](http://www.stephen.com/sue/sue_man.txt), there are some more tid-bits [here](http://www.stephen.com/sue/sueabout.html)
 
 
     T H E   G A M E   O F   S U S A N (tm)
