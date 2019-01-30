@@ -263,6 +263,11 @@ App::App ( ) {
     loop.length = sf::seconds ( 192.0f );
     m_music.setLoopPoints ( loop );
     m_music.play ( );
+    // Player to move.
+    m_player_to_move.what = display::active_red;
+    m_player_to_move.where.x = m_hex.at ( -state::width ( ) / 2, 0 ).x;
+    m_player_to_move.where.y = m_hex.at ( 0, -state::width ( ) / 2 ).y;
+    // The real thing.
     m_mouse.initialize ( m_window );
     m_window.requestFocus ( );
 }
@@ -288,6 +293,10 @@ void App::updateWindow ( ) noexcept {
         m_circles.setTextureRect ( m_display_rect [ static_cast<int> ( p.what ) ] );
         m_window.draw ( m_circles );
     }
+    // Draw next player.
+    m_circles.setPosition ( m_player_to_move.where );
+    m_circles.setTextureRect ( m_display_rect [ static_cast<int> ( m_player_to_move.what ) ] );
+    m_window.draw ( m_circles );
     // Display window.
     m_window.display ( );
     // Minimize if required (after updating above).

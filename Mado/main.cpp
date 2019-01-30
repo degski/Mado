@@ -99,6 +99,15 @@ struct HexStorage {
     }
 };
 
+
+/*
+hex<9> pixel_to_pointy_hex ( sf::Vector2f point ) {
+    sidx<9> q = ( sqrt ( 3 ) / 3 * point.x - 1. / 3 * point.y ) / size;
+    sidx<9> r = ( 2. / 3 * point.y ) / size;
+    return hex_round ( hex<9> ( q, r ) );
+}
+*/
+
 int main5667978 ( ) {
 
 

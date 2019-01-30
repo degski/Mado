@@ -88,6 +88,39 @@ class App {
     };
 
 
+    template<typename T, std::intptr_t W, typename = std::enable_if_t<std::is_default_constructible_v<T>, T>>
+    struct hex_storage {
+
+        [[ nodiscard ]] static constexpr std::intptr_t radius ( ) noexcept {
+            return W / 2;
+        }
+        [[ nodiscard ]] static constexpr std::intptr_t width ( ) noexcept {
+            return W;
+        }
+        [[ nodiscard ]] static constexpr std::intptr_t size ( ) noexcept {
+            return width ( ) * width ( );
+        }
+
+        T m_data [ width ( ) ] [ width ( ) ];
+
+        hex_storage ( ) noexcept : m_data { { T ( ) } } { }
+
+        [[ nodiscard ]] T & at ( const std::intptr_t q_, const std::intptr_t r_ ) noexcept {
+            return m_data [ r_ ] [ q_ - std::max ( std::intptr_t { 0 }, r_ - radius ( ) ) ];
+        }
+        [[ nodiscard ]] T at ( const std::intptr_t q_, const std::intptr_t r_ ) const noexcept {
+            return m_data [ r_ ] [ q_ - std::max ( std::intptr_t { 0 }, r_ - radius ( ) ) ];
+        }
+
+        [[ nodiscard ]] T * data ( ) noexcept {
+            return &m_data [ 0 ] [ 0 ];
+        }
+        [[ nodiscard ]] const T * data ( ) const noexcept {
+            return &m_data [ 0 ] [ 0 ];
+        }
+    };
+
+
     struct mouse_status {
 
         enum State : int { none = 0, moved = 1, left_clicked = 2, moved_and_left_clicked = 3 };
@@ -140,7 +173,7 @@ class App {
     };
 
     using kdtree = kd::Tree2D<float, sf::Vector2<float>, kd::array_tag_t, state::size ( )>;
-    using hextable = ma::Matrix<sf::Vector2f, static_cast<int>( state::width ( ) ), static_cast<int>( state::width ( ) ), -( static_cast<int>( state::width ( ) ) / 2 ), -(static_cast<int>( state::width ( ) )/2)>;
+    using hextable = ma::Matrix<sf::Vector2f, state::width ( ), state::width ( ), -state::width ( ) / 2, -state::width ( ) / 2>;
     using positions = std::array<position, kdtree::size ( )>;
     using indices = std::array<uidx, kdtree::size ( )>;
 
@@ -158,9 +191,15 @@ class App {
 
     state m_state;
 
+    using player = typename state::value_type;
+
+    player m_player = player::Type::human;
+    int m_human_idx = 1, m_agent_idx = 2;
+
     kdtree m_kdtree;
     hextable m_hex;
     positions m_positions;
+    position m_player_to_move;
     indices m_indices;
 
     sf::Font m_font_regular, m_font_bold, m_font_mono, m_font_numbers;
@@ -187,40 +226,6 @@ class App {
     App ( );
 
 private:
-
-
-    template<typename T, std::intptr_t W, typename = std::enable_if_t<std::is_default_constructible_v<T>, T>>
-    struct HexStorage {
-
-        [[ nodiscard ]] static constexpr std::intptr_t radius ( ) noexcept {
-            return W / 2;
-        }
-        [[ nodiscard ]] static constexpr std::intptr_t width ( ) noexcept {
-            return W;
-        }
-        [[ nodiscard ]] static constexpr std::intptr_t size ( ) noexcept {
-            return width ( ) * width ( );
-        }
-
-        T m_data [ width ( ) ] [ width ( ) ];
-
-        HexStorage ( ) noexcept : m_data { { T ( ) } } { }
-
-        [[ nodiscard ]] T & at ( const std::intptr_t q_, const std::intptr_t r_ ) noexcept {
-            return m_data [ r_ ] [ q_ - std::max ( std::intptr_t { 0 }, r_ - radius ( ) ) ];
-        }
-        [[ nodiscard ]] T at ( const std::intptr_t q_, const std::intptr_t r_ ) const noexcept {
-            return m_data [ r_ ] [ q_ - std::max ( std::intptr_t { 0 }, r_ - radius ( ) ) ];
-        }
-
-        [[ nodiscard ]] T * data ( ) noexcept {
-            return &m_data [ 0 ] [ 0 ];
-        }
-        [[ nodiscard ]] const T * data ( ) const noexcept {
-            return &m_data [ 0 ] [ 0 ];
-        }
-    };
-
 
     [[ nodiscard ]] static constexpr float distance_squared ( const sf::Vector2f & p1_, const sf::Vector2f & p2_ ) noexcept {
         return ( ( p1_.x - p2_.x ) * ( p1_.x - p2_.x ) ) + ( ( p1_.y - p2_.y ) * ( p1_.y - p2_.y ) );

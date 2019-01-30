@@ -85,8 +85,8 @@ struct Mado {
         return ( ( n_ * ( n_ + 1 ) ) - ( m_ * ( m_ + 1 ) ) ) / T ( 2 );
     }
 
-    [[ nodiscard ]] static constexpr std::size_t width ( ) noexcept {
-        return S;
+    [[ nodiscard ]] static constexpr std::intptr_t width ( ) noexcept {
+        return static_cast<std::intptr_t> ( S );
     }
 
     [[ nodiscard ]] static constexpr std::size_t size ( ) noexcept {
