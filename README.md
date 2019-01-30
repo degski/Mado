@@ -1,6 +1,7 @@
 
 # Mado
 
+
 An implementation of the game of Susan, invented by Stephen Linhart in 1994.
 
 
