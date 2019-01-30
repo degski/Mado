@@ -29,7 +29,7 @@ Powered by MCTS-AI (TBD)
 ## How to play
 
 
-Below a copy of the original (copyrighted) documet published by Stephen Linhart. 
+Below a copy of the original (copyrighted) document published by Stephen Linhart. 
 [The original is available at his web-site](http://www.stephen.com/sue/sue_man.txt), there are some more tid-bits [here](http://www.stephen.com/sue/sueabout.html)
 
 
