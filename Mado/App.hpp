@@ -191,11 +191,6 @@ class App {
 
     state m_state;
 
-    using player = typename state::value_type;
-
-    player m_player = player::Type::human;
-    int m_human_idx = 1, m_agent_idx = 2;
-
     kdtree m_kdtree;
     hextable m_hex;
     positions m_positions;
