@@ -43,8 +43,10 @@
 #include "Globals.hpp"
 #include "Mado.hpp"
 
+#include "resource.h"
 
-class App {
+
+class App : public sf::Drawable, public sf::Transformable {
 
     using state = Mado<4>;
     using uidx = typename state::uidx;
@@ -88,20 +90,23 @@ class App {
     };
 
 
-    template<typename T, std::intptr_t W, typename = std::enable_if_t<std::is_default_constructible_v<T>, T>>
+    template<typename T, std::size_t R, typename = std::enable_if_t<std::is_default_constructible_v<T>, T>>
     struct hex_storage {
 
         [[ nodiscard ]] static constexpr std::intptr_t radius ( ) noexcept {
-            return W / 2;
+            return static_cast<std::size_t> ( R );
         }
         [[ nodiscard ]] static constexpr std::intptr_t width ( ) noexcept {
-            return W;
+            return 2 * radius ( ) + 1;
+        }
+        [[ nodiscard ]] static constexpr std::intptr_t height ( ) noexcept {
+            return 2 * radius ( ) + 1;
         }
         [[ nodiscard ]] static constexpr std::intptr_t size ( ) noexcept {
-            return width ( ) * width ( );
+            return width ( ) * height ( );
         }
 
-        T m_data [ width ( ) ] [ width ( ) ];
+        T m_data [ height ( ) ] [ width ( ) ];
 
         hex_storage ( ) noexcept : m_data { { T ( ) } } { }
 
@@ -113,10 +118,10 @@ class App {
         }
 
         [[ nodiscard ]] T * data ( ) noexcept {
-            return &m_data [ 0 ] [ 0 ];
+            return & m_data [ 0 ] [ 0 ];
         }
         [[ nodiscard ]] const T * data ( ) const noexcept {
-            return &m_data [ 0 ] [ 0 ];
+            return & m_data [ 0 ] [ 0 ];
         }
     };
 
@@ -126,7 +131,7 @@ class App {
         enum State : int { none = 0, moved = 1, left_clicked = 2, moved_and_left_clicked = 3 };
 
         sf::RenderWindow * window = nullptr;
-        bool current = false;
+        int current = 0;
         State state = State::moved;
         sf::Vector2i data [ 2 ];
         sf::Vector2f position;
@@ -134,7 +139,7 @@ class App {
         mouse_status ( ) noexcept { }
 
         void initialize ( sf::RenderWindow & w_ ) noexcept {
-            window = &w_;
+            window = & w_;
             data [ 0 ] = data [ 1 ] = sf::Mouse::getPosition ( *window );
             position = sf::castVector2f ( data [ 0 ] );
         }
@@ -162,9 +167,9 @@ class App {
             if ( sf::Mouse::isButtonPressed ( sf::Mouse::Left ) ) {
                 state = State::left_clicked;
             }
-            data [ not ( current ) ] = sf::Mouse::getPosition ( *window );
+            data [ current ^ 1 ] = sf::Mouse::getPosition ( * window );
             if ( data [ 0 ] != data [ 1 ] ) {
-                current ^= true;
+                current ^= 1;
                 position = sf::castVector2f ( data [ current ] );
                 state = State::left_clicked == state ? State::moved_and_left_clicked : State::moved;
             }
@@ -173,11 +178,15 @@ class App {
     };
 
     using kdtree = kd::Tree2D<float, sf::Vector2<float>, kd::array_tag_t, state::size ( )>;
-    using hextable = ma::Matrix<sf::Vector2f, state::width ( ), state::height ( ), -state::radius ( ), -state::radius ( )>;
+    using hex_table = ma::Matrix<sf::Vector2f, state::width ( ), state::height ( ), -state::radius ( ), -state::radius ( )>;
     using positions = std::array<position, kdtree::size ( )>;
     using indices = std::array<uidx, kdtree::size ( )>;
 
-    public:
+    void startup ( const float v_ ) const noexcept {
+
+    }
+
+    sf::CallbackAnimator m_animator;
 
     float m_window_width, m_window_height;
     sf::Vector2f m_center;
@@ -192,7 +201,7 @@ class App {
     state m_state;
 
     kdtree m_kdtree;
-    hextable m_hex;
+    hex_table m_hex;
     positions m_positions;
     position m_player_to_move;
     indices m_indices;
@@ -217,6 +226,56 @@ class App {
 
     mouse_status m_mouse;
     std::ptrdiff_t m_idx = -1;
+
+    public:
+
+    inline bool load ( ) {
+
+        // Resize the vertex array to fit the level size.
+        m_vertices.setPrimitiveType ( sf::Quads );
+        m_vertices.resize ( state::size ( ) * 4 );
+
+        int i = 0;
+
+        for ( const auto & p : m_positions ) {
+
+            if ( kdtree::is_not_valid ( p.where ) ) {
+                continue;
+            }
+
+            sf::Vertex * quad = & m_vertices [ i * 4 ];
+
+            sf::Vector2f pos = p.where - sf::Vector2f { 33.0f, 33.0f };
+
+            // Clock-wise.
+            quad [ 0 ].position = sf::Vector2f ( pos.x        , pos.y         );
+            quad [ 1 ].position = sf::Vector2f ( pos.x + 67.0f, pos.y         );
+            quad [ 2 ].position = sf::Vector2f ( pos.x + 67.0f, pos.y + 0.67f );
+            quad [ 3 ].position = sf::Vector2f ( pos.x        , pos.y + 0.67f );
+
+            sf::IntRect & rect = m_display_rect [ static_cast<int> ( p.what ) ];
+
+            quad [ 0 ].texCoords = sf::Vector2f ( rect.left             , rect.top               );
+            quad [ 1 ].texCoords = sf::Vector2f ( rect.left + rect.width, rect.top               );
+            quad [ 2 ].texCoords = sf::Vector2f ( rect.left + rect.width, rect.top + rect.height );
+            quad [ 3 ].texCoords = sf::Vector2f ( rect.left             , rect.top + rect.height );
+
+            ++i;
+        }
+
+        return true;
+    }
+
+    inline virtual void draw ( sf::RenderTarget & target, sf::RenderStates states ) const {
+        // Apply the transform.
+        // states.transform *= getTransform ( );
+        // Apply the tileset texture.
+        states.texture = & m_circles_texture;
+        // Draw the vertex array.
+        target.draw ( m_vertices, states );
+    }
+
+    sf::VertexArray m_vertices;
 
     App ( );
 
@@ -277,6 +336,9 @@ public:
         return m_is_running;
     }
 
+    sf::RectangleShape m_overlay;
+
+    bool runStartupAnimation ( ) noexcept;
     void updateWindow ( ) noexcept;
 
 private:

@@ -67,22 +67,25 @@
 
 namespace exp = std::experimental;
 
-template<typename T, std::intptr_t W, typename = std::enable_if_t<std::is_default_constructible_v<T>, T>>
-struct HexStorage {
+template<typename T, std::size_t R, typename = std::enable_if_t<std::is_default_constructible_v<T>, T>>
+struct hex_storage {
 
     [[ nodiscard ]] static constexpr std::intptr_t radius ( ) noexcept {
-        return W / 2;
+        return static_cast< std::size_t > ( R );
     }
     [[ nodiscard ]] static constexpr std::intptr_t width ( ) noexcept {
-        return W;
+        return 2 * radius ( ) + 1;
+    }
+    [[ nodiscard ]] static constexpr std::intptr_t height ( ) noexcept {
+        return 2 * radius ( ) + 1;
     }
     [[ nodiscard ]] static constexpr std::intptr_t size ( ) noexcept {
-        return width ( ) * width ( );
+        return width ( ) * height ( );
     }
 
-    T m_data [ width ( ) ] [ width ( ) ];
+    T m_data [ height ( ) ] [ width ( ) ];
 
-    HexStorage ( ) noexcept : m_data { { T ( ) } } { }
+    hex_storage ( ) noexcept : m_data { { T ( ) } } { }
 
     [[ nodiscard ]] T & at ( const std::intptr_t q_, const std::intptr_t r_ ) noexcept {
         return m_data [ r_ ] [ q_ - std::max ( std::intptr_t { 0 }, r_ - radius ( ) ) ];
@@ -92,10 +95,10 @@ struct HexStorage {
     }
 
     [[ nodiscard ]] T * data ( ) noexcept {
-        return & m_data [ 0 ] [ 0 ];
+        return &m_data [ 0 ] [ 0 ];
     }
     [[ nodiscard ]] const T * data ( ) const noexcept {
-        return & m_data [ 0 ] [ 0 ];
+        return &m_data [ 0 ] [ 0 ];
     }
 };
 
@@ -108,10 +111,10 @@ hex<9> pixel_to_pointy_hex ( sf::Vector2f point ) {
 }
 */
 
-int main5667978 ( ) {
+int main664613 ( ) {
 
 
-    HexStorage<int, 7> ma;
+    hex_storage<int, 3> ma;
 
     ma.at ( 3, 0 ) = 1;
     ma.at ( 4, 0 ) = 2;
@@ -228,6 +231,31 @@ int main ( ) {
     try {
         std::unique_ptr<App> app_uptr = std::make_unique<App> ( );
         sf::Pacer keep;
+        while ( app_uptr->isWindowOpen ( ) ) {
+            sf::Event event;
+            while ( app_uptr->pollWindowEvent ( event ) ) {
+                if ( sf::Event::LostFocus == event.type ) {
+                    app_uptr->pause ( );
+                    break;
+                }
+                if ( sf::Event::GainedFocus == event.type ) {
+                    app_uptr->resume ( );
+                }
+                if ( sf::Event::Closed == event.type or isEscapePressed ( event ) ) {
+                    app_uptr->closeWindow ( );
+                    return EXIT_SUCCESS;
+                }
+            }
+            if ( app_uptr->isRunning ( ) ) {
+                if ( not ( app_uptr->runStartupAnimation ( ) ) ) {
+                    break;
+                }
+                keep.pace ( );
+            }
+            else {
+                sf::sleep ( sf::milliseconds ( 250 ) );
+            }
+        }
         while ( app_uptr->isWindowOpen ( ) ) {
             sf::Event event;
             while ( app_uptr->pollWindowEvent ( event ) ) {

@@ -269,7 +269,10 @@ App::App ( ) {
     m_player_to_move.where.y = m_hex.at ( 0, -state::width ( ) / 2 ).y;
     // The real thing.
     m_mouse.initialize ( m_window );
-    m_window.requestFocus ( );
+    m_animator.reserve ( 32 );
+    m_overlay.setSize ( sf::Vector2f { m_window_width, m_window_height } );
+    auto update_overlay_alpha = [ this ] ( const float v ) { m_overlay.setFillColor ( sf::Color { 10u, 10u, 10u, static_cast<sf::Uint8> ( v ) } ); };
+    m_animator.emplace ( LAMBDA_EASING_START_END_DURATION ( update_overlay_alpha, sf::easing::exponentialInEasing, 255.0f, 0.0f, 1000 ) );
 }
 
 
@@ -278,6 +281,24 @@ void App::setIcon ( ) noexcept {
     if ( hIcon ) {
         SendMessage ( m_window.getSystemHandle ( ), WM_SETICON, ICON_BIG, ( LPARAM ) hIcon );
     }
+}
+
+
+
+bool App::runStartupAnimation ( ) noexcept {
+    // Clear.
+    m_window.clear ( sf::Color { 10u, 10u, 10u, 255u } );
+    // Draw play area.
+    for ( const auto & p : m_positions ) {
+        m_circles.setPosition ( p.where );
+        m_circles.setTextureRect ( m_display_rect [ static_cast< int > ( p.what ) ] );
+        m_window.draw ( m_circles );
+    }
+    m_animator.run ( );
+    m_window.draw ( m_overlay );
+    // Display window.
+    m_window.display ( );
+    return m_animator.size ( );
 }
 
 
@@ -293,12 +314,6 @@ void App::updateWindow ( ) noexcept {
         m_circles.setTextureRect ( m_display_rect [ static_cast<int> ( p.what ) ] );
         m_window.draw ( m_circles );
     }
-    // Draw next player.
-    m_circles.setScale ( 0.3f, 0.3f );
-    m_circles.setPosition ( m_player_to_move.where );
-    m_circles.setTextureRect ( m_display_rect [ static_cast<int> ( m_player_to_move.what ) ] );
-    m_window.draw ( m_circles );
-    m_circles.setScale ( 1.0f, 1.0f );
     // Display window.
     m_window.display ( );
     // Minimize if required (after updating above).
