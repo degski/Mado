@@ -173,7 +173,7 @@ class App {
     };
 
     using kdtree = kd::Tree2D<float, sf::Vector2<float>, kd::array_tag_t, state::size ( )>;
-    using hextable = ma::Matrix<sf::Vector2f, state::width ( ), state::width ( ), -state::width ( ) / 2, -state::width ( ) / 2>;
+    using hextable = ma::Matrix<sf::Vector2f, state::width ( ), state::height ( ), -state::radius ( ), -state::radius ( )>;
     using positions = std::array<position, kdtree::size ( )>;
     using indices = std::array<uidx, kdtree::size ( )>;
 

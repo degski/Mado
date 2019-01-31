@@ -53,9 +53,9 @@
 
 
 
-template<std::size_t S>
+template<std::size_t R>
 struct hex {
-    using sidx = sidx<S>;
+    using sidx = sidx<R>;
     sidx q, r;
 
     template<typename Stream>
@@ -72,30 +72,36 @@ struct Mado {
 
     static_assert ( std::conjunction<std::is_signed<T>, std::is_integral<T>>::value, "signed integer types only" );
 
+    [[ nodiscard ]] static constexpr std::intptr_t radius ( ) noexcept {
+        return static_cast<std::intptr_t> ( R );
+    }
+
     [[ nodiscard ]] static constexpr std::size_t size ( ) noexcept {
-        return 1 + 3 * R * ( R + 1 );
+        return static_cast<std::size_t> ( 1 + 3 * radius ( ) * ( radius ( ) + 1 ) );
     }
 
     [[ nodiscard ]] static constexpr std::intptr_t width ( ) noexcept {
-        return static_cast<std::intptr_t> ( 2 * R + 1 );
+        return static_cast<std::intptr_t> ( 2 * radius ( ) + 1 );
+    }
+    [[ nodiscard ]] static constexpr std::intptr_t height ( ) noexcept {
+        return static_cast<std::intptr_t> ( 2 * radius ( ) + 1 );
     }
 
     [[ nodiscard ]] static constexpr std::intptr_t cols ( ) noexcept {
-        return width ( ) * 2 + 1;
+        return 2 * width ( ) + 1;
     }
     [[ nodiscard ]] static constexpr std::intptr_t rows ( ) noexcept {
-        return width ( ) + 2;
+        return height ( ) + 2;
     }
 
-    using uidx = uidx<width ( )>;
-    using sidx = sidx<width ( )>;
+    using uidx = uidx<radius ( )>;
+    using sidx = sidx<radius ( )>;
 
     [[ nodiscard ]] static constexpr uidx center ( ) noexcept {
-        return static_cast<uidx> ( ( R + 1 ) * cols ( ) + width ( ) );
+        return static_cast<uidx> ( cols ( ) * ( radius ( ) + 1 ) + width ( ) );
     }
 
-
-    using hex = hex<width()>;
+    using hex = hex<radius ( )>;
 
     // https://www.redblobgames.com/grids/hexagons/
 
@@ -116,12 +122,12 @@ struct Mado {
     }
 
 
-    using move = Move<width()>;
+    using move = Move<radius ( )>;
 
-    using value = typename Player<width()>::Type;
-    using value_type = Player<width()>;
-    using pointer = Player<width()> * ;
-    using const_pointer = Player<width()> const *;
+    using value = typename Player<radius ( )>::Type;
+    using value_type = Player<radius ( )>;
+    using pointer = Player<radius ( )> * ;
+    using const_pointer = Player<radius ( )> const *;
 
     using board = std::array<value_type, cols ( ) * rows ( )>;
     using indices = std::array<uidx, size ( )>;
@@ -159,7 +165,7 @@ struct Mado {
         m_board [ idx ] = value::vacant;
         std::size_t i = 0u;
         m_indcs [ i++ ] = idx;
-        for ( int ring = 1; ring < int { R + 1 }; ++ring ) {
+        for ( int ring = 1; ring < int { radius ( ) + 1 }; ++ring ) {
             idx = east ( idx ); // move to next ring.
             for ( int j = 0; j < ring; ++j ) {
                 idx = north_west ( idx );
