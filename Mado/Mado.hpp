@@ -67,42 +67,35 @@ struct hex {
 
 
 
-template<std::size_t S, typename T = std::int8_t>
+template<std::size_t R, typename T = std::int8_t>
 struct Mado {
 
-    static_assert ( S & std::size_t { 1 }, "uneven size only" );
     static_assert ( std::conjunction<std::is_signed<T>, std::is_integral<T>>::value, "signed integer types only" );
 
-    [[ nodiscard ]] static constexpr std::size_t cols ( ) noexcept {
-        return S * 2 + 1;
-    }
-    [[ nodiscard ]] static constexpr std::size_t rows ( ) noexcept {
-        return S + 2;
-    }
-
-    template<typename T, typename = std::enable_if_t<std::conjunction<std::is_unsigned<T>, std::is_integral<T>>::value>>
-    [[ nodiscard ]] static constexpr T sum_m_to_n ( const T m_, const T n_ ) noexcept {
-        return ( ( n_ * ( n_ + 1 ) ) - ( m_ * ( m_ + 1 ) ) ) / T ( 2 );
+    [[ nodiscard ]] static constexpr std::size_t size ( ) noexcept {
+        return 1 + 3 * R * ( R + 1 );
     }
 
     [[ nodiscard ]] static constexpr std::intptr_t width ( ) noexcept {
-        return static_cast<std::intptr_t> ( S );
+        return static_cast<std::intptr_t> ( 2 * R + 1 );
     }
 
-    [[ nodiscard ]] static constexpr std::size_t size ( ) noexcept {
-        return S + sum_m_to_n ( S / 2, S - 1 ) * 2;
+    [[ nodiscard ]] static constexpr std::intptr_t cols ( ) noexcept {
+        return width ( ) * 2 + 1;
+    }
+    [[ nodiscard ]] static constexpr std::intptr_t rows ( ) noexcept {
+        return width ( ) + 2;
     }
 
-
-    using uidx = uidx<S>;
-    using sidx = sidx<S>;
+    using uidx = uidx<width ( )>;
+    using sidx = sidx<width ( )>;
 
     [[ nodiscard ]] static constexpr uidx center ( ) noexcept {
-        return static_cast<uidx> ( ( S / 2 + 1 ) * cols ( ) + S );
+        return static_cast<uidx> ( ( R + 1 ) * cols ( ) + width ( ) );
     }
 
 
-    using hex = hex<S>;
+    using hex = hex<width()>;
 
     // https://www.redblobgames.com/grids/hexagons/
 
@@ -123,12 +116,12 @@ struct Mado {
     }
 
 
-    using move = Move<S>;
+    using move = Move<width()>;
 
-    using value = typename Player<S>::Type;
-    using value_type = Player<S>;
-    using pointer = Player<S> * ;
-    using const_pointer = Player<S> const *;
+    using value = typename Player<width()>::Type;
+    using value_type = Player<width()>;
+    using pointer = Player<width()> * ;
+    using const_pointer = Player<width()> const *;
 
     using board = std::array<value_type, cols ( ) * rows ( )>;
     using indices = std::array<uidx, size ( )>;
@@ -166,7 +159,7 @@ struct Mado {
         m_board [ idx ] = value::vacant;
         std::size_t i = 0u;
         m_indcs [ i++ ] = idx;
-        for ( int ring = 1; ring < int { S / 2 + 1 }; ++ring ) {
+        for ( int ring = 1; ring < int { R + 1 }; ++ring ) {
             idx = east ( idx ); // move to next ring.
             for ( int j = 0; j < ring; ++j ) {
                 idx = north_west ( idx );

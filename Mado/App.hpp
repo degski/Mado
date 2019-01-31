@@ -46,7 +46,7 @@
 
 class App {
 
-    using state = Mado<9>;
+    using state = Mado<4>;
     using uidx = typename state::uidx;
     using sidx = typename state::sidx;
     using hex = typename state::hex;

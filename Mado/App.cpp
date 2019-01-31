@@ -264,7 +264,7 @@ App::App ( ) {
     m_music.setLoopPoints ( loop );
     m_music.play ( );
     // Player to move.
-    m_player_to_move.what = display::active_red;
+    m_player_to_move.what = display::in_active_green;
     m_player_to_move.where.x = m_hex.at ( -state::width ( ) / 2, 0 ).x;
     m_player_to_move.where.y = m_hex.at ( 0, -state::width ( ) / 2 ).y;
     // The real thing.
@@ -294,9 +294,11 @@ void App::updateWindow ( ) noexcept {
         m_window.draw ( m_circles );
     }
     // Draw next player.
+    m_circles.setScale ( 0.3f, 0.3f );
     m_circles.setPosition ( m_player_to_move.where );
     m_circles.setTextureRect ( m_display_rect [ static_cast<int> ( m_player_to_move.what ) ] );
     m_window.draw ( m_circles );
+    m_circles.setScale ( 1.0f, 1.0f );
     // Display window.
     m_window.display ( );
     // Minimize if required (after updating above).
