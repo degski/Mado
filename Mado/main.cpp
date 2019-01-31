@@ -230,34 +230,21 @@ int main ( ) {
     std::exception_ptr eptr;
     try {
         std::unique_ptr<App> app_uptr = std::make_unique<App> ( );
-        sf::Pacer keep;
-        while ( app_uptr->isWindowOpen ( ) ) {
-            sf::Event event;
+        sf::Pacer keep ( 30 );
+        sf::Event event;
+        // Startup animation.
+        while ( app_uptr->runStartupAnimation ( ) ) {
             while ( app_uptr->pollWindowEvent ( event ) ) {
-                if ( sf::Event::LostFocus == event.type ) {
-                    app_uptr->pause ( );
-                    break;
-                }
-                if ( sf::Event::GainedFocus == event.type ) {
-                    app_uptr->resume ( );
-                }
-                if ( sf::Event::Closed == event.type or isEscapePressed ( event ) ) {
+                if ( isEscapePressed ( event ) ) {
                     app_uptr->closeWindow ( );
                     return EXIT_SUCCESS;
                 }
             }
-            if ( app_uptr->isRunning ( ) ) {
-                if ( not ( app_uptr->runStartupAnimation ( ) ) ) {
-                    break;
-                }
-                keep.pace ( );
-            }
-            else {
-                sf::sleep ( sf::milliseconds ( 250 ) );
-            }
+            keep.pace ( );
         }
+        // Regular game loop.
+        keep.reset ( 10 );
         while ( app_uptr->isWindowOpen ( ) ) {
-            sf::Event event;
             while ( app_uptr->pollWindowEvent ( event ) ) {
                 if ( sf::Event::LostFocus == event.type ) {
                     app_uptr->pause ( );

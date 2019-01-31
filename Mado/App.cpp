@@ -267,12 +267,12 @@ App::App ( ) {
     m_player_to_move.what = display::in_active_green;
     m_player_to_move.where.x = m_hex.at ( -state::width ( ) / 2, 0 ).x;
     m_player_to_move.where.y = m_hex.at ( 0, -state::width ( ) / 2 ).y;
-    // The real thing.
     m_mouse.initialize ( m_window );
     m_animator.reserve ( 32 );
     m_overlay.setSize ( sf::Vector2f { m_window_width, m_window_height } );
     auto update_overlay_alpha = [ this ] ( const float v ) { m_overlay.setFillColor ( sf::Color { 10u, 10u, 10u, static_cast<sf::Uint8> ( v ) } ); };
-    m_animator.emplace ( LAMBDA_EASING_START_END_DURATION ( update_overlay_alpha, sf::easing::exponentialInEasing, 255.0f, 0.0f, 1000 ) );
+    m_animator.emplace ( LAMBDA_EASING_START_END_DURATION ( update_overlay_alpha, sf::easing::exponentialInEasing, 255.0f, 0.0f, 500 ) );
+    m_window.requestFocus ( );
 }
 
 
@@ -291,7 +291,7 @@ bool App::runStartupAnimation ( ) noexcept {
     // Draw play area.
     for ( const auto & p : m_positions ) {
         m_circles.setPosition ( p.where );
-        m_circles.setTextureRect ( m_display_rect [ static_cast< int > ( p.what ) ] );
+        m_circles.setTextureRect ( m_display_rect [ static_cast<int> ( p.what ) ] );
         m_window.draw ( m_circles );
     }
     m_animator.run ( );
