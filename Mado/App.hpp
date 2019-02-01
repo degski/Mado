@@ -37,7 +37,6 @@
 #include <SFML/Extensions.hpp>
 
 #include "../../KD-Tree/KD-Tree/ikdtree.hpp"
-#include "multi_array.hpp"
 
 #include "Types.hpp"
 #include "Globals.hpp"
