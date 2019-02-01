@@ -247,9 +247,10 @@ private:
         return ( ( p1_.x - p2_.x ) * ( p1_.x - p2_.x ) ) + ( ( p1_.y - p2_.y ) * ( p1_.y - p2_.y ) );
     }
 
-    [[ nodiscard ]] uidx pointToIdx ( sf::Vector2f p ) const noexcept;
+    [[ nodiscard ]] uidx pointToIdx ( sf::Vector2f & p ) const noexcept;
     [[ nodiscard ]] hex pointToHex ( sf::Vector2f p_ ) const noexcept;
     [[ nodiscard ]] uidx pointToCoord ( sf::Vector2f p ) const noexcept;
+    [[ nodiscard ]] uidx pointToCoord2 ( sf::Vector2f p ) const noexcept;
 
     [[ nodiscard ]] std::vector<sf::Vector2f> positionData ( ) const noexcept;
     [[ nodiscard ]] std::vector<std::pair<sf::Vector2f, uidx>> positionIdxData ( ) const noexcept;

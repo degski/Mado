@@ -38,25 +38,25 @@
 //  https://stackoverflow.com/questions/22128872/simple-c-sfml-program-high-cpu-usage
 
 
-[[ nodiscard ]] App::uidx App::pointToIdx ( sf::Vector2f p_ ) const noexcept {
-    // https://www.redblobgames.com/grids/hexagons/#comment-1063818420
-    static const float radius { m_hori / 1.732050807568877193f };
-    static const sf::Vector2f center { m_center.x, m_center.y - radius };
-    p_ -= center;
-    p_.x /= m_hori; p_.y /= radius;
-    const float t = std::floorf ( p_.y + p_.x ), r = std::floorf ( ( std::floorf ( p_.y - p_.x ) + t ) / 3.0f );
-    return state::hex_to_idx ( std::floorf ( ( std::floorf ( 2.0f * p_.x + 1.0f ) + t ) / 3.0f ) - r, r );
+[[ nodiscard ]] App::uidx App::pointToIdx ( sf::Vector2f & p_ ) const noexcept {
+    return state::hex_to_idx ( pointToHex ( p_ ) );
+}
+
+int int_floorf ( float x ) {
+    return static_cast<int> ( x + 100'000 ) - 100'000;
 }
 
 [[ nodiscard ]] App::hex App::pointToHex ( sf::Vector2f p_ ) const noexcept {
     // https://www.redblobgames.com/grids/hexagons/#comment-1063818420
-    static const float radius { m_hori / 1.732050807568877193f };
+    static const float radius { m_hori / 1.732050776f };
     static const sf::Vector2f center { m_center.x, m_center.y - radius };
     p_ -= center;
     p_.x /= m_hori; p_.y /= radius;
-    const float t = std::floorf ( p_.y + p_.x ), r = std::floorf ( ( std::floorf ( p_.y - p_.x ) + t ) / 3.0f );
-    return { static_cast<sidx> ( std::floorf ( ( std::floorf ( 2.0f * p_.x + 1.0f ) + t ) / 3.0f ) - r ), static_cast<sidx> ( r ) };
+    int q = int_floorf ( p_.y + p_.x ), r = int_floorf ( ( int_floorf ( p_.y - p_.x ) + q ) * 0.3333333433f );
+    q = int_floorf ( ( int_floorf ( 2.0f * p_.x + 1.0f ) + q ) * 0.3333333433f ) - r;
+    return { static_cast<sidx> ( q + static_cast<int> ( state::radius ( ) ) ), static_cast<sidx> ( r + static_cast<int> ( state::radius ( ) ) ) };
 }
+
 
 template<typename T>
 [[ nodiscard ]] inline bool is_even ( const T v_ ) noexcept {
@@ -64,7 +64,7 @@ template<typename T>
 }
 
 [[ nodiscard ]] App::uidx App::pointToCoord ( sf::Vector2f p_ ) const noexcept {
-    static const float radius { m_hori / 1.732050807568877193f };
+    static const float radius { m_hori / 1.732050776f };
     static const float hm1 = m_center.x - ( ( state::width ( ) * m_hori ) / 2.0f ), hm2 = hm1 + 0.5f * m_hori, vm = m_center.y - ( ( state::width ( ) * m_vert ) / 2.0f );
     const uidx row = ( p_.y - vm ) / m_vert + 1;
     return is_even ( row ) ?
@@ -275,9 +275,24 @@ void App::loadVertexArray ( ) noexcept {
 }
 
 
+
+[[ nodiscard ]] App::uidx App::pointToCoord2 ( sf::Vector2f p_ ) const noexcept {
+
+    static const float hori_margin_uneven = m_center.x - ( ( state::width ( ) * m_hori ) / 2.0f ), hori_margin_even = hori_margin_uneven + 0.5f * m_hori, vert_margin = m_center.y - ( ( state::width ( ) * m_vert ) / 2.0f );
+    const uidx row = ( p_.y - vert_margin ) / m_vert;
+
+    uidx col = ( p_.x - ( is_even ( row ) ? hori_margin_even : hori_margin_uneven ) ) / m_hori;
+
+    return col;
+    //return is_even ( row ) ?
+        //static_cast< uidx > ( ( p_.x - hm1 ) / m_hori ) * 2 + 1 + row * state::cols ( ) :
+       // static_cast< uidx > ( ( p_.x - hm2 ) / m_hori ) * 2 + 2 + row * state::cols ( );
+}
+
+
 [[ nodiscard ]] bool App::playAreaContains ( sf::Vector2f p_ ) const noexcept {
     // http://www.playchilla.com/how-to-check-if-a-point-is-inside-a-hexagon
-    static const float hori { state::width ( ) * 0.5f * m_vert }, vert { hori / 1.732050807568877193f }, vert_2 { 2.0f * vert }, hori_vert_2 { hori * vert_2 };
+    static const float hori { state::width ( ) * 0.5f * m_vert }, vert { hori / 1.732050776f }, vert_2 { 2.0f * vert }, hori_vert_2 { hori * vert_2 };
     p_ -= m_center;
     p_.x = std::abs ( p_.x ); p_.y = std::abs ( p_.y );
     // x- and y-coordinates swapped (for flat-topped hexagon).
@@ -425,6 +440,7 @@ void App::mouseEvents ( const sf::Event & event_ ) {
         m_display_minimize = m_minimize_bounds.contains ( mouse_position );
         if ( not ( m_display_close or m_display_minimize ) ) {
             if ( playAreaContains ( mouse_position ) ) {
+                std::cout << pointToHex ( mouse_position ) << nl;
                 const auto [ idx, distance ] = m_kdtree.nn_index_distance ( mouse_position );
                 if ( distance < m_circle_radius_squared )
                     m_idx = idx, m_positions [ idx ].activate ( );
