@@ -44,7 +44,7 @@
 
 [[ nodiscard ]] App::hex App::pointToHex ( sf::Vector2f p_ ) const noexcept {
     // https://www.redblobgames.com/grids/hexagons/#comment-1063818420
-    static const float radius { m_hori / 1.732050776f };
+    static const float radius { m_hori * 0.5773502588f };
     static const sf::Vector2f center { m_center.x, m_center.y - radius };
     p_ -= center;
     p_.x /= m_hori; p_.y /= radius;
@@ -61,8 +61,8 @@ template<typename T>
 }
 
 [[ nodiscard ]] App::uidx App::pointToCoord ( sf::Vector2f p_ ) const noexcept {
-    static const float radius { m_hori / 1.732050776f };
-    static const float hm1 = m_center.x - ( ( state::width ( ) * m_hori ) / 2.0f ), hm2 = hm1 + 0.5f * m_hori, vm = m_center.y - ( ( state::width ( ) * m_vert ) / 2.0f );
+    static const float radius { m_hori * 0.5773502588f };
+    static const float hm1 = m_center.x - ( ( state::width ( ) * m_hori ) * 0.5f ), hm2 = hm1 + 0.5f * m_hori, vm = m_center.y - ( ( state::width ( ) * m_vert ) * 0.5f );
     const uidx row = ( p_.y - vm ) / m_vert + 1;
     return is_even ( row ) ?
         static_cast<uidx> ( ( p_.x - hm1 ) / m_hori ) * 2 + 1 + row * state::cols ( ) :
@@ -321,7 +321,7 @@ void App::loadVertexArray ( ) noexcept {
 
 [[ nodiscard ]] App::uidx App::pointToCoord2 ( sf::Vector2f p_ ) const noexcept {
 
-    static const float hori_margin_uneven = m_center.x - ( ( state::width ( ) * m_hori ) / 2.0f ), hori_margin_even = hori_margin_uneven + 0.5f * m_hori, vert_margin = m_center.y - ( ( state::width ( ) * m_vert ) / 2.0f );
+    static const float hori_margin_uneven = m_center.x - ( ( state::width ( ) * m_hori ) * 0.5f ), hori_margin_even = hori_margin_uneven + 0.5f * m_hori, vert_margin = m_center.y - ( ( state::width ( ) * m_vert ) * 0.5f );
     const uidx row = ( p_.y - vert_margin ) / m_vert;
 
     uidx col = ( p_.x - ( is_even ( row ) ? hori_margin_even : hori_margin_uneven ) ) / m_hori;
@@ -335,7 +335,7 @@ void App::loadVertexArray ( ) noexcept {
 
 [[ nodiscard ]] bool App::playAreaContains ( sf::Vector2f p_ ) const noexcept {
     // http://www.playchilla.com/how-to-check-if-a-point-is-inside-a-hexagon
-    static const float hori { state::width ( ) * 0.5f * m_vert }, vert { hori / 1.732050776f }, vert_2 { 2.0f * vert }, hori_vert_2 { hori * vert_2 };
+    static const float hori { state::width ( ) * 0.5f * m_vert }, vert { hori * 0.5773502588f }, vert_2 { 2.0f * vert }, hori_vert_2 { hori * vert_2 };
     p_ -= m_center;
     p_.x = std::abs ( p_.x ); p_.y = std::abs ( p_.y );
     // x- and y-coordinates swapped (for flat-topped hexagon).
@@ -353,11 +353,11 @@ App::App ( ) {
     // Setup parameters.
     m_window_width = 701.0f;
     m_window_height = 647.0f;
-    m_center = sf::Vector2f { m_window_width / 2.0f, m_window_height / 2.0f /*+ 12.0f*/ };
+    m_center = sf::Vector2f { m_window_width * 0.5f, m_window_height * 0.5f /*+ 12.0f*/ };
     m_hori = 74.0f; // Horizontal displacement.
     m_vert = 64.0f; // Vertical displacement.
     m_circle_diameter = 67.0f;
-    m_circle_radius = std::floorf ( m_circle_diameter / 2.0f );
+    m_circle_radius = std::floorf ( m_circle_diameter * 0.5f );
     m_circle_radius_squared = sqr ( m_circle_radius );
     m_settings.antialiasingLevel = 8u;
     // Create the m_window.
@@ -404,8 +404,8 @@ App::App ( ) {
     m_taskbar_default = sf::IntRect { 0,  0, 135, 30 };
     m_taskbar_minimize = sf::IntRect { 0, 30, 135, 30 };
     m_taskbar_close = sf::IntRect { 0, 90, 135, 30 };
-    m_minimize_bounds = sf::FloatRect { m_window_width - m_taskbar_texture.getSize ( ).x, 0.0f, m_taskbar_texture.getSize ( ).x / 3.0f, m_taskbar_texture.getSize ( ).y / 4.0f };
-    m_close_bounds = sf::FloatRect { m_window_width - m_taskbar_texture.getSize ( ).x / 3.0f, 0.0f, m_taskbar_texture.getSize ( ).x / 3.0f, m_taskbar_texture.getSize ( ).y / 4.0f };
+    m_minimize_bounds = sf::FloatRect { m_window_width - m_taskbar_texture.getSize ( ).x, 0.0f, m_taskbar_texture.getSize ( ).x * 0.3333333433f, m_taskbar_texture.getSize ( ).y * 0.25F };
+    m_close_bounds = sf::FloatRect { m_window_width - m_taskbar_texture.getSize ( ).x * 0.3333333433f, 0.0f, m_taskbar_texture.getSize ( ).x * 0.3333333433f, m_taskbar_texture.getSize ( ).y * 0.25F };
     // Load sound.
     sf::loadFromResource ( m_music, MUSIC );
     m_music.setVolume ( 10.0f );
