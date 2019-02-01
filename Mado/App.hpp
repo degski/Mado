@@ -236,10 +236,14 @@ class App {
     inline void setQuadTex ( int i_, int t_ ) noexcept {
         i_ *= 4;
         const sf::Box<float> & tb = m_tex_box [ t_ ];
-        m_vertices [ i_ + 0 ].texCoords = sf::Vector2f { tb.left, tb.top };
-        m_vertices [ i_ + 1 ].texCoords = sf::Vector2f { tb.right, tb.top };
-        m_vertices [ i_ + 2 ].texCoords = sf::Vector2f { tb.right, tb.bottom };
-        m_vertices [ i_ + 3 ].texCoords = sf::Vector2f { tb.left, tb.bottom };
+        struct quad {
+            sf::Vertex v0, v1, v2, v3;
+        };
+        quad & quads = *reinterpret_cast<quad*> ( & m_vertices [ i_ ] );
+        quads.v0.texCoords = sf::Vector2f { tb.left, tb.top };
+        quads.v1.texCoords = sf::Vector2f { tb.right, tb.top };
+        quads.v2.texCoords = sf::Vector2f { tb.right, tb.bottom };
+        quads.v3.texCoords = sf::Vector2f { tb.left, tb.bottom };
     }
     sf::VertexArray m_vertices;
     hex_storage<int, state::radius ( )> m_vertex_indices;

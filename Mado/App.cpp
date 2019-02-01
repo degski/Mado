@@ -184,42 +184,15 @@ void App::hexData ( ) noexcept {
 }
 
 
-template<typename T>
-std::vector<std::size_t> sortPermutation ( const std::vector<T> &vector_ ) {
-
-    std::vector<std::size_t> permutation ( vector_.size ( ) );
-
-    std::iota ( permutation.begin ( ), permutation.end ( ), 0 );
-    std::sort ( permutation.begin ( ), permutation.end ( ), [ & ] ( std::size_t i, std::size_t j ) { return vector_ [ i ] < vector_ [ j ]; } );
-
-    return permutation;
-}
-
-template <typename T>
-std::vector<T> applyPermutation ( const std::vector<T> &vector_, const std::vector<std::size_t> &permutation_ ) {
-
-    std::vector<T> sorted_vector ( permutation_.size ( ) );
-
-    std::transform ( permutation_.begin ( ), permutation_.end ( ), sorted_vector.begin ( ), [ & ] ( std::size_t i ) { return vector_ [ i ]; } );
-
-    return sorted_vector;
-}
-
 void App::loadVertexArray ( ) noexcept {
-
     m_vertices.setPrimitiveType ( sf::Quads );
     m_vertices.resize ( 4 * state::size ( ) );
-
     sf::Box<float> & tb = m_tex_box [ 0 ];
-
     struct quad {
         sf::Vertex v0, v1, v2, v3;
     };
-
     quad * quads = reinterpret_cast<quad*> ( & m_vertices [ 0 ] );
-
     int i = 0;
-
     sf::Vector2f p = m_center - sf::Vector2f { m_circle_radius, m_circle_radius };
     hex ax { static_cast<sidx> ( state::radius ( ) ), static_cast<sidx> ( state::radius ( ) ) };
     quads [ i ] = {
@@ -299,24 +272,51 @@ void App::loadVertexArray ( ) noexcept {
             m_vertex_indices.at ( ax ) = i;
         }
     }
-
-
+    // Sort quads lambda.
     auto quads_less = [ ] ( const auto & a, const auto & b ) {
         return ( a.v0.position.y < b.v0.position.y ) or ( a.v0.position.y == b.v0.position.y and a.v0.position.x < b.v0.position.x );
     };
-
-    std::vector<std::intptr_t> permutation ( state::size ( ) );
-
-    std::iota ( permutation.begin ( ), permutation.end ( ), 0 );
-    std::sort ( permutation.begin ( ), permutation.end ( ), [ quads, quads_less ] ( std::intptr_t i, std::intptr_t j ) { return quads_less ( quads [ i ], quads [ j ] ); } );
-
-    for ( auto v : permutation )
-        std::cout << v << ' ';
-    std::cout << nl;
-
+    // Establish the new order by index.
+    std::array<int, state::size ( )> sorted_index;
+    std::iota ( std::begin ( sorted_index ), std::end ( sorted_index ), 0 );
+    std::sort ( std::begin ( sorted_index ), std::end ( sorted_index ), [ quads, quads_less ] ( int i, int j ) { return quads_less ( quads [ i ], quads [ j ] ); } );
+    // Invert the lookup.
+    std::array<int, state::size ( )> inverted;
+    std::iota ( std::begin ( inverted ), std::end ( inverted ), 0 );
+    std::sort ( std::begin ( inverted ), std::end ( inverted ), [ & sorted_index ] ( int i, int j ) { return sorted_index [ i ] < sorted_index [ j ]; } );
+    // Replace the old index with the new index.
+    ax = { static_cast<sidx> ( state::radius ( ) ), static_cast<sidx> ( state::radius ( ) ) };
+    m_vertex_indices.at ( ax ) = inverted [ m_vertex_indices.at ( ax ) ];
+    for ( int ring = 1; ring <= int { state::radius ( ) }; ++ring ) {
+        ++ax.q;
+        for ( int j = 0; j < ring; ++j ) { // nw.
+            --ax.r;
+            m_vertex_indices.at ( ax ) = inverted [ m_vertex_indices.at ( ax ) ];
+        }
+        for ( int j = 0; j < ring; ++j ) { // w.
+            --ax.q;
+            m_vertex_indices.at ( ax ) = inverted [ m_vertex_indices.at ( ax ) ];
+        }
+        for ( int j = 0; j < ring; ++j ) { // sw.
+            --ax.q, ++ax.r;
+            m_vertex_indices.at ( ax ) = inverted [ m_vertex_indices.at ( ax ) ];
+        }
+        for ( int j = 0; j < ring; ++j ) { // se.
+            ++ax.r;
+            m_vertex_indices.at ( ax ) = inverted [ m_vertex_indices.at ( ax ) ];
+        }
+        for ( int j = 0; j < ring; ++j ) { // e.
+            ++ax.q;
+            m_vertex_indices.at ( ax ) = inverted [ m_vertex_indices.at ( ax ) ];
+        }
+        for ( int j = 0; j < ring; ++j ) { // ne.
+            ++ax.q; --ax.r;
+            m_vertex_indices.at ( ax ) = inverted [ m_vertex_indices.at ( ax ) ];
+        }
+    }
+    // Finally, sort the vertices.
     std::sort ( quads, quads + m_vertices.getVertexCount ( ) / 4, quads_less );
 }
-
 
 
 [[ nodiscard ]] App::uidx App::pointToCoord2 ( sf::Vector2f p_ ) const noexcept {
