@@ -229,7 +229,7 @@ class App {
     void loadVertexArray ( ) noexcept;
     inline void setQuadTex ( int i_, int t_ ) noexcept {
         i_ *= 4;
-        sf::Box<float> & tb = m_tex_box [ t_ ];
+        const sf::Box<float> & tb = m_tex_box [ t_ ];
         m_vertices [ i_ + 0 ].texCoords = sf::Vector2f { tb.left, tb.top };
         m_vertices [ i_ + 1 ].texCoords = sf::Vector2f { tb.right, tb.top };
         m_vertices [ i_ + 2 ].texCoords = sf::Vector2f { tb.right, tb.bottom };
@@ -245,6 +245,10 @@ private:
 
     [[ nodiscard ]] static constexpr float distance_squared ( const sf::Vector2f & p1_, const sf::Vector2f & p2_ ) noexcept {
         return ( ( p1_.x - p2_.x ) * ( p1_.x - p2_.x ) ) + ( ( p1_.y - p2_.y ) * ( p1_.y - p2_.y ) );
+    }
+
+    [[ nodiscard ]] inline int int_floorf ( float x ) const noexcept {
+        return static_cast<int> ( x + 65'536.0f ) - 65'536;
     }
 
     [[ nodiscard ]] uidx pointToIdx ( const sf::Vector2f & p ) const noexcept;

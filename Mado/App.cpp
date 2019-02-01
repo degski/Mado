@@ -42,10 +42,6 @@
     return state::hex_to_idx ( pointToHex ( p_ ) );
 }
 
-int int_floorf ( float x ) {
-    return static_cast<int> ( x + 65'536.0f ) - 65'536;
-}
-
 [[ nodiscard ]] App::hex App::pointToHex ( sf::Vector2f p_ ) const noexcept {
     // https://www.redblobgames.com/grids/hexagons/#comment-1063818420
     static const float radius { m_hori / 1.732050776f };
@@ -55,7 +51,7 @@ int int_floorf ( float x ) {
     int q = int_floorf ( p_.y + p_.x ), r = int_floorf ( ( int_floorf ( p_.y - p_.x ) + q ) * 0.3333333433f );
     q = int_floorf ( ( int_floorf ( 2.0f * p_.x + 1.0f ) + q ) * 0.3333333433f ) - r;
     q += static_cast<int> ( state::radius ( ) ); r += static_cast<int> ( state::radius ( ) );
-    return { static_cast<sidx> ( q ), static_cast<sidx> ( r ) };
+    return { std::move ( static_cast<sidx> ( q ) ), std::move ( static_cast<sidx> ( r ) ) };
 }
 
 
