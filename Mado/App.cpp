@@ -97,50 +97,6 @@ template<typename T>
 }
 
 
-[[ nodiscard ]] std::vector<std::pair<sf::Vector2f, App::uidx>> App::positionIdxData ( ) const noexcept {
-    std::vector<std::pair<sf::Vector2f, uidx>> pos;
-    pos.reserve ( state::size ( ) );
-    sf::Vector2f p = m_center;
-    hex ax { 0, 0 };
-    pos.emplace_back ( p, state::hex_to_idx ( ax ) );
-    for ( int ring = 1; ring <= int { state::radius ( ) }; ++ring ) {
-        p.x += m_hori; // Move east.
-        ++ax.q;
-        for ( int j = 0; j < ring; ++j ) { // nw.
-            p.x -= m_hori / 2; p.y -= m_vert;
-            --ax.r;
-            pos.emplace_back ( p, state::hex_to_idx ( ax ) );
-        }
-        for ( int j = 0; j < ring; ++j ) { // w.
-            p.x -= m_hori;
-            --ax.q;
-            pos.emplace_back ( p, state::hex_to_idx ( ax ) );
-        }
-        for ( int j = 0; j < ring; ++j ) { // sw.
-            p.x -= m_hori / 2; p.y += m_vert;
-            --ax.q; ++ax.r;
-            pos.emplace_back ( p, state::hex_to_idx ( ax ) );
-        }
-        for ( int j = 0; j < ring; ++j ) { // se.
-            p.x += m_hori / 2; p.y += m_vert;
-            ++ax.r;
-            pos.emplace_back ( p, state::hex_to_idx ( ax ) );
-        }
-        for ( int j = 0; j < ring; ++j ) { // e.
-            p.x += m_hori;
-            ++ax.q;
-            pos.emplace_back ( p, state::hex_to_idx ( ax ) );
-        }
-        for ( int j = 0; j < ring; ++j ) { // ne.
-            p.x += m_hori / 2; p.y -= m_vert;
-            ++ax.q; --ax.r;
-            pos.emplace_back ( p, state::hex_to_idx ( ax ) );
-        }
-    }
-    return pos;
-}
-
-
 void App::loadVertexArray ( ) noexcept {
     m_vertices.setPrimitiveType ( sf::Quads );
     m_vertices.resize ( 4 * state::size ( ) );

@@ -264,7 +264,6 @@ private:
     [[ nodiscard ]] hex pointToHex ( sf::Vector2f p_ ) const noexcept;
 
     [[ nodiscard ]] std::vector<sf::Vector2f> positionData ( ) const noexcept;
-    [[ nodiscard ]] std::vector<std::pair<sf::Vector2f, uidx>> positionIdxData ( ) const noexcept;
 
     [[ nodiscard ]] bool playAreaContains ( sf::Vector2f p_ ) const noexcept;
 
