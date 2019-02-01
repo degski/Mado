@@ -184,6 +184,27 @@ void App::hexData ( ) noexcept {
 }
 
 
+template<typename T>
+std::vector<std::size_t> sortPermutation ( const std::vector<T> &vector_ ) {
+
+    std::vector<std::size_t> permutation ( vector_.size ( ) );
+
+    std::iota ( permutation.begin ( ), permutation.end ( ), 0 );
+    std::sort ( permutation.begin ( ), permutation.end ( ), [ & ] ( std::size_t i, std::size_t j ) { return vector_ [ i ] < vector_ [ j ]; } );
+
+    return permutation;
+}
+
+template <typename T>
+std::vector<T> applyPermutation ( const std::vector<T> &vector_, const std::vector<std::size_t> &permutation_ ) {
+
+    std::vector<T> sorted_vector ( permutation_.size ( ) );
+
+    std::transform ( permutation_.begin ( ), permutation_.end ( ), sorted_vector.begin ( ), [ & ] ( std::size_t i ) { return vector_ [ i ]; } );
+
+    return sorted_vector;
+}
+
 void App::loadVertexArray ( ) noexcept {
 
     m_vertices.setPrimitiveType ( sf::Quads );
@@ -200,75 +221,100 @@ void App::loadVertexArray ( ) noexcept {
     int i = 0;
 
     sf::Vector2f p = m_center - sf::Vector2f { m_circle_radius, m_circle_radius };
+    hex ax { static_cast<sidx> ( state::radius ( ) ), static_cast<sidx> ( state::radius ( ) ) };
     quads [ i ] = {
         sf::Vertex { sf::Vector2f { p.x, p.y }, sf::Vector2f { tb.left, tb.top } },
         sf::Vertex { sf::Vector2f { p.x + m_circle_diameter, p.y }, sf::Vector2f { tb.right, tb.top } },
         sf::Vertex { sf::Vector2f { p.x + m_circle_diameter, p.y + m_circle_diameter }, sf::Vector2f { tb.right, tb.bottom } },
         sf::Vertex { sf::Vector2f { p.x, p.y + m_circle_diameter }, sf::Vector2f { tb.left, tb.bottom } }
     };
+    m_vertex_indices.at ( ax ) = i;
     for ( int ring = 1; ring <= int { state::radius ( ) }; ++ring ) {
         p.x += m_hori; // Move east.
+        ++ax.q;
         for ( int j = 0; j < ring; ++j ) { // nw.
             p.x -= m_hori / 2; p.y -= m_vert;
+            --ax.r;
             quads [ ++i ] = {
                 sf::Vertex { sf::Vector2f { p.x, p.y }, sf::Vector2f { tb.left, tb.top } },
                 sf::Vertex { sf::Vector2f { p.x + m_circle_diameter, p.y }, sf::Vector2f { tb.right, tb.top } },
                 sf::Vertex { sf::Vector2f { p.x + m_circle_diameter, p.y + m_circle_diameter }, sf::Vector2f { tb.right, tb.bottom } },
                 sf::Vertex { sf::Vector2f { p.x, p.y + m_circle_diameter }, sf::Vector2f { tb.left, tb.bottom } }
             };
+            m_vertex_indices.at ( ax ) = i;
         }
         for ( int j = 0; j < ring; ++j ) { // w.
             p.x -= m_hori;
+            --ax.q;
             quads [ ++i ] = {
                 sf::Vertex { sf::Vector2f { p.x, p.y }, sf::Vector2f { tb.left, tb.top } },
                 sf::Vertex { sf::Vector2f { p.x + m_circle_diameter, p.y }, sf::Vector2f { tb.right, tb.top } },
                 sf::Vertex { sf::Vector2f { p.x + m_circle_diameter, p.y + m_circle_diameter }, sf::Vector2f { tb.right, tb.bottom } },
                 sf::Vertex { sf::Vector2f { p.x, p.y + m_circle_diameter }, sf::Vector2f { tb.left, tb.bottom } }
             };
+            m_vertex_indices.at ( ax ) = i;
         }
         for ( int j = 0; j < ring; ++j ) { // sw.
             p.x -= m_hori / 2; p.y += m_vert;
+            --ax.q; ++ax.r;
             quads [ ++i ] = {
                 sf::Vertex { sf::Vector2f { p.x, p.y }, sf::Vector2f { tb.left, tb.top } },
                 sf::Vertex { sf::Vector2f { p.x + m_circle_diameter, p.y }, sf::Vector2f { tb.right, tb.top } },
                 sf::Vertex { sf::Vector2f { p.x + m_circle_diameter, p.y + m_circle_diameter }, sf::Vector2f { tb.right, tb.bottom } },
                 sf::Vertex { sf::Vector2f { p.x, p.y + m_circle_diameter }, sf::Vector2f { tb.left, tb.bottom } }
             };
+            m_vertex_indices.at ( ax ) = i;
         }
         for ( int j = 0; j < ring; ++j ) { // se.
             p.x += m_hori / 2; p.y += m_vert;
+            ++ax.r;
             quads [ ++i ] = {
                 sf::Vertex { sf::Vector2f { p.x, p.y }, sf::Vector2f { tb.left, tb.top } },
                 sf::Vertex { sf::Vector2f { p.x + m_circle_diameter, p.y }, sf::Vector2f { tb.right, tb.top } },
                 sf::Vertex { sf::Vector2f { p.x + m_circle_diameter, p.y + m_circle_diameter }, sf::Vector2f { tb.right, tb.bottom } },
                 sf::Vertex { sf::Vector2f { p.x, p.y + m_circle_diameter }, sf::Vector2f { tb.left, tb.bottom } }
             };
+            m_vertex_indices.at ( ax ) = i;
         }
         for ( int j = 0; j < ring; ++j ) { // e.
             p.x += m_hori;
+            ++ax.q;
             quads [ ++i ] = {
                 sf::Vertex { sf::Vector2f { p.x, p.y }, sf::Vector2f { tb.left, tb.top } },
                 sf::Vertex { sf::Vector2f { p.x + m_circle_diameter, p.y }, sf::Vector2f { tb.right, tb.top } },
                 sf::Vertex { sf::Vector2f { p.x + m_circle_diameter, p.y + m_circle_diameter }, sf::Vector2f { tb.right, tb.bottom } },
                 sf::Vertex { sf::Vector2f { p.x, p.y + m_circle_diameter }, sf::Vector2f { tb.left, tb.bottom } }
             };
+            m_vertex_indices.at ( ax ) = i;
         }
         for ( int j = 0; j < ring; ++j ) { // ne.
             p.x += m_hori / 2; p.y -= m_vert;
+            ++ax.q; --ax.r;
             quads [ ++i ] = {
                 sf::Vertex { sf::Vector2f { p.x, p.y }, sf::Vector2f { tb.left, tb.top } },
                 sf::Vertex { sf::Vector2f { p.x + m_circle_diameter, p.y }, sf::Vector2f { tb.right, tb.top } },
                 sf::Vertex { sf::Vector2f { p.x + m_circle_diameter, p.y + m_circle_diameter }, sf::Vector2f { tb.right, tb.bottom } },
                 sf::Vertex { sf::Vector2f { p.x, p.y + m_circle_diameter }, sf::Vector2f { tb.left, tb.bottom } }
             };
+            m_vertex_indices.at ( ax ) = i;
         }
     }
 
-    std::sort ( quads, quads + m_vertices.getVertexCount ( ) / 4,
-        [ ] ( const auto & a, const auto & b ) {
-            return ( a.v0.position.y < b.v0.position.y ) or ( a.v0.position.y == b.v0.position.y and a.v0.position.x < b.v0.position.x );
-        }
-    );
+
+    auto quads_less = [ ] ( const auto & a, const auto & b ) {
+        return ( a.v0.position.y < b.v0.position.y ) or ( a.v0.position.y == b.v0.position.y and a.v0.position.x < b.v0.position.x );
+    };
+
+    std::vector<std::intptr_t> permutation ( state::size ( ) );
+
+    std::iota ( permutation.begin ( ), permutation.end ( ), 0 );
+    std::sort ( permutation.begin ( ), permutation.end ( ), [ quads, quads_less ] ( std::intptr_t i, std::intptr_t j ) { return quads_less ( quads [ i ], quads [ j ] ); } );
+
+    for ( auto v : permutation )
+        std::cout << v << ' ';
+    std::cout << nl;
+
+    std::sort ( quads, quads + m_vertices.getVertexCount ( ) / 4, quads_less );
 }
 
 

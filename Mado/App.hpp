@@ -106,7 +106,7 @@ class App {
             return width ( ) * height ( );
         }
 
-        T m_data [ height ( ) ] [ width ( ) ];
+        T m_data [ 2 * R + 1 ] [ 2 * R + 1 ];
 
         hex_storage ( ) noexcept : m_data { { T ( ) } } { }
 
@@ -115,6 +115,12 @@ class App {
         }
         [[ nodiscard ]] T at ( const std::intptr_t q_, const std::intptr_t r_ ) const noexcept {
             return m_data [ r_ ] [ q_ - std::max ( std::intptr_t { 0 }, r_ - radius ( ) ) ];
+        }
+        [[ nodiscard ]] T & at ( const hex & h_ ) noexcept {
+            return m_data [ static_cast<std::intptr_t> ( h_.r ) ] [ static_cast<std::intptr_t> ( h_.q ) - std::max ( std::intptr_t { 0 }, static_cast<std::intptr_t> ( h_.r ) - radius ( ) ) ];
+        }
+        [[ nodiscard ]] T at ( const hex & h_ ) const noexcept {
+            return m_data [ static_cast<std::intptr_t> ( h_.r ) ] [ static_cast<std::intptr_t> ( h_.q ) - std::max ( std::intptr_t { 0 }, static_cast<std::intptr_t> ( h_.r ) - radius ( ) ) ];
         }
 
         [[ nodiscard ]] T * data ( ) noexcept {
@@ -236,6 +242,7 @@ class App {
         m_vertices [ i_ + 3 ].texCoords = sf::Vector2f { tb.left, tb.bottom };
     }
     sf::VertexArray m_vertices;
+    hex_storage<int, state::radius ( )> m_vertex_indices;
 
     public:
 
