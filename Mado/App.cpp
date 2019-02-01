@@ -255,9 +255,11 @@ void App::loadVertexArray ( ) noexcept {
     struct quad {
         sf::Vertex v0, v1, v2, v3;
     };
-    std::sort ( reinterpret_cast<quad*> ( & m_vertices [ 0 ] ), reinterpret_cast<quad*> ( & m_vertices [ 0 ] + m_vertices.getVertexCount ( ) ), [ ] ( const auto & a, const auto & b ) {
-        return ( a.v0.position.y < b.v0.position.y ) or ( a.v0.position.y == b.v0.position.y and a.v0.position.x < b.v0.position.x );
-    } );
+    std::sort ( reinterpret_cast<quad*> ( & m_vertices [ 0 ] ), reinterpret_cast<quad*> ( & m_vertices [ 0 ] + m_vertices.getVertexCount ( ) ),
+        [ ] ( const auto & a, const auto & b ) {
+            return ( a.v0.position.y < b.v0.position.y ) or ( a.v0.position.y == b.v0.position.y and a.v0.position.x < b.v0.position.x );
+        }
+    );
 }
 
 
