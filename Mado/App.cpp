@@ -198,60 +198,66 @@ void App::loadVertexArray ( ) noexcept {
 
     sf::Vector2f p = m_center - sf::Vector2f { m_circle_radius, m_circle_radius };
     m_vertices [ i + 0 ] = sf::Vertex { sf::Vector2f { p.x, p.y }, sf::Vector2f { tb.left, tb.top } };
-    m_vertices [ i + 1 ] = sf::Vertex { sf::Vector2f { p.x + m_circle_size, p.y }, sf::Vector2f { tb.right, tb.top } };
-    m_vertices [ i + 2 ] = sf::Vertex { sf::Vector2f { p.x + m_circle_size, p.y + m_circle_size }, sf::Vector2f { tb.right, tb.bottom } };
-    m_vertices [ i + 3 ] = sf::Vertex { sf::Vector2f { p.x, p.y + m_circle_size }, sf::Vector2f { tb.left, tb.bottom } };
+    m_vertices [ i + 1 ] = sf::Vertex { sf::Vector2f { p.x + m_circle_diameter, p.y }, sf::Vector2f { tb.right, tb.top } };
+    m_vertices [ i + 2 ] = sf::Vertex { sf::Vector2f { p.x + m_circle_diameter, p.y + m_circle_diameter }, sf::Vector2f { tb.right, tb.bottom } };
+    m_vertices [ i + 3 ] = sf::Vertex { sf::Vector2f { p.x, p.y + m_circle_diameter }, sf::Vector2f { tb.left, tb.bottom } };
     for ( int ring = 1; ring <= int { state::radius ( ) }; ++ring ) {
         p.x += m_hori; // Move east.
         for ( int j = 0; j < ring; ++j ) { // nw.
             p.x -= m_hori / 2; p.y -= m_vert;
             i += 4;
             m_vertices [ i + 0 ] = sf::Vertex { sf::Vector2f { p.x, p.y }, sf::Vector2f { tb.left, tb.top } };
-            m_vertices [ i + 1 ] = sf::Vertex { sf::Vector2f { p.x + m_circle_size, p.y }, sf::Vector2f { tb.right, tb.top } };
-            m_vertices [ i + 2 ] = sf::Vertex { sf::Vector2f { p.x + m_circle_size, p.y + m_circle_size }, sf::Vector2f { tb.right, tb.bottom } };
-            m_vertices [ i + 3 ] = sf::Vertex { sf::Vector2f { p.x, p.y + m_circle_size }, sf::Vector2f { tb.left, tb.bottom } };
+            m_vertices [ i + 1 ] = sf::Vertex { sf::Vector2f { p.x + m_circle_diameter, p.y }, sf::Vector2f { tb.right, tb.top } };
+            m_vertices [ i + 2 ] = sf::Vertex { sf::Vector2f { p.x + m_circle_diameter, p.y + m_circle_diameter }, sf::Vector2f { tb.right, tb.bottom } };
+            m_vertices [ i + 3 ] = sf::Vertex { sf::Vector2f { p.x, p.y + m_circle_diameter }, sf::Vector2f { tb.left, tb.bottom } };
         }
         for ( int j = 0; j < ring; ++j ) { // w.
             p.x -= m_hori;
             i += 4;
             m_vertices [ i + 0 ] = sf::Vertex { sf::Vector2f { p.x, p.y }, sf::Vector2f { tb.left, tb.top } };
-            m_vertices [ i + 1 ] = sf::Vertex { sf::Vector2f { p.x + m_circle_size, p.y }, sf::Vector2f { tb.right, tb.top } };
-            m_vertices [ i + 2 ] = sf::Vertex { sf::Vector2f { p.x + m_circle_size, p.y + m_circle_size }, sf::Vector2f { tb.right, tb.bottom } };
-            m_vertices [ i + 3 ] = sf::Vertex { sf::Vector2f { p.x, p.y + m_circle_size }, sf::Vector2f { tb.left, tb.bottom } };
+            m_vertices [ i + 1 ] = sf::Vertex { sf::Vector2f { p.x + m_circle_diameter, p.y }, sf::Vector2f { tb.right, tb.top } };
+            m_vertices [ i + 2 ] = sf::Vertex { sf::Vector2f { p.x + m_circle_diameter, p.y + m_circle_diameter }, sf::Vector2f { tb.right, tb.bottom } };
+            m_vertices [ i + 3 ] = sf::Vertex { sf::Vector2f { p.x, p.y + m_circle_diameter }, sf::Vector2f { tb.left, tb.bottom } };
         }
         for ( int j = 0; j < ring; ++j ) { // sw.
             p.x -= m_hori / 2; p.y += m_vert;
             i += 4;
             m_vertices [ i + 0 ] = sf::Vertex { sf::Vector2f { p.x, p.y }, sf::Vector2f { tb.left, tb.top } };
-            m_vertices [ i + 1 ] = sf::Vertex { sf::Vector2f { p.x + m_circle_size, p.y }, sf::Vector2f { tb.right, tb.top } };
-            m_vertices [ i + 2 ] = sf::Vertex { sf::Vector2f { p.x + m_circle_size, p.y + m_circle_size }, sf::Vector2f { tb.right, tb.bottom } };
-            m_vertices [ i + 3 ] = sf::Vertex { sf::Vector2f { p.x, p.y + m_circle_size }, sf::Vector2f { tb.left, tb.bottom } };
+            m_vertices [ i + 1 ] = sf::Vertex { sf::Vector2f { p.x + m_circle_diameter, p.y }, sf::Vector2f { tb.right, tb.top } };
+            m_vertices [ i + 2 ] = sf::Vertex { sf::Vector2f { p.x + m_circle_diameter, p.y + m_circle_diameter }, sf::Vector2f { tb.right, tb.bottom } };
+            m_vertices [ i + 3 ] = sf::Vertex { sf::Vector2f { p.x, p.y + m_circle_diameter }, sf::Vector2f { tb.left, tb.bottom } };
         }
         for ( int j = 0; j < ring; ++j ) { // se.
             p.x += m_hori / 2; p.y += m_vert;
             i += 4;
             m_vertices [ i + 0 ] = sf::Vertex { sf::Vector2f { p.x, p.y }, sf::Vector2f { tb.left, tb.top } };
-            m_vertices [ i + 1 ] = sf::Vertex { sf::Vector2f { p.x + m_circle_size, p.y }, sf::Vector2f { tb.right, tb.top } };
-            m_vertices [ i + 2 ] = sf::Vertex { sf::Vector2f { p.x + m_circle_size, p.y + m_circle_size }, sf::Vector2f { tb.right, tb.bottom } };
-            m_vertices [ i + 3 ] = sf::Vertex { sf::Vector2f { p.x, p.y + m_circle_size }, sf::Vector2f { tb.left, tb.bottom } };
+            m_vertices [ i + 1 ] = sf::Vertex { sf::Vector2f { p.x + m_circle_diameter, p.y }, sf::Vector2f { tb.right, tb.top } };
+            m_vertices [ i + 2 ] = sf::Vertex { sf::Vector2f { p.x + m_circle_diameter, p.y + m_circle_diameter }, sf::Vector2f { tb.right, tb.bottom } };
+            m_vertices [ i + 3 ] = sf::Vertex { sf::Vector2f { p.x, p.y + m_circle_diameter }, sf::Vector2f { tb.left, tb.bottom } };
         }
         for ( int j = 0; j < ring; ++j ) { // e.
             p.x += m_hori;
             i += 4;
             m_vertices [ i + 0 ] = sf::Vertex { sf::Vector2f { p.x, p.y }, sf::Vector2f { tb.left, tb.top } };
-            m_vertices [ i + 1 ] = sf::Vertex { sf::Vector2f { p.x + m_circle_size, p.y }, sf::Vector2f { tb.right, tb.top } };
-            m_vertices [ i + 2 ] = sf::Vertex { sf::Vector2f { p.x + m_circle_size, p.y + m_circle_size }, sf::Vector2f { tb.right, tb.bottom } };
-            m_vertices [ i + 3 ] = sf::Vertex { sf::Vector2f { p.x, p.y + m_circle_size }, sf::Vector2f { tb.left, tb.bottom } };
+            m_vertices [ i + 1 ] = sf::Vertex { sf::Vector2f { p.x + m_circle_diameter, p.y }, sf::Vector2f { tb.right, tb.top } };
+            m_vertices [ i + 2 ] = sf::Vertex { sf::Vector2f { p.x + m_circle_diameter, p.y + m_circle_diameter }, sf::Vector2f { tb.right, tb.bottom } };
+            m_vertices [ i + 3 ] = sf::Vertex { sf::Vector2f { p.x, p.y + m_circle_diameter }, sf::Vector2f { tb.left, tb.bottom } };
         }
         for ( int j = 0; j < ring; ++j ) { // ne.
             p.x += m_hori / 2; p.y -= m_vert;
             i += 4;
             m_vertices [ i + 0 ] = sf::Vertex { sf::Vector2f { p.x, p.y }, sf::Vector2f { tb.left, tb.top } };
-            m_vertices [ i + 1 ] = sf::Vertex { sf::Vector2f { p.x + m_circle_size, p.y }, sf::Vector2f { tb.right, tb.top } };
-            m_vertices [ i + 2 ] = sf::Vertex { sf::Vector2f { p.x + m_circle_size, p.y + m_circle_size }, sf::Vector2f { tb.right, tb.bottom } };
-            m_vertices [ i + 3 ] = sf::Vertex { sf::Vector2f { p.x, p.y + m_circle_size }, sf::Vector2f { tb.left, tb.bottom } };
+            m_vertices [ i + 1 ] = sf::Vertex { sf::Vector2f { p.x + m_circle_diameter, p.y }, sf::Vector2f { tb.right, tb.top } };
+            m_vertices [ i + 2 ] = sf::Vertex { sf::Vector2f { p.x + m_circle_diameter, p.y + m_circle_diameter }, sf::Vector2f { tb.right, tb.bottom } };
+            m_vertices [ i + 3 ] = sf::Vertex { sf::Vector2f { p.x, p.y + m_circle_diameter }, sf::Vector2f { tb.left, tb.bottom } };
         }
     }
+    struct quad {
+        sf::Vertex v0, v1, v2, v3;
+    };
+    std::sort ( reinterpret_cast<quad*> ( & m_vertices [ 0 ] ), reinterpret_cast<quad*> ( & m_vertices [ 0 ] + m_vertices.getVertexCount ( ) ), [ ] ( const auto & a, const auto & b ) {
+        return ( a.v0.position.y < b.v0.position.y ) or ( a.v0.position.y == b.v0.position.y and a.v0.position.x < b.v0.position.x );
+    } );
 }
 
 
@@ -278,13 +284,12 @@ App::App ( ) {
     m_center = sf::Vector2f { m_window_width / 2.0f, m_window_height / 2.0f /*+ 12.0f*/ };
     m_hori = 74.0f; // Horizontal displacement.
     m_vert = 64.0f; // Vertical displacement.
-    m_circle_size = 67.0f;
-    m_circle_radius = 33.0f;
+    m_circle_diameter = 67.0f;
+    m_circle_radius = std::floorf ( m_circle_diameter / 2.0f );
     m_circle_radius_squared = sqr ( m_circle_radius );
     m_settings.antialiasingLevel = 8u;
     // Create the m_window.
     m_window.create ( sf::VideoMode ( static_cast<std::uint32_t> ( m_window_width ), static_cast<std::uint32_t> ( m_window_height ) ), L"Mado", sf::Style::None, m_settings );
-    // m_window.setFramerateLimit ( 60u );
     m_window_bounds = sf::FloatRect { 0.0f, 0.0f, m_window_width, m_window_height };
     // Set icon.
     setIcon ( );
@@ -303,8 +308,8 @@ App::App ( ) {
     }
     m_tex_box = std::array<sf::Box<float>, 6> {
         {
-            { 0, 0, m_circle_size, m_circle_size }, { m_circle_size, 0, 2 * m_circle_size, m_circle_size }, { 2 * m_circle_size, 0, 3 * m_circle_size, m_circle_size },
-            { 0, m_circle_size, m_circle_size, 2 * m_circle_size }, { m_circle_size, m_circle_size, 2 * m_circle_size, 2 * m_circle_size }, { 2 * m_circle_size, m_circle_size, 3 * m_circle_size, 2 * m_circle_size }
+            { 0.0f, 0.0f, m_circle_diameter, m_circle_diameter }, { m_circle_diameter, 0.0f, 2.0f * m_circle_diameter, m_circle_diameter }, { 2.0f * m_circle_diameter, 0.0f, 3.0f * m_circle_diameter, m_circle_diameter },
+            { 0.0f, m_circle_diameter, m_circle_diameter, 2.0f * m_circle_diameter }, { m_circle_diameter, m_circle_diameter, 2.0f * m_circle_diameter, 2.0f * m_circle_diameter }, { 2.0f * m_circle_diameter, m_circle_diameter, 3.0f * m_circle_diameter, 2.0f * m_circle_diameter }
         }
     };
     loadVertexArray ( );
@@ -327,7 +332,7 @@ App::App ( ) {
     m_taskbar_default = sf::IntRect { 0,  0, 135, 30 };
     m_taskbar_minimize = sf::IntRect { 0, 30, 135, 30 };
     m_taskbar_close = sf::IntRect { 0, 90, 135, 30 };
-    m_minimize_bounds = sf::FloatRect { m_window_width - m_taskbar_texture.getSize ( ).x       , 0.0f, m_taskbar_texture.getSize ( ).x / 3.0f, m_taskbar_texture.getSize ( ).y / 4.0f };
+    m_minimize_bounds = sf::FloatRect { m_window_width - m_taskbar_texture.getSize ( ).x, 0.0f, m_taskbar_texture.getSize ( ).x / 3.0f, m_taskbar_texture.getSize ( ).y / 4.0f };
     m_close_bounds = sf::FloatRect { m_window_width - m_taskbar_texture.getSize ( ).x / 3.0f, 0.0f, m_taskbar_texture.getSize ( ).x / 3.0f, m_taskbar_texture.getSize ( ).y / 4.0f };
     // Load sound.
     sf::loadFromResource ( m_music, MUSIC );
@@ -342,11 +347,12 @@ App::App ( ) {
     m_player_to_move.what = display::in_active_green;
     m_player_to_move.where.x = m_hex.at ( -state::width ( ) / 2, 0 ).x;
     m_player_to_move.where.y = m_hex.at ( 0, -state::width ( ) / 2 ).y;
+    // Ge started.
     m_mouse.initialize ( m_window );
     m_animator.reserve ( 32 );
     m_overlay.setSize ( sf::Vector2f { m_window_width, m_window_height } );
     auto update_overlay_alpha = [ this ] ( const float v ) { m_overlay.setFillColor ( sf::Color { 10u, 10u, 10u, static_cast<sf::Uint8> ( v ) } ); };
-    m_animator.emplace ( LAMBDA_EASING_START_END_DURATION ( update_overlay_alpha, sf::easing::exponentialInEasing, 255.0f, 0.0f, 6000 ) );
+    m_animator.emplace ( LAMBDA_EASING_START_END_DURATION ( update_overlay_alpha, sf::easing::exponentialInEasing, 255.0f, 0.0f, 600 ) );
     m_window.requestFocus ( );
 }
 
@@ -364,16 +370,9 @@ bool App::runStartupAnimation ( ) noexcept {
     // Clear.
     m_window.clear ( sf::Color { 10u, 10u, 10u, 255u } );
     // Draw play area.
-    /*
-    for ( const auto & p : m_positions ) {
-        m_circles.setPosition ( p.where );
-        m_circles.setTextureRect ( m_tex_box [ static_cast<int> ( p.what ) ] );
-        m_window.draw ( m_circles );
-    }
-    */
     m_window.draw ( m_vertices, & m_circles_texture );
     m_animator.run ( );
-    // m_window.draw ( m_overlay );
+    m_window.draw ( m_overlay );
     // Display window.
     m_window.display ( );
     return m_animator.size ( );
@@ -387,14 +386,7 @@ void App::updateWindow ( ) noexcept {
     m_taskbar.setTextureRect ( m_display_close ? m_taskbar_close : m_display_minimize ? m_taskbar_minimize : m_taskbar_default );
     m_window.draw ( m_taskbar );
     // Draw play area.
-    /*
-    for ( const auto & p : m_positions ) {
-        m_circles.setPosition ( p.where );
-        m_circles.setTextureRect ( m_tex_box [ static_cast<int> ( p.what ) ] );
-        m_window.draw ( m_circles );
-    }
-    */
-    setQuadTex ( 6, 5 );
+    setQuadTex ( 30, 5 );
     m_window.draw ( m_vertices, & m_circles_texture );
     // Display window.
     m_window.display ( );

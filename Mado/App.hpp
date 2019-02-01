@@ -191,7 +191,7 @@ class App {
     float m_window_width, m_window_height;
     sf::Vector2f m_center;
     float m_hori, m_vert;
-    float m_circle_size, m_circle_radius, m_circle_radius_squared;
+    float m_circle_diameter, m_circle_radius, m_circle_radius_squared;
 
     sf::ContextSettings m_settings;
     sf::RenderWindow m_window;
