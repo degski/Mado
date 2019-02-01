@@ -63,6 +63,67 @@
 
 #include "App.hpp"
 
+
+
+
+
+
+
+int main778978 ( ) {
+
+
+    sf::Texture circles_texture;
+
+
+    sf::loadFromResource ( circles_texture, CIRCLES_LARGE );
+
+    // create the window
+    sf::RenderWindow window ( sf::VideoMode ( 512, 512 ), "Circles" );
+
+    sf::VertexArray map;
+
+    map.setPrimitiveType ( sf::Quads );
+    map.resize ( 8 );
+
+    map [ 0 ].color = sf::Color::Blue;
+
+    /*
+    map [ 0 ].color = sf::Color::Blue;
+    map [ 1 ].color = sf::Color::Red;
+    map [ 2 ].color = sf::Color::Green;
+    map [ 3 ].color = sf::Color::Yellow;
+    */
+    map [ 0 ].position = sf::Vector2f { 50.0f, 50.0f };
+    map [ 1 ].position = sf::Vector2f { 50.0f + 67.0f, 50.0f };
+    map [ 2 ].position = sf::Vector2f { 50.0f + 67.0f, 50.0f + 67.0f };
+    map [ 3 ].position = sf::Vector2f { 50.0f, 50.0f + 67.0f };
+
+    map [ 0 ].texCoords = sf::Vector2f { 0.0f, 0.0f };
+    map [ 1 ].texCoords = sf::Vector2f { 0.0f + 67.0f, 0.0f };
+    map [ 2 ].texCoords = sf::Vector2f { 0.0f + 67.0f, 0.0f + 67.0f };
+    map [ 3 ].texCoords = sf::Vector2f { 0.0f, 0.0f + 67.0f };
+
+    // run the main loop
+    while ( window.isOpen ( ) ) {
+        // handle events
+        sf::Event event;
+        while ( window.pollEvent ( event ) ) {
+            if ( event.type == sf::Event::Closed )
+                window.close ( );
+        }
+
+        // draw the map
+        window.clear ( );
+        window.draw ( map,  & circles_texture );
+        window.display ( );
+    }
+
+    return 0;
+}
+
+
+
+
 #include <experimental/fixed_capacity_vector>
 
 namespace exp = std::experimental;
@@ -861,7 +922,7 @@ void player::resume_playback ( const play& ) {
     std::cout << "Resuming playback\n";
 }
 
-int main6786 ( ) {
+int main6786556 ( ) {
     player p;
 
     p.process_event ( player::open_close ( ) );

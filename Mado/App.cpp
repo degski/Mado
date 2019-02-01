@@ -230,6 +230,7 @@ App::App ( ) {
             m_indices [ i ] = pointToIdx ( p );
         ++i;
     }
+    loadVertexArray ( );
     // Load fonts.
     sf::loadFromResource ( m_font_regular, __REGULAR_FONT__ );
     sf::loadFromResource ( m_font_bold, __BOLD_FONT__ );
@@ -271,7 +272,7 @@ App::App ( ) {
     m_animator.reserve ( 32 );
     m_overlay.setSize ( sf::Vector2f { m_window_width, m_window_height } );
     auto update_overlay_alpha = [ this ] ( const float v ) { m_overlay.setFillColor ( sf::Color { 10u, 10u, 10u, static_cast<sf::Uint8> ( v ) } ); };
-    m_animator.emplace ( LAMBDA_EASING_START_END_DURATION ( update_overlay_alpha, sf::easing::exponentialInEasing, 255.0f, 0.0f, 500 ) );
+    m_animator.emplace ( LAMBDA_EASING_START_END_DURATION ( update_overlay_alpha, sf::easing::exponentialInEasing, 255.0f, 0.0f, 6000 ) );
     m_window.requestFocus ( );
 }
 
@@ -289,13 +290,16 @@ bool App::runStartupAnimation ( ) noexcept {
     // Clear.
     m_window.clear ( sf::Color { 10u, 10u, 10u, 255u } );
     // Draw play area.
+    /*
     for ( const auto & p : m_positions ) {
         m_circles.setPosition ( p.where );
         m_circles.setTextureRect ( m_display_rect [ static_cast<int> ( p.what ) ] );
         m_window.draw ( m_circles );
     }
+    */
+    m_window.draw ( m_vertices, & m_circles_texture );
     m_animator.run ( );
-    m_window.draw ( m_overlay );
+    // m_window.draw ( m_overlay );
     // Display window.
     m_window.display ( );
     return m_animator.size ( );

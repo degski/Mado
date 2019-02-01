@@ -46,7 +46,33 @@
 #include "resource.h"
 
 
-class App : public sf::Drawable, public sf::Transformable {
+struct Quad {
+
+    sf::Vertex ne, nw, sw, se;
+
+    Quad ( const sf::FloatRect & pos_, const sf::FloatRect & rect_ ) noexcept {
+        ne.position.x = pos_.left + pos_.width;
+        ne.position.y = pos_.top;
+        nw.position.x = pos_.left;
+        nw.position.y = pos_.top;
+        sw.position.x = pos_.left;
+        sw.position.y = pos_.top + pos_.height;
+        sw.position.x = pos_.left + pos_.width;
+        sw.position.y = pos_.top + pos_.height;
+        ne.texCoords.x = rect_.left + rect_.width;
+        ne.texCoords.y = rect_.top;
+        nw.texCoords.x = rect_.left;
+        nw.texCoords.y = rect_.top;
+        sw.texCoords.x = rect_.left;
+        sw.texCoords.y = rect_.top + rect_.height;
+        sw.texCoords.x = rect_.left + rect_.width;
+        sw.texCoords.y = rect_.top + rect_.height;
+    }
+};
+
+
+
+class App {
 
     using state = Mado<4>;
     using uidx = typename state::uidx;
@@ -227,55 +253,75 @@ class App : public sf::Drawable, public sf::Transformable {
     mouse_status m_mouse;
     std::ptrdiff_t m_idx = -1;
 
-    public:
+    inline void loadVertexArray ( ) {
 
-    inline bool load ( ) {
-
-        // Resize the vertex array to fit the level size.
         m_vertices.setPrimitiveType ( sf::Quads );
-        m_vertices.resize ( state::size ( ) * 4 );
+        m_vertices.resize ( 4 * state::size ( ) );
 
+        const float s = 67.0f;
         int i = 0;
 
-        for ( const auto & p : m_positions ) {
-
-            if ( kdtree::is_not_valid ( p.where ) ) {
-                continue;
+        sf::Vector2f p = m_center - sf::Vector2f { 33.0f, 33.0f };
+        m_vertices [ i + 0 ] = sf::Vertex { sf::Vector2f { p.x, p.y }, sf::Vector2f { 0.0f, 0.0f } };
+        m_vertices [ i + 1 ] = sf::Vertex { sf::Vector2f { p.x + s, p.y }, sf::Vector2f { s, 0.0f } };
+        m_vertices [ i + 2 ] = sf::Vertex { sf::Vector2f { p.x + s, p.y + s }, sf::Vector2f { s, s } };
+        m_vertices [ i + 3 ] = sf::Vertex { sf::Vector2f { p.x, p.y + s }, sf::Vector2f { 0.0f, s } };
+        for ( int ring = 1; ring < int { state::width ( ) / 2 + 1 }; ++ring ) {
+            p.x += m_hori; // Move east.
+            for ( int j = 0; j < ring; ++j ) { // nw.
+                p.x -= m_hori / 2; p.y -= m_vert;
+                i += 4;
+                m_vertices [ i + 0 ] = sf::Vertex { sf::Vector2f { p.x, p.y }, sf::Vector2f { 0.0f, 0.0f } };
+                m_vertices [ i + 1 ] = sf::Vertex { sf::Vector2f { p.x + s, p.y }, sf::Vector2f { s, 0.0f } };
+                m_vertices [ i + 2 ] = sf::Vertex { sf::Vector2f { p.x + s, p.y + s }, sf::Vector2f { s, s } };
+                m_vertices [ i + 3 ] = sf::Vertex { sf::Vector2f { p.x, p.y + s }, sf::Vector2f { 0.0f, s } };
             }
-
-            sf::Vertex * quad = & m_vertices [ i * 4 ];
-
-            sf::Vector2f pos = p.where - sf::Vector2f { 33.0f, 33.0f };
-
-            // Clock-wise.
-            quad [ 0 ].position = sf::Vector2f ( pos.x        , pos.y         );
-            quad [ 1 ].position = sf::Vector2f ( pos.x + 67.0f, pos.y         );
-            quad [ 2 ].position = sf::Vector2f ( pos.x + 67.0f, pos.y + 0.67f );
-            quad [ 3 ].position = sf::Vector2f ( pos.x        , pos.y + 0.67f );
-
-            sf::IntRect & rect = m_display_rect [ static_cast<int> ( p.what ) ];
-
-            quad [ 0 ].texCoords = sf::Vector2f ( rect.left             , rect.top               );
-            quad [ 1 ].texCoords = sf::Vector2f ( rect.left + rect.width, rect.top               );
-            quad [ 2 ].texCoords = sf::Vector2f ( rect.left + rect.width, rect.top + rect.height );
-            quad [ 3 ].texCoords = sf::Vector2f ( rect.left             , rect.top + rect.height );
-
-            ++i;
+            for ( int j = 0; j < ring; ++j ) { // w.
+                p.x -= m_hori;
+                i += 4;
+                m_vertices [ i + 0 ] = sf::Vertex { sf::Vector2f { p.x, p.y }, sf::Vector2f { 0.0f, 0.0f } };
+                m_vertices [ i + 1 ] = sf::Vertex { sf::Vector2f { p.x + s, p.y }, sf::Vector2f { s, 0.0f } };
+                m_vertices [ i + 2 ] = sf::Vertex { sf::Vector2f { p.x + s, p.y + s }, sf::Vector2f { s, s } };
+                m_vertices [ i + 3 ] = sf::Vertex { sf::Vector2f { p.x, p.y + s }, sf::Vector2f { 0.0f, s } };
+            }
+            for ( int j = 0; j < ring; ++j ) { // sw.
+                p.x -= m_hori / 2; p.y += m_vert;
+                i += 4;
+                m_vertices [ i + 0 ] = sf::Vertex { sf::Vector2f { p.x, p.y }, sf::Vector2f { 0.0f, 0.0f } };
+                m_vertices [ i + 1 ] = sf::Vertex { sf::Vector2f { p.x + s, p.y }, sf::Vector2f { s, 0.0f } };
+                m_vertices [ i + 2 ] = sf::Vertex { sf::Vector2f { p.x + s, p.y + s }, sf::Vector2f { s, s } };
+                m_vertices [ i + 3 ] = sf::Vertex { sf::Vector2f { p.x, p.y + s }, sf::Vector2f { 0.0f, s } };
+            }
+            for ( int j = 0; j < ring; ++j ) { // se.
+                p.x += m_hori / 2; p.y += m_vert;
+                i += 4;
+                m_vertices [ i + 0 ] = sf::Vertex { sf::Vector2f { p.x, p.y }, sf::Vector2f { 0.0f, 0.0f } };
+                m_vertices [ i + 1 ] = sf::Vertex { sf::Vector2f { p.x + s, p.y }, sf::Vector2f { s, 0.0f } };
+                m_vertices [ i + 2 ] = sf::Vertex { sf::Vector2f { p.x + s, p.y + s }, sf::Vector2f { s, s } };
+                m_vertices [ i + 3 ] = sf::Vertex { sf::Vector2f { p.x, p.y + s }, sf::Vector2f { 0.0f, s } };
+            }
+            for ( int j = 0; j < ring; ++j ) { // e.
+                p.x += m_hori;
+                i += 4;
+                m_vertices [ i + 0 ] = sf::Vertex { sf::Vector2f { p.x, p.y }, sf::Vector2f { 0.0f, 0.0f } };
+                m_vertices [ i + 1 ] = sf::Vertex { sf::Vector2f { p.x + s, p.y }, sf::Vector2f { s, 0.0f } };
+                m_vertices [ i + 2 ] = sf::Vertex { sf::Vector2f { p.x + s, p.y + s }, sf::Vector2f { s, s } };
+                m_vertices [ i + 3 ] = sf::Vertex { sf::Vector2f { p.x, p.y + s }, sf::Vector2f { 0.0f, s } };
+            }
+            for ( int j = 0; j < ring; ++j ) { // ne.
+                p.x += m_hori / 2; p.y -= m_vert;
+                i += 4;
+                m_vertices [ i + 0 ] = sf::Vertex { sf::Vector2f { p.x, p.y }, sf::Vector2f { 0.0f, 0.0f } };
+                m_vertices [ i + 1 ] = sf::Vertex { sf::Vector2f { p.x + s, p.y }, sf::Vector2f { s, 0.0f } };
+                m_vertices [ i + 2 ] = sf::Vertex { sf::Vector2f { p.x + s, p.y + s }, sf::Vector2f { s, s } };
+                m_vertices [ i + 3 ] = sf::Vertex { sf::Vector2f { p.x, p.y + s }, sf::Vector2f { 0.0f, s } };
+            }
         }
-
-        return true;
-    }
-
-    inline virtual void draw ( sf::RenderTarget & target, sf::RenderStates states ) const {
-        // Apply the transform.
-        // states.transform *= getTransform ( );
-        // Apply the tileset texture.
-        states.texture = & m_circles_texture;
-        // Draw the vertex array.
-        target.draw ( m_vertices, states );
     }
 
     sf::VertexArray m_vertices;
+
+    public:
 
     App ( );
 
