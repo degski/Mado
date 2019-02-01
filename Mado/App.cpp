@@ -60,15 +60,6 @@ template<typename T>
     return v_ & T { 1 };
 }
 
-[[ nodiscard ]] App::uidx App::pointToCoord ( sf::Vector2f p_ ) const noexcept {
-    static const float radius { m_hori * 0.5773502588f };
-    static const float hm1 = m_center.x - ( ( state::width ( ) * m_hori ) * 0.5f ), hm2 = hm1 + 0.5f * m_hori, vm = m_center.y - ( ( state::width ( ) * m_vert ) * 0.5f );
-    const uidx row = ( p_.y - vm ) / m_vert + 1;
-    return is_even ( row ) ?
-        static_cast<uidx> ( ( p_.x - hm1 ) / m_hori ) * 2 + 1 + row * state::cols ( ) :
-        static_cast<uidx> ( ( p_.x - hm2 ) / m_hori ) * 2 + 2 + row * state::cols ( );
-}
-
 
 [[ nodiscard ]] std::vector<sf::Vector2f> App::positionData ( ) const noexcept {
     std::vector<sf::Vector2f> pos;
@@ -147,40 +138,6 @@ template<typename T>
         }
     }
     return pos;
-}
-
-void App::hexData ( ) noexcept {
-    sf::Vector2f p = m_center;
-    hex ax { 0, 0 };
-    m_hex.at ( ax.q, ax.r ) = p;
-    for ( int ring = 1; ring <= int { state::radius ( ) }; ++ring ) {
-        p.x += m_hori; // Move east.
-        ++ax.q;
-        for ( int j = 0; j < ring; ++j ) { // nw.
-            p.x -= m_hori / 2; p.y -= m_vert;
-            m_hex.at ( ax.q, --ax.r ) = p;
-        }
-        for ( int j = 0; j < ring; ++j ) { // w.
-            p.x -= m_hori;
-            m_hex.at ( --ax.q, ax.r ) = p;
-        }
-        for ( int j = 0; j < ring; ++j ) { // sw.
-            p.x -= m_hori / 2; p.y += m_vert;
-            m_hex.at ( --ax.q, ++ax.r ) = p;
-        }
-        for ( int j = 0; j < ring; ++j ) { // se.
-            p.x += m_hori / 2; p.y += m_vert;
-            m_hex.at ( ax.q, ++ax.r ) = p;
-        }
-        for ( int j = 0; j < ring; ++j ) { // e.
-            p.x += m_hori;
-            m_hex.at ( ++ax.q, ax.r ) = p;
-        }
-        for ( int j = 0; j < ring; ++j ) { // ne.
-            p.x += m_hori / 2; p.y -= m_vert;
-            m_hex.at ( ++ax.q, --ax.r ) = p;
-        }
-    }
 }
 
 
@@ -276,7 +233,7 @@ void App::loadVertexArray ( ) noexcept {
     auto quads_less = [ ] ( const auto & a, const auto & b ) {
         return ( a.v0.position.y < b.v0.position.y ) or ( a.v0.position.y == b.v0.position.y and a.v0.position.x < b.v0.position.x );
     };
-    // Establish the new order by index.
+    // Establish the new order of the vertices by index.
     std::array<int, state::size ( )> sorted_index;
     std::iota ( std::begin ( sorted_index ), std::end ( sorted_index ), 0 );
     std::sort ( std::begin ( sorted_index ), std::end ( sorted_index ), [ quads, quads_less ] ( int i, int j ) { return quads_less ( quads [ i ], quads [ j ] ); } );
@@ -319,20 +276,6 @@ void App::loadVertexArray ( ) noexcept {
 }
 
 
-[[ nodiscard ]] App::uidx App::pointToCoord2 ( sf::Vector2f p_ ) const noexcept {
-
-    static const float hori_margin_uneven = m_center.x - ( ( state::width ( ) * m_hori ) * 0.5f ), hori_margin_even = hori_margin_uneven + 0.5f * m_hori, vert_margin = m_center.y - ( ( state::width ( ) * m_vert ) * 0.5f );
-    const uidx row = ( p_.y - vert_margin ) / m_vert;
-
-    uidx col = ( p_.x - ( is_even ( row ) ? hori_margin_even : hori_margin_uneven ) ) / m_hori;
-
-    return col;
-    //return is_even ( row ) ?
-        //static_cast< uidx > ( ( p_.x - hm1 ) / m_hori ) * 2 + 1 + row * state::cols ( ) :
-       // static_cast< uidx > ( ( p_.x - hm2 ) / m_hori ) * 2 + 2 + row * state::cols ( );
-}
-
-
 [[ nodiscard ]] bool App::playAreaContains ( sf::Vector2f p_ ) const noexcept {
     // http://www.playchilla.com/how-to-check-if-a-point-is-inside-a-hexagon
     static const float hori { state::width ( ) * 0.5f * m_vert }, vert { hori * 0.5773502588f }, vert_2 { 2.0f * vert }, hori_vert_2 { hori * vert_2 };
@@ -370,7 +313,6 @@ App::App ( ) {
         std::vector<sf::Vector2f> tmp = positionData ( );
         m_kdtree.initialize ( std::begin ( tmp ), std::end ( tmp ) );
     }
-    hexData ( );
     int i = 0;
     for ( const auto & p : m_kdtree ) {
         m_positions [ i ].where = p;
@@ -417,8 +359,6 @@ App::App ( ) {
     m_music.play ( );
     // Player to move.
     m_player_to_move.what = display::in_active_green;
-    m_player_to_move.where.x = m_hex.at ( -state::width ( ) / 2, 0 ).x;
-    m_player_to_move.where.y = m_hex.at ( 0, -state::width ( ) / 2 ).y;
     // Ge started.
     m_mouse.initialize ( m_window );
     m_animator.reserve ( 32 );

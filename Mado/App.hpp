@@ -184,7 +184,6 @@ class App {
     };
 
     using kdtree = kd::Tree2D<float, sf::Vector2<float>, kd::array_tag_t, state::size ( )>;
-    using hex_table = ma::Matrix<sf::Vector2f, state::width ( ), state::height ( ), -state::radius ( ), -state::radius ( )>;
     using positions = std::array<position, kdtree::size ( )>;
     using indices = std::array<uidx, kdtree::size ( )>;
 
@@ -208,7 +207,6 @@ class App {
     state m_state;
 
     kdtree m_kdtree;
-    hex_table m_hex;
     positions m_positions;
     position m_player_to_move;
     indices m_indices;
@@ -264,12 +262,9 @@ private:
 
     [[ nodiscard ]] uidx pointToIdx ( const sf::Vector2f & p ) const noexcept;
     [[ nodiscard ]] hex pointToHex ( sf::Vector2f p_ ) const noexcept;
-    [[ nodiscard ]] uidx pointToCoord ( sf::Vector2f p ) const noexcept;
-    [[ nodiscard ]] uidx pointToCoord2 ( sf::Vector2f p ) const noexcept;
 
     [[ nodiscard ]] std::vector<sf::Vector2f> positionData ( ) const noexcept;
     [[ nodiscard ]] std::vector<std::pair<sf::Vector2f, uidx>> positionIdxData ( ) const noexcept;
-    void hexData ( ) noexcept;
 
     [[ nodiscard ]] bool playAreaContains ( sf::Vector2f p_ ) const noexcept;
 
