@@ -38,12 +38,12 @@
 //  https://stackoverflow.com/questions/22128872/simple-c-sfml-program-high-cpu-usage
 
 
-[[ nodiscard ]] App::uidx App::pointToIdx ( sf::Vector2f & p_ ) const noexcept {
+[[ nodiscard ]] App::uidx App::pointToIdx ( const sf::Vector2f & p_ ) const noexcept {
     return state::hex_to_idx ( pointToHex ( p_ ) );
 }
 
 int int_floorf ( float x ) {
-    return static_cast<int> ( x + 100'000 ) - 100'000;
+    return static_cast<int> ( x + 65'536.0f ) - 65'536;
 }
 
 [[ nodiscard ]] App::hex App::pointToHex ( sf::Vector2f p_ ) const noexcept {
@@ -54,7 +54,8 @@ int int_floorf ( float x ) {
     p_.x /= m_hori; p_.y /= radius;
     int q = int_floorf ( p_.y + p_.x ), r = int_floorf ( ( int_floorf ( p_.y - p_.x ) + q ) * 0.3333333433f );
     q = int_floorf ( ( int_floorf ( 2.0f * p_.x + 1.0f ) + q ) * 0.3333333433f ) - r;
-    return { static_cast<sidx> ( q + static_cast<int> ( state::radius ( ) ) ), static_cast<sidx> ( r + static_cast<int> ( state::radius ( ) ) ) };
+    q += static_cast<int> ( state::radius ( ) ); r += static_cast<int> ( state::radius ( ) );
+    return { static_cast<sidx> ( q ), static_cast<sidx> ( r ) };
 }
 
 
