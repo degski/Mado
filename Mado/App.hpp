@@ -45,6 +45,13 @@
 #include "resource.h"
 
 
+
+namespace sf {
+
+using Boxf = Box<float>;
+}
+
+
 class App {
 
     using state = Mado<4>;
@@ -233,11 +240,11 @@ class App {
     mouse_status m_mouse;
     std::ptrdiff_t m_idx = -1;
 
-    void loadVertexArray ( ) noexcept;
-    [[ nodiscard ]] quad makeVertex ( const sf::Vector2f & p, const sf::Box<float> & tb ) const noexcept;
+    void makeVertexArray ( ) noexcept;
+    [[ nodiscard ]] quad makeVertex ( const sf::Vector2f & p_, const sf::Boxf & tb_ ) const noexcept;
     inline void setQuadTex ( int i_, int t_ ) noexcept {
         i_ *= 4;
-        const sf::Box<float> & tb = m_tex_box [ t_ ];
+        const sf::Boxf & tb = m_tex_box [ t_ ];
         quad & quads = *reinterpret_cast<quad*> ( & m_vertices [ i_ ] );
         quads.v0.texCoords = sf::Vector2f { tb.left, tb.top };
         quads.v1.texCoords = sf::Vector2f { tb.right, tb.top };

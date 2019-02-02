@@ -98,7 +98,7 @@ template<typename T>
 }
 
 
-[[ nodiscard ]] typename App::quad App::makeVertex ( const sf::Vector2f & p_, const sf::Box<float> & tb_ ) const noexcept {
+[[ nodiscard ]] typename App::quad App::makeVertex ( const sf::Vector2f & p_, const sf::Boxf & tb_ ) const noexcept {
     return {
         sf::Vertex { sf::Vector2f { p_.x, p_.y }, sf::Vector2f { tb_.left, tb_.top } },
         sf::Vertex { sf::Vector2f { p_.x + m_circle_diameter, p_.y }, sf::Vector2f { tb_.right, tb_.top } },
@@ -107,10 +107,10 @@ template<typename T>
     };
 }
 
-void App::loadVertexArray ( ) noexcept {
+void App::makeVertexArray ( ) noexcept {
     m_vertices.setPrimitiveType ( sf::Quads );
     m_vertices.resize ( 4 * state::size ( ) );
-    sf::Box<float> & tb = m_tex_box [ 0 ];
+    sf::Boxf & tb = m_tex_box [ 0 ];
     quad * quads = reinterpret_cast<quad*> ( & m_vertices [ 0 ] );
     int i = 0;
     sf::Vector2f p = m_center - sf::Vector2f { m_circle_radius, m_circle_radius };
@@ -254,7 +254,7 @@ App::App ( ) {
             { 0.0f, m_circle_diameter, m_circle_diameter, 2.0f * m_circle_diameter }, { m_circle_diameter, m_circle_diameter, 2.0f * m_circle_diameter, 2.0f * m_circle_diameter }, { 2.0f * m_circle_diameter, m_circle_diameter, 3.0f * m_circle_diameter, 2.0f * m_circle_diameter }
         }
     };
-    loadVertexArray ( );
+    makeVertexArray ( );
     // Load fonts.
     sf::loadFromResource ( m_font_regular, __REGULAR_FONT__ );
     sf::loadFromResource ( m_font_bold, __BOLD_FONT__ );
