@@ -36,172 +36,21 @@
 #include <SFML/Audio.hpp>
 #include <SFML/Extensions.hpp>
 
-#include "../../KD-Tree/KD-Tree/ikdtree.hpp"
-
 #include "Types.hpp"
 #include "Globals.hpp"
 #include "Mado.hpp"
+#include "Helpers.hpp"
+
 
 #include "resource.h"
 
 
-
-namespace sf {
-
-using Boxf = Box<float>;
-}
-
-
 class App {
 
-    using state = Mado<4>;
-    using uidx = typename state::uidx;
-    using sidx = typename state::sidx;
-    using hex = typename state::hex;
-
-    struct quad {
-        sf::Vertex v0, v1, v2, v3;
-    };
-
-    enum class display : int { in_active_vacant = 0, in_active_red, in_active_green, active_vacant, active_red, active_green };
-
-    struct position {
-
-        sf::Vector2f where;
-        display what = display::in_active_vacant;
-
-        position ( ) = default;
-        position ( const position & ) noexcept = default;
-        position ( position && ) noexcept = default;
-        position ( const sf::Vector2f & where_, const display & what_ ) noexcept :
-            where { where_ },
-            what { what_ } {
-        }
-        position ( sf::Vector2f && where_, display && what_ ) noexcept :
-            where { std::move ( where_ ) },
-            what { std::move ( what_ ) } {
-        }
-
-        [[ nodiscard ]] inline bool is_active ( ) const noexcept {
-            return static_cast<int> ( what ) > 2;
-        }
-        [[ nodiscard ]] inline bool is_inactive ( ) const noexcept {
-            return static_cast<int> ( what ) < 3;
-        }
-
-        void activate ( ) noexcept {
-            if ( is_inactive ( ) )
-                what = static_cast<display> ( static_cast<int> ( what ) + 3 );
-        }
-        void deactivate ( ) noexcept {
-            if ( is_active ( ) )
-                what = static_cast<display> ( static_cast<int> ( what ) - 3 );
-        }
-    };
-
-
-    template<typename T, std::size_t R, typename SizeType = int, typename = std::enable_if_t<std::is_default_constructible_v<T>, T>>
-    struct hex_storage {
-
-        using size_type = SizeType;
-
-        [[ nodiscard ]] static constexpr size_type radius ( ) noexcept {
-            return static_cast<std::size_t> ( R );
-        }
-        [[ nodiscard ]] static constexpr size_type width ( ) noexcept {
-            return 2 * radius ( ) + 1;
-        }
-        [[ nodiscard ]] static constexpr size_type height ( ) noexcept {
-            return 2 * radius ( ) + 1;
-        }
-        [[ nodiscard ]] static constexpr size_type size ( ) noexcept {
-            return width ( ) * height ( );
-        }
-
-        T m_data [ 2 * R + 1 ] [ 2 * R + 1 ];
-
-        hex_storage ( ) noexcept : m_data { { T ( ) } } { }
-
-        [[ nodiscard ]] T & at ( const size_type q_, const size_type r_ ) noexcept {
-            return m_data [ r_ ] [ q_ - std::max ( size_type { 0 }, r_ - radius ( ) ) ];
-        }
-        [[ nodiscard ]] T at ( const size_type q_, const size_type r_ ) const noexcept {
-            return m_data [ r_ ] [ q_ - std::max ( size_type { 0 }, r_ - radius ( ) ) ];
-        }
-        [[ nodiscard ]] T & at ( const hex & h_ ) noexcept {
-            return m_data [ static_cast<size_type> ( h_.r ) ] [ static_cast<size_type> ( h_.q ) - std::max ( size_type { 0 }, static_cast<size_type> ( h_.r ) - radius ( ) ) ];
-        }
-        [[ nodiscard ]] T at ( const hex & h_ ) const noexcept {
-            return m_data [ static_cast<size_type> ( h_.r ) ] [ static_cast<size_type> ( h_.q ) - std::max ( size_type { 0 }, static_cast<size_type> ( h_.r ) - radius ( ) ) ];
-        }
-
-        [[ nodiscard ]] T * data ( ) noexcept {
-            return & m_data [ 0 ] [ 0 ];
-        }
-        [[ nodiscard ]] const T * data ( ) const noexcept {
-            return & m_data [ 0 ] [ 0 ];
-        }
-    };
-
-
-    struct mouse_status {
-
-        enum State : int { none = 0, moved = 1, left_clicked = 2, moved_and_left_clicked = 3 };
-
-        sf::RenderWindow * window = nullptr;
-        int current = 0;
-        State state = State::moved;
-        sf::Vector2i data [ 2 ];
-        sf::Vector2f position;
-
-        mouse_status ( ) noexcept { }
-
-        void initialize ( sf::RenderWindow & w_ ) noexcept {
-            window = & w_;
-            data [ 0 ] = data [ 1 ] = sf::Mouse::getPosition ( *window );
-            position = sf::castVector2f ( data [ 0 ] );
-        }
-
-        [[ nodiscard ]] const sf::Vector2f & operator ( ) ( ) const noexcept {
-            return position;
-        }
-
-        [[ nodiscard ]] bool hadActivity ( ) const noexcept {
-            return static_cast<int> ( state );
-        }
-        [[ nodiscard ]] bool hadNoActivity ( ) const noexcept {
-            return not ( hadActivity ( ) );
-        }
-
-        [[ nodiscard ]] bool leftClicked ( ) const noexcept {
-            return 1 < static_cast<int> ( state );
-        }
-        [[ nodiscard ]] bool hasMoved ( ) const noexcept {
-            return static_cast<int> ( state ) & 1;
-        }
-
-        const sf::Vector2f & update ( ) noexcept {
-            state = State::none;
-            if ( sf::Mouse::isButtonPressed ( sf::Mouse::Left ) ) {
-                state = State::left_clicked;
-            }
-            data [ current ^ 1 ] = sf::Mouse::getPosition ( * window );
-            if ( data [ 0 ] != data [ 1 ] ) {
-                current ^= 1;
-                position = sf::castVector2f ( data [ current ] );
-                state = State::left_clicked == state ? State::moved_and_left_clicked : State::moved;
-            }
-            return position;
-        }
-    };
-
-    using kdtree = kd::Tree2D<float, sf::Vector2<float>, kd::array_tag_t, state::size ( )>;
-    using positions = std::array<position, kdtree::size ( )>;
-    using indices = std::array<uidx, kdtree::size ( )>;
-
-    void startup ( const float v_ ) const noexcept {
-
-    }
+    using MadoState = Mado<4>;
+    using uidx = typename MadoState::uidx;
+    using sidx = typename MadoState::sidx;
+    using hex = typename MadoState::hex;
 
     sf::CallbackAnimator m_animator;
 
@@ -216,19 +65,14 @@ class App {
 
     bool m_is_running = true;
 
-    state m_state;
-
-    kdtree m_kdtree;
-    positions m_positions;
-    position m_player_to_move;
-    indices m_indices;
+    MadoState m_state;
 
     sf::Font m_font_regular, m_font_bold, m_font_mono, m_font_numbers;
 
     sf::Texture m_circles_texture;
     sf::Sprite m_circles;
 
-    std::array<sf::Box<float>, 6> m_tex_box;
+    std::array<sf::Boxf, 6> m_tex_box;
 
     sf::Texture m_taskbar_texture;
     sf::Sprite m_taskbar;
@@ -239,22 +83,33 @@ class App {
 
     sf::Music m_music;
 
-    mouse_status m_mouse;
-    std::ptrdiff_t m_idx = -1;
+    MouseState m_mouse;
 
+    int m_where = -1;
+    display m_what = display::in_active_vacant;
+
+    [[ nodiscard ]] sf::Quad makeVertex ( const sf::Vector2f & p_, const sf::Boxf & tb_ ) const noexcept;
     void makeVertexArray ( ) noexcept;
-    [[ nodiscard ]] quad makeVertex ( const sf::Vector2f & p_, const sf::Boxf & tb_ ) const noexcept;
-    inline void setQuadTex ( int i_, int t_ ) noexcept {
-        i_ *= 4;
-        const sf::Boxf & tb = m_tex_box [ t_ ];
-        quad & quads = *reinterpret_cast<quad*> ( & m_vertices [ i_ ] );
-        quads.v0.texCoords = sf::Vector2f { tb.left, tb.top };
-        quads.v1.texCoords = sf::Vector2f { tb.right, tb.top };
-        quads.v2.texCoords = sf::Vector2f { tb.right, tb.bottom };
-        quads.v3.texCoords = sf::Vector2f { tb.left, tb.bottom };
+
+    template<typename SizeType>
+    void setQuadTex ( SizeType i_, SizeType t_ ) noexcept;
+
+    inline void activate ( ) noexcept {
+        if ( static_cast<int> ( m_what ) < 3 ) {
+            m_what = static_cast<display> ( static_cast<int> ( m_what ) + 3 );
+            setQuadTex ( m_where, static_cast<int> ( m_what ) );
+        }
     }
+    inline void deactivate ( ) noexcept {
+        if ( static_cast<int> ( m_what ) > 2 ) {
+            m_what = static_cast<display> ( static_cast<int> ( m_what ) - 3 );
+            setQuadTex ( m_where, static_cast<int> ( m_what ) );
+        }
+    }
+
+
     sf::VertexArray m_vertices;
-    hex_storage<int, state::radius ( )> m_vertex_indices;
+    HexContainer<int, MadoState::radius ( )> m_vertex_indices;
 
     public:
 
@@ -272,8 +127,6 @@ private:
 
     [[ nodiscard ]] uidx pointToIdx ( const sf::Vector2f & p ) const noexcept;
     [[ nodiscard ]] hex pointToHex ( sf::Vector2f p_ ) const noexcept;
-
-    [[ nodiscard ]] std::vector<sf::Vector2f> positionData ( ) const noexcept;
 
     [[ nodiscard ]] bool playAreaContains ( sf::Vector2f p_ ) const noexcept;
 

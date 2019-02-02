@@ -220,6 +220,7 @@
   <ItemGroup>
     <ClInclude Include="App.hpp" />
     <ClInclude Include="Globals.hpp" />
+    <ClInclude Include="Helpers.hpp" />
     <ClInclude Include="Mado.hpp" />
     <ClInclude Include="Move.hpp" />
     <ClInclude Include="Player.hpp" />

@@ -39,9 +39,8 @@
 
 
 [[ nodiscard ]] App::uidx App::pointToIdx ( const sf::Vector2f & p_ ) const noexcept {
-    return state::hex_to_idx ( pointToHex ( p_ ) );
+    return MadoState::hex_to_idx ( pointToHex ( p_ ) );
 }
-
 [[ nodiscard ]] App::hex App::pointToHex ( sf::Vector2f p_ ) const noexcept {
     // https://www.redblobgames.com/grids/hexagons/#comment-1063818420
     static const float radius { m_hori * 0.5773502588f };
@@ -50,55 +49,13 @@
     p_.x /= m_hori; p_.y /= radius;
     int q = int_floorf ( p_.y + p_.x ), r = int_floorf ( ( int_floorf ( p_.y - p_.x ) + q ) * 0.3333333433f );
     q = int_floorf ( ( int_floorf ( 2.0f * p_.x + 1.0f ) + q ) * 0.3333333433f ) - r;
-    q += static_cast<int> ( state::radius ( ) );
-    r += static_cast<int> ( state::radius ( ) );
-    return { static_cast<sidx> ( std::clamp ( q, 0, 2 * static_cast<int> ( state::radius ( ) ) ) ), static_cast<sidx> ( std::clamp ( r, 0, 2 * static_cast< int > ( state::radius ( ) ) ) ) };
+    q += static_cast<int> ( MadoState::radius ( ) );
+    r += static_cast<int> ( MadoState::radius ( ) );
+    return { static_cast<sidx> ( std::clamp ( q, 0, 2 * static_cast<int> ( MadoState::radius ( ) ) ) ), static_cast<sidx> ( std::clamp ( r, 0, 2 * static_cast<int> ( MadoState::radius ( ) ) ) ) };
 }
 
 
-template<typename T>
-[[ nodiscard ]] inline bool is_even ( const T v_ ) noexcept {
-    return v_ & T { 1 };
-}
-
-
-[[ nodiscard ]] std::vector<sf::Vector2f> App::positionData ( ) const noexcept {
-    std::vector<sf::Vector2f> pos;
-    pos.reserve ( state::size ( ) );
-    sf::Vector2f p = m_center;
-    pos.push_back ( p );
-    for ( int ring = 1; ring <= int { state::radius ( ) }; ++ring ) {
-        p.x += m_hori; // Move east.
-        for ( int j = 0; j < ring; ++j ) { // nw.
-            p.x -= m_hori / 2; p.y -= m_vert;
-            pos.push_back ( p );
-        }
-        for ( int j = 0; j < ring; ++j ) { // w.
-            p.x -= m_hori;
-            pos.push_back ( p );
-        }
-        for ( int j = 0; j < ring; ++j ) { // sw.
-            p.x -= m_hori / 2; p.y += m_vert;
-            pos.push_back ( p );
-        }
-        for ( int j = 0; j < ring; ++j ) { // se.
-            p.x += m_hori / 2; p.y += m_vert;
-            pos.push_back ( p );
-        }
-        for ( int j = 0; j < ring; ++j ) { // e.
-            p.x += m_hori;
-            pos.push_back ( p );
-        }
-        for ( int j = 0; j < ring; ++j ) { // ne.
-            p.x += m_hori / 2; p.y -= m_vert;
-            pos.push_back ( p );
-        }
-    }
-    return pos;
-}
-
-
-[[ nodiscard ]] typename App::quad App::makeVertex ( const sf::Vector2f & p_, const sf::Boxf & tb_ ) const noexcept {
+[[ nodiscard ]] sf::Quad App::makeVertex ( const sf::Vector2f & p_, const sf::Boxf & tb_ ) const noexcept {
     return {
         sf::Vertex { sf::Vector2f { p_.x, p_.y }, sf::Vector2f { tb_.left, tb_.top } },
         sf::Vertex { sf::Vector2f { p_.x + m_circle_diameter, p_.y }, sf::Vector2f { tb_.right, tb_.top } },
@@ -106,18 +63,17 @@ template<typename T>
         sf::Vertex { sf::Vector2f { p_.x, p_.y + m_circle_diameter }, sf::Vector2f { tb_.left, tb_.bottom } }
     };
 }
-
 void App::makeVertexArray ( ) noexcept {
     m_vertices.setPrimitiveType ( sf::Quads );
-    m_vertices.resize ( 4 * state::size ( ) );
+    m_vertices.resize ( 4 * MadoState::size ( ) );
     sf::Boxf & tb = m_tex_box [ 0 ];
-    quad * quads = reinterpret_cast<quad*> ( & m_vertices [ 0 ] );
+    sf::Quad * quads = reinterpret_cast<sf::Quad*> ( & m_vertices [ 0 ] );
     int i = 0;
     sf::Vector2f p = m_center - sf::Vector2f { m_circle_radius, m_circle_radius };
-    hex ax { static_cast<sidx> ( state::radius ( ) ), static_cast<sidx> ( state::radius ( ) ) };
+    hex ax { static_cast<sidx> ( MadoState::radius ( ) ), static_cast<sidx> ( MadoState::radius ( ) ) };
     quads [ i ] = makeVertex ( p, tb );
     m_vertex_indices.at ( ax ) = i;
-    for ( int ring = 1; ring <= int { state::radius ( ) }; ++ring ) {
+    for ( int ring = 1; ring <= int { MadoState::radius ( ) }; ++ring ) {
         p.x += m_hori; // Move east.
         ++ax.q;
         for ( int j = 0; j < ring; ++j ) { // nw.
@@ -162,17 +118,17 @@ void App::makeVertexArray ( ) noexcept {
         return ( a.v0.position.y < b.v0.position.y ) or ( a.v0.position.y == b.v0.position.y and a.v0.position.x < b.v0.position.x );
     };
     // Establish the new order of the vertices by index.
-    std::array<int, state::size ( )> sorted_index;
+    std::array<int, MadoState::size ( )> sorted_index;
     std::iota ( std::begin ( sorted_index ), std::end ( sorted_index ), 0 );
     std::sort ( std::begin ( sorted_index ), std::end ( sorted_index ), [ quads, quads_less ] ( int i, int j ) { return quads_less ( quads [ i ], quads [ j ] ); } );
     // Invert the lookup.
-    std::array<int, state::size ( )> inverted;
+    std::array<int, MadoState::size ( )> inverted;
     std::iota ( std::begin ( inverted ), std::end ( inverted ), 0 );
     std::sort ( std::begin ( inverted ), std::end ( inverted ), [ & sorted_index ] ( int i, int j ) { return sorted_index [ i ] < sorted_index [ j ]; } );
     // Replace the old index with the new index.
-    ax = { static_cast<sidx> ( state::radius ( ) ), static_cast<sidx> ( state::radius ( ) ) };
+    ax = { static_cast<sidx> ( MadoState::radius ( ) ), static_cast<sidx> ( MadoState::radius ( ) ) };
     m_vertex_indices.at ( ax ) = inverted [ m_vertex_indices.at ( ax ) ];
-    for ( int ring = 1; ring <= int { state::radius ( ) }; ++ring ) {
+    for ( int ring = 1; ring <= int { MadoState::radius ( ) }; ++ring ) {
         ++ax.q;
         for ( int j = 0; j < ring; ++j ) { // nw.
             --ax.r;
@@ -204,9 +160,21 @@ void App::makeVertexArray ( ) noexcept {
 }
 
 
+template<typename SizeType>
+void App::setQuadTex ( SizeType i_, SizeType t_ ) noexcept {
+    i_ *= 4;
+    const sf::Boxf & tb = m_tex_box [ t_ ];
+    sf::Quad & quads = *reinterpret_cast< sf::Quad* > ( &m_vertices [ i_ ] );
+    quads.v0.texCoords = sf::Vector2f { tb.left, tb.top };
+    quads.v1.texCoords = sf::Vector2f { tb.right, tb.top };
+    quads.v2.texCoords = sf::Vector2f { tb.right, tb.bottom };
+    quads.v3.texCoords = sf::Vector2f { tb.left, tb.bottom };
+}
+
+
 [[ nodiscard ]] bool App::playAreaContains ( sf::Vector2f p_ ) const noexcept {
     // http://www.playchilla.com/how-to-check-if-a-point-is-inside-a-hexagon
-    static const float hori { state::width ( ) * 0.5f * m_vert }, vert { hori * 0.5773502588f }, vert_2 { 2.0f * vert }, hori_vert_2 { hori * vert_2 };
+    static const float hori { MadoState::width ( ) * 0.5f * m_vert }, vert { hori * 0.5773502588f }, vert_2 { 2.0f * vert }, hori_vert_2 { hori * vert_2 };
     p_ -= m_center;
     p_.x = std::abs ( p_.x ); p_.y = std::abs ( p_.y );
     // x- and y-coordinates swapped (for flat-topped hexagon).
@@ -237,17 +205,6 @@ App::App ( ) {
     // Set icon.
     setIcon ( );
     // Create data structures.
-    {
-        std::vector<sf::Vector2f> tmp = positionData ( );
-        m_kdtree.initialize ( std::begin ( tmp ), std::end ( tmp ) );
-    }
-    int i = 0;
-    for ( const auto & p : m_kdtree ) {
-        m_positions [ i ].where = p;
-        if ( kdtree::is_valid ( p ) )
-            m_indices [ i ] = pointToIdx ( p );
-        ++i;
-    }
     m_tex_box = std::array<sf::Box<float>, 6> {
         {
             { 0.0f, 0.0f, m_circle_diameter, m_circle_diameter }, { m_circle_diameter, 0.0f, 2.0f * m_circle_diameter, m_circle_diameter }, { 2.0f * m_circle_diameter, 0.0f, 3.0f * m_circle_diameter, m_circle_diameter },
@@ -286,7 +243,7 @@ App::App ( ) {
     m_music.setLoopPoints ( loop );
     m_music.play ( );
     // Player to move.
-    m_player_to_move.what = display::in_active_green;
+    // m_player_to_move.what = display::in_active_green;
     // Ge started.
     m_mouse.initialize ( m_window );
     m_animator.reserve ( 32 );
@@ -303,7 +260,6 @@ void App::setIcon ( ) noexcept {
         SendMessage ( m_window.getSystemHandle ( ), WM_SETICON, ICON_BIG, ( LPARAM ) hIcon );
     }
 }
-
 
 
 bool App::runStartupAnimation ( ) noexcept {
@@ -342,19 +298,18 @@ void App::updateWindow ( ) noexcept {
 
 void App::mouseEvents ( const sf::Event & event_ ) {
     const sf::Vector2f & mouse_position = m_mouse.update ( );
-    if ( m_idx >= 0 )
-        m_positions [ m_idx ].deactivate ( );
-    std::ptrdiff_t oi = m_idx;
-    m_idx = -1;
+    if ( m_where >= 0 )
+        deactivate ( );
+    m_where = -1;
+    m_what = display::in_active_vacant;
     if ( m_window_bounds.contains ( mouse_position ) ) {
         m_display_close = m_close_bounds.contains ( mouse_position );
         m_display_minimize = m_minimize_bounds.contains ( mouse_position );
         if ( not ( m_display_close or m_display_minimize ) ) {
             if ( playAreaContains ( mouse_position ) ) {
                 std::cout << pointToHex ( mouse_position ) << nl;
-                const auto [ idx, distance ] = m_kdtree.nn_index_distance ( mouse_position );
-                if ( distance < m_circle_radius_squared )
-                    m_idx = idx, m_positions [ idx ].activate ( );
+                m_where = m_vertex_indices [ pointToHex ( mouse_position ) ];
+                activate ( );
             }
         }
         else {
