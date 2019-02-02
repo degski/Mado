@@ -31,9 +31,9 @@
 
 
 #ifndef nl
-
 #define nl '\n'
 #endif
+
 
 //  https://stackoverflow.com/questions/22128872/simple-c-sfml-program-high-cpu-usage
 
