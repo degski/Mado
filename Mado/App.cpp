@@ -95,6 +95,7 @@ App::App ( ) :
     m_taskbar_default = sf::IntRect { 0,  0, 135, 30 };
     m_taskbar_minimize = sf::IntRect { 0, 30, 135, 30 };
     m_taskbar_close = sf::IntRect { 0, 90, 135, 30 };
+    // Bounds.
     m_minimize_bounds = sf::FloatRect { m_window_width - m_taskbar_texture.getSize ( ).x, 0.0f, m_taskbar_texture.getSize ( ).x * 0.3333333433f, m_taskbar_texture.getSize ( ).y * 0.25F };
     m_close_bounds = sf::FloatRect { m_window_width - m_taskbar_texture.getSize ( ).x * 0.3333333433f, 0.0f, m_taskbar_texture.getSize ( ).x * 0.3333333433f, m_taskbar_texture.getSize ( ).y * 0.25F };
     // Load sound.
@@ -127,27 +128,20 @@ void App::setIcon ( ) noexcept {
 
 
 bool App::runStartupAnimation ( ) noexcept {
-    // Clear.
-    m_window.clear ( sf::Color { 10u, 10u, 10u, 255u } );
-    // Draw play area.
-    m_window.draw ( m_play_area );
     m_animator.run ( );
+    m_window.clear ( sf::Color { 10u, 10u, 10u, 255u } );
+    m_window.draw ( m_play_area );
     m_window.draw ( m_overlay );
-    // Display window.
     m_window.display ( );
     return m_animator.size ( );
 }
 
 
 void App::updateWindow ( ) noexcept {
-    // Clear.
     m_window.clear ( sf::Color { 10u, 10u, 10u, 255u } );
-    // Draw taskbar.
     m_taskbar.setTextureRect ( m_display_close ? m_taskbar_close : m_display_minimize ? m_taskbar_minimize : m_taskbar_default );
     m_window.draw ( m_taskbar );
-    // Draw play area.
     m_window.draw ( m_play_area );
-    // Display window.
     m_window.display ( );
     // Minimize if required (after updating above).
     if ( m_minimize ) {
@@ -169,11 +163,11 @@ void App::mouseEvents ( const sf::Event & event_ ) {
                 m_play_area.activate ( pointToHex ( mouse_position ) );
             }
             else {
-                m_play_area.deactivate ( );
+                m_play_area.de_activate ( );
             }
         }
         else {
-            m_play_area.deactivate ( );
+            m_play_area.de_activate ( );
             if ( sf::Mouse::isButtonPressed ( sf::Mouse::Left ) ) {
                 if ( m_display_close ) {
                     closeWindow ( );
@@ -188,6 +182,7 @@ void App::mouseEvents ( const sf::Event & event_ ) {
         }
     }
     else {
+        m_play_area.de_activate ( );
         m_display_close = m_display_minimize = false;
     }
 }

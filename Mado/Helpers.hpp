@@ -169,7 +169,9 @@ struct MouseState {
 template<typename State>
 struct PlayArea : public sf::Drawable, public sf::Transformable {
 
-    enum class display : int { in_active_vacant = 0, in_active_red, in_active_green, active_vacant, active_red, active_green };
+    using display_type = std::int8_t;
+
+    enum class display : display_type { in_active_vacant = 0, in_active_red, in_active_green, active_vacant, active_red, active_green };
 
     using sidx = typename State::sidx;
     using hex = typename State::hex;
@@ -189,15 +191,15 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
         if ( m_active == active ) {
             return;
         }
-        if ( m_active > -1 ) { // deactivate
-            m_what [ m_active ] = static_cast< display > ( static_cast< int > ( m_what [ m_active ] ) - 3 );
+        if ( m_active > -1 ) { // De-activate.
+            m_what [ m_active ] = static_cast<display> ( static_cast<int> ( m_what [ m_active ] ) - 3 );
             setQuadTex ( m_active, m_what [ m_active ] );
         }
-        m_active = m_vertex_indices [ h_ ];
+        m_active = active;
         m_what [ m_active ] = static_cast<display> ( static_cast<int> ( m_what [ m_active ] ) + 3 );
         setQuadTex ( m_active, m_what [ m_active ] );
     }
-    void deactivate ( ) noexcept {
+    void de_activate ( ) noexcept {
         if ( m_active > -1 ) {
             m_what [ m_active ] = static_cast<display> ( static_cast<int> ( m_what [ m_active ] ) - 3 );
             setQuadTex ( m_active, m_what [ m_active ] );
