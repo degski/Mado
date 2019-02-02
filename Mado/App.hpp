@@ -52,64 +52,31 @@ class App {
     using sidx = typename MadoState::sidx;
     using hex = typename MadoState::hex;
 
-    sf::CallbackAnimator m_animator;
-
     float m_window_width, m_window_height;
     sf::Vector2f m_center;
     float m_hori, m_vert;
-    float m_circle_diameter, m_circle_radius, m_circle_radius_squared;
 
     sf::ContextSettings m_settings;
     sf::RenderWindow m_window;
     sf::FloatRect m_window_bounds;
 
-    bool m_is_running = true;
-
     MadoState m_state;
 
     sf::Font m_font_regular, m_font_bold, m_font_mono, m_font_numbers;
-
-    sf::Texture m_circles_texture;
-    sf::Sprite m_circles;
-
-    std::array<sf::Boxf, 6> m_tex_box;
 
     sf::Texture m_taskbar_texture;
     sf::Sprite m_taskbar;
     sf::IntRect m_taskbar_default, m_taskbar_minimize, m_taskbar_close;
     sf::FloatRect m_close_bounds, m_minimize_bounds;
 
+    bool m_is_running = true;
     bool m_display_close = false, m_display_minimize = false, m_close = false, m_minimize = false, m_left_mousebutton_pressed = false;
 
-    sf::Music m_music;
-
     MouseState m_mouse;
+    PlayArea<MadoState> m_play_area;
 
-    int m_where = -1;
-    display m_what = display::in_active_vacant;
-
-    [[ nodiscard ]] sf::Quad makeVertex ( const sf::Vector2f & p_, const sf::Boxf & tb_ ) const noexcept;
-    void makeVertexArray ( ) noexcept;
-
-    template<typename SizeType>
-    void setQuadTex ( SizeType i_, SizeType t_ ) noexcept;
-
-    inline void activate ( ) noexcept {
-        if ( static_cast<int> ( m_what ) < 3 ) {
-            m_what = static_cast<display> ( static_cast<int> ( m_what ) + 3 );
-            setQuadTex ( m_where, static_cast<int> ( m_what ) );
-        }
-    }
-    inline void deactivate ( ) noexcept {
-        if ( static_cast<int> ( m_what ) > 2 ) {
-            m_what = static_cast<display> ( static_cast<int> ( m_what ) - 3 );
-            setQuadTex ( m_where, static_cast<int> ( m_what ) );
-        }
-    }
-
-
-    sf::VertexArray m_vertices;
-    HexContainer<int, MadoState::radius ( )> m_vertex_indices;
+    sf::CallbackAnimator m_animator;
+    sf::Music m_music;
 
     public:
 
