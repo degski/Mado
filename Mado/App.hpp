@@ -100,19 +100,21 @@ class App {
     };
 
 
-    template<typename T, std::size_t R, typename = std::enable_if_t<std::is_default_constructible_v<T>, T>>
+    template<typename T, std::size_t R, typename SizeType = int, typename = std::enable_if_t<std::is_default_constructible_v<T>, T>>
     struct hex_storage {
 
-        [[ nodiscard ]] static constexpr std::intptr_t radius ( ) noexcept {
+        using size_type = SizeType;
+
+        [[ nodiscard ]] static constexpr size_type radius ( ) noexcept {
             return static_cast<std::size_t> ( R );
         }
-        [[ nodiscard ]] static constexpr std::intptr_t width ( ) noexcept {
+        [[ nodiscard ]] static constexpr size_type width ( ) noexcept {
             return 2 * radius ( ) + 1;
         }
-        [[ nodiscard ]] static constexpr std::intptr_t height ( ) noexcept {
+        [[ nodiscard ]] static constexpr size_type height ( ) noexcept {
             return 2 * radius ( ) + 1;
         }
-        [[ nodiscard ]] static constexpr std::intptr_t size ( ) noexcept {
+        [[ nodiscard ]] static constexpr size_type size ( ) noexcept {
             return width ( ) * height ( );
         }
 
@@ -120,17 +122,17 @@ class App {
 
         hex_storage ( ) noexcept : m_data { { T ( ) } } { }
 
-        [[ nodiscard ]] T & at ( const std::intptr_t q_, const std::intptr_t r_ ) noexcept {
-            return m_data [ r_ ] [ q_ - std::max ( std::intptr_t { 0 }, r_ - radius ( ) ) ];
+        [[ nodiscard ]] T & at ( const size_type q_, const size_type r_ ) noexcept {
+            return m_data [ r_ ] [ q_ - std::max ( size_type { 0 }, r_ - radius ( ) ) ];
         }
-        [[ nodiscard ]] T at ( const std::intptr_t q_, const std::intptr_t r_ ) const noexcept {
-            return m_data [ r_ ] [ q_ - std::max ( std::intptr_t { 0 }, r_ - radius ( ) ) ];
+        [[ nodiscard ]] T at ( const size_type q_, const size_type r_ ) const noexcept {
+            return m_data [ r_ ] [ q_ - std::max ( size_type { 0 }, r_ - radius ( ) ) ];
         }
         [[ nodiscard ]] T & at ( const hex & h_ ) noexcept {
-            return m_data [ static_cast<std::intptr_t> ( h_.r ) ] [ static_cast<std::intptr_t> ( h_.q ) - std::max ( std::intptr_t { 0 }, static_cast<std::intptr_t> ( h_.r ) - radius ( ) ) ];
+            return m_data [ static_cast<size_type> ( h_.r ) ] [ static_cast<size_type> ( h_.q ) - std::max ( size_type { 0 }, static_cast<size_type> ( h_.r ) - radius ( ) ) ];
         }
         [[ nodiscard ]] T at ( const hex & h_ ) const noexcept {
-            return m_data [ static_cast<std::intptr_t> ( h_.r ) ] [ static_cast<std::intptr_t> ( h_.q ) - std::max ( std::intptr_t { 0 }, static_cast<std::intptr_t> ( h_.r ) - radius ( ) ) ];
+            return m_data [ static_cast<size_type> ( h_.r ) ] [ static_cast<size_type> ( h_.q ) - std::max ( size_type { 0 }, static_cast<size_type> ( h_.r ) - radius ( ) ) ];
         }
 
         [[ nodiscard ]] T * data ( ) noexcept {
