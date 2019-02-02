@@ -184,7 +184,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
     PlayArea ( const sf::Vector2f & center_, float hori_, float vert_, float circle_diameter_ );
 
     [[ nodiscard ]] const sf::Boxf & getQuadTex ( display d_ ) const noexcept {
-        return m_tex_box [ static_cast<int> ( d_ ) ];
+        return m_circles_texture_box [ static_cast<int> ( d_ ) ];
     }
     void setQuadTex ( int i_, display d_ ) noexcept;
 
@@ -227,7 +227,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
 
     int m_active = not_set;
 
-    const std::array<sf::Boxf, 6> m_tex_box;
+    const std::array<sf::Boxf, 6> m_circles_texture_box;
 
     sf::Texture m_circles_texture;
 
@@ -247,7 +247,7 @@ PlayArea<State>::PlayArea ( const sf::Vector2f & center_, float hori_, float ver
     m_vert { vert_ },
     m_circle_diameter { circle_diameter_ },
     m_circle_radius { std::floorf ( m_circle_diameter * 0.5f ) },
-    m_tex_box  {
+    m_circles_texture_box  {
         {
             { 0.0f, 0.0f, m_circle_diameter, m_circle_diameter }, { m_circle_diameter, 0.0f, 2.0f * m_circle_diameter, m_circle_diameter }, { 2.0f * m_circle_diameter, 0.0f, 3.0f * m_circle_diameter, m_circle_diameter },
             { 0.0f, m_circle_diameter, m_circle_diameter, 2.0f * m_circle_diameter }, { m_circle_diameter, m_circle_diameter, 2.0f * m_circle_diameter, 2.0f * m_circle_diameter }, { 2.0f * m_circle_diameter, m_circle_diameter, 3.0f * m_circle_diameter, 2.0f * m_circle_diameter }
