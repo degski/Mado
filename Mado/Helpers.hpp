@@ -171,7 +171,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
 
     using display_type = std::int8_t;
 
-    enum class display : display_type { in_active_vacant = 0, in_active_red, in_active_green, active_vacant, active_red, active_green };
+    enum class display : display_type { not_set = -1, in_active_vacant = 0, in_active_red, in_active_green, active_vacant, active_red, active_green };
 
     using sidx = typename State::sidx;
     using hex = typename State::hex;
@@ -186,24 +186,31 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
     }
     void setQuadTex ( int i_, display d_ ) noexcept;
 
+    [[ nodiscard ]] int display_as_int ( display d_ ) const noexcept {
+        return static_cast<int> ( d_ );
+    }
+
+    [[ nodiscard ]] display make_active ( const int a_ ) noexcept {
+        return m_what [ m_active ] = static_cast<display> ( display_as_int ( m_what [ m_active ] ) + 3 );
+    }
+    [[ nodiscard ]] display make_in_active ( const int a_ ) noexcept {
+        return m_what [ m_active ] = static_cast<display> ( display_as_int ( m_what [ m_active ] ) - 3 );
+    }
+
     void activate ( const hex & h_ ) noexcept {
         const int active = m_vertex_indices [ h_ ];
-        if ( m_active == active ) {
-            return;
+        if ( active != m_active ) {
+            if ( display_as_int ( display::not_set ) != m_active ) {
+                setQuadTex ( m_active, make_in_active ( m_active ) );
+            }
+            m_active = active;
+            setQuadTex ( m_active, make_active ( m_active ) );
         }
-        if ( m_active > -1 ) { // De-activate.
-            m_what [ m_active ] = static_cast<display> ( static_cast<int> ( m_what [ m_active ] ) - 3 );
-            setQuadTex ( m_active, m_what [ m_active ] );
-        }
-        m_active = active;
-        m_what [ m_active ] = static_cast<display> ( static_cast<int> ( m_what [ m_active ] ) + 3 );
-        setQuadTex ( m_active, m_what [ m_active ] );
     }
     void de_activate ( ) noexcept {
-        if ( m_active > -1 ) {
-            m_what [ m_active ] = static_cast<display> ( static_cast<int> ( m_what [ m_active ] ) - 3 );
-            setQuadTex ( m_active, m_what [ m_active ] );
-            m_active = -1;
+        if ( display_as_int ( display::not_set ) != m_active ) {
+            setQuadTex ( m_active, make_in_active ( m_active ) );
+            m_active = display_as_int ( display::not_set );
         }
     }
 
@@ -220,7 +227,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
     const sf::Vector2f & m_center;
     const float m_hori, m_vert, m_circle_diameter, m_circle_radius;
 
-    int m_active = -1;
+    int m_active = display_as_int ( display::not_set );
 
     const std::array<sf::Boxf, 6> m_tex_box;
 
