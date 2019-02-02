@@ -52,6 +52,10 @@ class App {
     using sidx = typename state::sidx;
     using hex = typename state::hex;
 
+    struct quad {
+        sf::Vertex v0, v1, v2, v3;
+    };
+
     enum class display : int { in_active_vacant = 0, in_active_red, in_active_green, active_vacant, active_red, active_green };
 
     struct position {
@@ -230,12 +234,10 @@ class App {
     std::ptrdiff_t m_idx = -1;
 
     void loadVertexArray ( ) noexcept;
+    [[ nodiscard ]] quad makeVertex ( const sf::Vector2f & p, const sf::Box<float> & tb ) const noexcept;
     inline void setQuadTex ( int i_, int t_ ) noexcept {
         i_ *= 4;
         const sf::Box<float> & tb = m_tex_box [ t_ ];
-        struct quad {
-            sf::Vertex v0, v1, v2, v3;
-        };
         quad & quads = *reinterpret_cast<quad*> ( & m_vertices [ i_ ] );
         quads.v0.texCoords = sf::Vector2f { tb.left, tb.top };
         quads.v1.texCoords = sf::Vector2f { tb.right, tb.top };

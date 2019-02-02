@@ -50,8 +50,9 @@
     p_.x /= m_hori; p_.y /= radius;
     int q = int_floorf ( p_.y + p_.x ), r = int_floorf ( ( int_floorf ( p_.y - p_.x ) + q ) * 0.3333333433f );
     q = int_floorf ( ( int_floorf ( 2.0f * p_.x + 1.0f ) + q ) * 0.3333333433f ) - r;
-    q += static_cast<int> ( state::radius ( ) ); r += static_cast<int> ( state::radius ( ) );
-    return { std::move ( static_cast<sidx> ( q ) ), std::move ( static_cast<sidx> ( r ) ) };
+    q += static_cast<int> ( state::radius ( ) );
+    r += static_cast<int> ( state::radius ( ) );
+    return { static_cast<sidx> ( std::clamp ( q, 0, 2 * static_cast<int> ( state::radius ( ) ) ) ), static_cast<sidx> ( std::clamp ( r, 0, 2 * static_cast< int > ( state::radius ( ) ) ) ) };
 }
 
 
@@ -97,23 +98,24 @@ template<typename T>
 }
 
 
+[[ nodiscard ]] typename App::quad App::makeVertex ( const sf::Vector2f & p_, const sf::Box<float> & tb_ ) const noexcept {
+    return {
+        sf::Vertex { sf::Vector2f { p_.x, p_.y }, sf::Vector2f { tb_.left, tb_.top } },
+        sf::Vertex { sf::Vector2f { p_.x + m_circle_diameter, p_.y }, sf::Vector2f { tb_.right, tb_.top } },
+        sf::Vertex { sf::Vector2f { p_.x + m_circle_diameter, p_.y + m_circle_diameter }, sf::Vector2f { tb_.right, tb_.bottom } },
+        sf::Vertex { sf::Vector2f { p_.x, p_.y + m_circle_diameter }, sf::Vector2f { tb_.left, tb_.bottom } }
+    };
+}
+
 void App::loadVertexArray ( ) noexcept {
     m_vertices.setPrimitiveType ( sf::Quads );
     m_vertices.resize ( 4 * state::size ( ) );
     sf::Box<float> & tb = m_tex_box [ 0 ];
-    struct quad {
-        sf::Vertex v0, v1, v2, v3;
-    };
     quad * quads = reinterpret_cast<quad*> ( & m_vertices [ 0 ] );
     int i = 0;
     sf::Vector2f p = m_center - sf::Vector2f { m_circle_radius, m_circle_radius };
     hex ax { static_cast<sidx> ( state::radius ( ) ), static_cast<sidx> ( state::radius ( ) ) };
-    quads [ i ] = {
-        sf::Vertex { sf::Vector2f { p.x, p.y }, sf::Vector2f { tb.left, tb.top } },
-        sf::Vertex { sf::Vector2f { p.x + m_circle_diameter, p.y }, sf::Vector2f { tb.right, tb.top } },
-        sf::Vertex { sf::Vector2f { p.x + m_circle_diameter, p.y + m_circle_diameter }, sf::Vector2f { tb.right, tb.bottom } },
-        sf::Vertex { sf::Vector2f { p.x, p.y + m_circle_diameter }, sf::Vector2f { tb.left, tb.bottom } }
-    };
+    quads [ i ] = makeVertex ( p, tb );
     m_vertex_indices.at ( ax ) = i;
     for ( int ring = 1; ring <= int { state::radius ( ) }; ++ring ) {
         p.x += m_hori; // Move east.
@@ -121,67 +123,37 @@ void App::loadVertexArray ( ) noexcept {
         for ( int j = 0; j < ring; ++j ) { // nw.
             p.x -= m_hori / 2; p.y -= m_vert;
             --ax.r;
-            quads [ ++i ] = {
-                sf::Vertex { sf::Vector2f { p.x, p.y }, sf::Vector2f { tb.left, tb.top } },
-                sf::Vertex { sf::Vector2f { p.x + m_circle_diameter, p.y }, sf::Vector2f { tb.right, tb.top } },
-                sf::Vertex { sf::Vector2f { p.x + m_circle_diameter, p.y + m_circle_diameter }, sf::Vector2f { tb.right, tb.bottom } },
-                sf::Vertex { sf::Vector2f { p.x, p.y + m_circle_diameter }, sf::Vector2f { tb.left, tb.bottom } }
-            };
+            quads [ ++i ] = makeVertex ( p, tb );
             m_vertex_indices.at ( ax ) = i;
         }
         for ( int j = 0; j < ring; ++j ) { // w.
             p.x -= m_hori;
             --ax.q;
-            quads [ ++i ] = {
-                sf::Vertex { sf::Vector2f { p.x, p.y }, sf::Vector2f { tb.left, tb.top } },
-                sf::Vertex { sf::Vector2f { p.x + m_circle_diameter, p.y }, sf::Vector2f { tb.right, tb.top } },
-                sf::Vertex { sf::Vector2f { p.x + m_circle_diameter, p.y + m_circle_diameter }, sf::Vector2f { tb.right, tb.bottom } },
-                sf::Vertex { sf::Vector2f { p.x, p.y + m_circle_diameter }, sf::Vector2f { tb.left, tb.bottom } }
-            };
+            quads [ ++i ] = makeVertex ( p, tb );
             m_vertex_indices.at ( ax ) = i;
         }
         for ( int j = 0; j < ring; ++j ) { // sw.
             p.x -= m_hori / 2; p.y += m_vert;
             --ax.q; ++ax.r;
-            quads [ ++i ] = {
-                sf::Vertex { sf::Vector2f { p.x, p.y }, sf::Vector2f { tb.left, tb.top } },
-                sf::Vertex { sf::Vector2f { p.x + m_circle_diameter, p.y }, sf::Vector2f { tb.right, tb.top } },
-                sf::Vertex { sf::Vector2f { p.x + m_circle_diameter, p.y + m_circle_diameter }, sf::Vector2f { tb.right, tb.bottom } },
-                sf::Vertex { sf::Vector2f { p.x, p.y + m_circle_diameter }, sf::Vector2f { tb.left, tb.bottom } }
-            };
+            quads [ ++i ] = makeVertex ( p, tb );
             m_vertex_indices.at ( ax ) = i;
         }
         for ( int j = 0; j < ring; ++j ) { // se.
             p.x += m_hori / 2; p.y += m_vert;
             ++ax.r;
-            quads [ ++i ] = {
-                sf::Vertex { sf::Vector2f { p.x, p.y }, sf::Vector2f { tb.left, tb.top } },
-                sf::Vertex { sf::Vector2f { p.x + m_circle_diameter, p.y }, sf::Vector2f { tb.right, tb.top } },
-                sf::Vertex { sf::Vector2f { p.x + m_circle_diameter, p.y + m_circle_diameter }, sf::Vector2f { tb.right, tb.bottom } },
-                sf::Vertex { sf::Vector2f { p.x, p.y + m_circle_diameter }, sf::Vector2f { tb.left, tb.bottom } }
-            };
+            quads [ ++i ] = makeVertex ( p, tb );
             m_vertex_indices.at ( ax ) = i;
         }
         for ( int j = 0; j < ring; ++j ) { // e.
             p.x += m_hori;
             ++ax.q;
-            quads [ ++i ] = {
-                sf::Vertex { sf::Vector2f { p.x, p.y }, sf::Vector2f { tb.left, tb.top } },
-                sf::Vertex { sf::Vector2f { p.x + m_circle_diameter, p.y }, sf::Vector2f { tb.right, tb.top } },
-                sf::Vertex { sf::Vector2f { p.x + m_circle_diameter, p.y + m_circle_diameter }, sf::Vector2f { tb.right, tb.bottom } },
-                sf::Vertex { sf::Vector2f { p.x, p.y + m_circle_diameter }, sf::Vector2f { tb.left, tb.bottom } }
-            };
+            quads [ ++i ] = makeVertex ( p, tb );
             m_vertex_indices.at ( ax ) = i;
         }
         for ( int j = 0; j < ring; ++j ) { // ne.
             p.x += m_hori / 2; p.y -= m_vert;
             ++ax.q; --ax.r;
-            quads [ ++i ] = {
-                sf::Vertex { sf::Vector2f { p.x, p.y }, sf::Vector2f { tb.left, tb.top } },
-                sf::Vertex { sf::Vector2f { p.x + m_circle_diameter, p.y }, sf::Vector2f { tb.right, tb.top } },
-                sf::Vertex { sf::Vector2f { p.x + m_circle_diameter, p.y + m_circle_diameter }, sf::Vector2f { tb.right, tb.bottom } },
-                sf::Vertex { sf::Vector2f { p.x, p.y + m_circle_diameter }, sf::Vector2f { tb.left, tb.bottom } }
-            };
+            quads [ ++i ] = makeVertex ( p, tb );
             m_vertex_indices.at ( ax ) = i;
         }
     }
