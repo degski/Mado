@@ -178,13 +178,13 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
     using sidx = typename State::sidx;
     using hex = typename State::hex;
 
-    [[ nodiscard ]] sf::Quad makeVertex ( const sf::Vector2f & p_, const sf::Boxf & tb_ ) const noexcept;
+    [[ nodiscard ]] sf::Quad makeVertex ( const sf::Vector2f & p_, const sf::Boxf & tex_box_ ) const noexcept;
     void init ( ) noexcept;
 
     PlayArea ( const sf::Vector2f & center_, float hori_, float vert_, float circle_diameter_ );
 
     [[ nodiscard ]] const sf::Boxf & getQuadTex ( display d_ ) const noexcept {
-        return m_circles_texture_box [ static_cast<int> ( d_ ) ];
+        return m_texture_box [ static_cast<int> ( d_ ) ];
     }
     void setQuadTex ( int i_, display d_ ) noexcept;
 
@@ -216,7 +216,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
         // Apply the entity's transform -- combine it with the one that was passed by the caller.
         // states.transform *= getTransform ( ); // getTransform() is defined by sf::Transformable.
         // Apply the texture.
-        states.texture = & m_circles_texture;
+        states.texture = & m_texture;
         // You may also override states.shader or states.blendMode if you want.
         // Draw the vertex array.
         target.draw ( m_vertices, states );
@@ -227,9 +227,9 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
 
     int m_active = not_set;
 
-    const std::array<sf::Boxf, 6> m_circles_texture_box;
+    const std::array<sf::Boxf, 6> m_texture_box;
 
-    sf::Texture m_circles_texture;
+    sf::Texture m_texture;
 
     HexContainer<int, State::radius ( )> m_vertex_indices;
     std::array<display, State::size ( )> m_what;
@@ -247,27 +247,27 @@ PlayArea<State>::PlayArea ( const sf::Vector2f & center_, float hori_, float ver
     m_vert { vert_ },
     m_circle_diameter { circle_diameter_ },
     m_circle_radius { std::floorf ( m_circle_diameter * 0.5f ) },
-    m_circles_texture_box  {
+    m_texture_box  {
         {
             { 0.0f, 0.0f, m_circle_diameter, m_circle_diameter }, { m_circle_diameter, 0.0f, 2.0f * m_circle_diameter, m_circle_diameter }, { 2.0f * m_circle_diameter, 0.0f, 3.0f * m_circle_diameter, m_circle_diameter },
             { 0.0f, m_circle_diameter, m_circle_diameter, 2.0f * m_circle_diameter }, { m_circle_diameter, m_circle_diameter, 2.0f * m_circle_diameter, 2.0f * m_circle_diameter }, { 2.0f * m_circle_diameter, m_circle_diameter, 3.0f * m_circle_diameter, 2.0f * m_circle_diameter }
         }
     } {
     // Load play area graphics.
-    sf::loadFromResource ( m_circles_texture, CIRCLES_LARGE );
-    m_circles_texture.setSmooth ( true );
+    sf::loadFromResource ( m_texture, CIRCLES_LARGE );
+    m_texture.setSmooth ( true );
     // Init data structures.
     init ( );
 }
 
 
 template<typename State>
-[ [ nodiscard ] ] sf::Quad PlayArea<State>::makeVertex ( const sf::Vector2f & p_, const sf::Boxf & tb_ ) const noexcept {
+[[ nodiscard ]] sf::Quad PlayArea<State>::makeVertex ( const sf::Vector2f & p_, const sf::Boxf & tex_box_ ) const noexcept {
     return {
-        sf::Vertex { sf::Vector2f { p_.x, p_.y }, sf::Vector2f { tb_.left, tb_.top } },
-        sf::Vertex { sf::Vector2f { p_.x + m_circle_diameter, p_.y }, sf::Vector2f { tb_.right, tb_.top } },
-        sf::Vertex { sf::Vector2f { p_.x + m_circle_diameter, p_.y + m_circle_diameter }, sf::Vector2f { tb_.right, tb_.bottom } },
-        sf::Vertex { sf::Vector2f { p_.x, p_.y + m_circle_diameter }, sf::Vector2f { tb_.left, tb_.bottom } }
+        sf::Vertex { sf::Vector2f { p_.x, p_.y }, sf::Vector2f { tex_box_.left, tex_box_.top } },
+        sf::Vertex { sf::Vector2f { p_.x + m_circle_diameter, p_.y }, sf::Vector2f { tex_box_.right, tex_box_.top } },
+        sf::Vertex { sf::Vector2f { p_.x + m_circle_diameter, p_.y + m_circle_diameter }, sf::Vector2f { tex_box_.right, tex_box_.bottom } },
+        sf::Vertex { sf::Vector2f { p_.x, p_.y + m_circle_diameter }, sf::Vector2f { tex_box_.left, tex_box_.bottom } }
     };
 }
 
@@ -381,3 +381,49 @@ void PlayArea<State>::setQuadTex ( int i_, display d_ ) noexcept {
     quads.v2.texCoords = sf::Vector2f { tex_box.right, tex_box.bottom };
     quads.v3.texCoords = sf::Vector2f { tex_box.left, tex_box.bottom };
 }
+
+
+struct Taskbar : public sf::Drawable, public sf::Transformable {
+
+    static constexpr float width = 135.0f, height = 30.0f;
+
+    using display_type = std::int8_t;
+
+    enum display { in_active = 0, minimize, maximize, close };
+
+    Taskbar ( const float window_width_ ) :
+        m_texture_box { { { 0.0f, in_active * height, width, height }, { 0.0f, minimize * height, width, height }, { 0.0f, maximize * height, width, height }, { 0.0f, close * height, width, height } } },
+        m_minimize_bounds { window_width_ - width, 0.0f, width / 3.0f, height },
+        m_close_bounds { window_width_ - width / 3.0f, 0.0f, width / 3.0f, height } {
+        sf::loadFromResource ( m_texture, TASKBAR );
+        m_texture.setSmooth ( true );
+    }
+
+    [[ nodiscard ]] sf::Quad makeVertex ( const sf::Vector2f & p_, const sf::Boxf & tex_box_ ) const noexcept {
+        return {
+            sf::Vertex { sf::Vector2f { p_.x, p_.y }, sf::Vector2f { tex_box_.left, tex_box_.top } },
+            sf::Vertex { sf::Vector2f { p_.x + width, p_.y }, sf::Vector2f { tex_box_.right, tex_box_.top } },
+            sf::Vertex { sf::Vector2f { p_.x + width, p_.y + width }, sf::Vector2f { tex_box_.right, tex_box_.bottom } },
+            sf::Vertex { sf::Vector2f { p_.x, p_.y + width }, sf::Vector2f { tex_box_.left, tex_box_.bottom } }
+        };
+    }
+
+    virtual void draw ( sf::RenderTarget & target, sf::RenderStates states ) const {
+        // Apply the entity's transform -- combine it with the one that was passed by the caller.
+        // states.transform *= getTransform ( ); // getTransform() is defined by sf::Transformable.
+        // Apply the texture.
+        states.texture = & m_texture;
+        // You may also override states.shader or states.blendMode if you want.
+        // Draw the vertex array.
+        target.draw ( m_vertices, states );
+    }
+
+    bool m_display_close = false, m_display_minimize = false;
+
+    const std::array<sf::Boxf, 4> m_texture_box;
+
+    sf::FloatRect m_minimize_bounds, m_close_bounds;
+
+    sf::Texture m_texture;
+    sf::VertexArray m_vertices;
+};

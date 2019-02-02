@@ -73,6 +73,7 @@ class App {
     bool m_display_close = false, m_display_minimize = false, m_close = false, m_minimize = false, m_left_mousebutton_pressed = false;
 
     MouseState m_mouse;
+    Taskbar m_taskbar_;
     PlayArea<MadoState> m_play_area;
 
     sf::CallbackAnimator m_animator;

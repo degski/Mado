@@ -74,6 +74,7 @@ App::App ( ) :
     m_center { sf::Vector2f { m_window_width * 0.5f, m_window_height * 0.5f /*+ 12.0f*/ } },
     m_hori { 74.0f },
     m_vert { 64.0f },
+    m_taskbar_ { m_window_width },
     m_play_area { m_center, m_hori, m_vert, 67.0f } {
     m_settings.antialiasingLevel = 8u;
     // Create the m_window.
