@@ -118,50 +118,50 @@ enum mouse_state : int { none = 0, moved = 1, left_clicked = 2, moved_and_left_c
 
 struct MouseState {
 
-    sf::RenderWindow * window = nullptr;
-    int current = 0;
-    mouse_state state = mouse_state::moved;
-    sf::Vector2i data [ 2 ];
-    sf::Vector2f Position;
+    sf::RenderWindow * m_window_ptr = nullptr;
+    int m_current = 0;
+    mouse_state m_mouse_state = mouse_state::moved;
+    sf::Vector2i m_data [ 2 ];
+    sf::Vector2f m_position;
 
     MouseState ( ) noexcept { }
 
     void initialize ( sf::RenderWindow & w_ ) noexcept {
-        window = & w_;
-        data [ 0 ] = data [ 1 ] = sf::Mouse::getPosition ( *window );
-        Position = sf::castVector2f ( data [ 0 ] );
+        m_window_ptr = & w_;
+        m_data [ 0 ] = m_data [ 1 ] = sf::Mouse::getPosition ( *m_window_ptr );
+        m_position = sf::castVector2f ( m_data [ 0 ] );
     }
 
     [[ nodiscard ]] const sf::Vector2f & operator ( ) ( ) const noexcept {
-        return Position;
+        return m_position;
     }
 
     [[ nodiscard ]] bool hadActivity ( ) const noexcept {
-        return static_cast<int> ( state );
+        return static_cast<int> ( m_mouse_state );
     }
     [[ nodiscard ]] bool hadNoActivity ( ) const noexcept {
         return not ( hadActivity ( ) );
     }
 
     [[ nodiscard ]] bool leftClicked ( ) const noexcept {
-        return 1 < static_cast<int> ( state );
+        return 1 < static_cast<int> ( m_mouse_state );
     }
     [[ nodiscard ]] bool hasMoved ( ) const noexcept {
-        return static_cast<int> ( state ) & 1;
+        return static_cast<int> ( m_mouse_state ) & 1;
     }
 
     const sf::Vector2f & update ( ) noexcept {
-        state = mouse_state::none;
+        m_mouse_state = mouse_state::none;
         if ( sf::Mouse::isButtonPressed ( sf::Mouse::Left ) ) {
-            state = mouse_state::left_clicked;
+            m_mouse_state = mouse_state::left_clicked;
         }
-        data [ current ^ 1 ] = sf::Mouse::getPosition ( * window );
-        if ( data [ 0 ] != data [ 1 ] ) {
-            current ^= 1;
-            Position = sf::castVector2f ( data [ current ] );
-            state = mouse_state::left_clicked == state ? mouse_state::moved_and_left_clicked : mouse_state::moved;
+        m_data [ m_current ^ 1 ] = sf::Mouse::getPosition ( * m_window_ptr );
+        if ( m_data [ 0 ] != m_data [ 1 ] ) {
+            m_current ^= 1;
+            m_position = sf::castVector2f ( m_data [ m_current ] );
+            m_mouse_state = mouse_state::left_clicked == m_mouse_state ? mouse_state::moved_and_left_clicked : mouse_state::moved;
         }
-        return Position;
+        return m_position;
     }
 };
 
