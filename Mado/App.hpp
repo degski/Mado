@@ -127,7 +127,7 @@ private:
     }
 
     [[ nodiscard ]] inline int int_floorf ( float x ) const noexcept {
-        return static_cast<int> ( x + 65'536.0f ) - 65'536;
+        return static_cast<int> ( x + 4'194'304.0f ) - 4'194'304;
     }
 
     [[ nodiscard ]] uidx pointToIdx ( const sf::Vector2f & p ) const noexcept;

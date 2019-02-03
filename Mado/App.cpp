@@ -156,18 +156,18 @@ void App::mouseEvents ( const sf::Event & event_ ) {
                 if ( m_place ) {
                     // Placement.
                     m_play_area.place ( hex_position, PlayArea::display::active_red );
+                    m_place = false;
                     m_move.reset ( );
                 }
-                // Move select.
                 else if ( m_move.is_valid ( ) and hex_position != m_move ) {
                     // Moving from m_move to pos.
                     m_play_area.move ( m_move, hex_position, PlayArea::display::active_red );
                     m_move.reset ( );
                 }
                 else {
+                    // Setting moved from.
                     m_move = hex_position;
                 }
-                m_place = false;
             }
             else {
                 // Just hovering in play area.

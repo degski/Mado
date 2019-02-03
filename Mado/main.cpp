@@ -69,7 +69,9 @@
 namespace exp = std::experimental;
 
 
-int main8463 ( ) {
+int main6757 ( ) {
+
+    std::cout << std::numeric_limits< float >::digits << nl;
 
     return EXIT_SUCCESS;
 }
