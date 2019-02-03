@@ -64,7 +64,7 @@ class App {
 
     sf::Font m_font_regular, m_font_bold, m_font_mono, m_font_numbers;
 
-    bool m_is_running = true, m_minimize = false, m_left_mousebutton_pressed = false;
+    bool m_is_running = true, m_minimize = false, m_left_mousebutton_pressed = false, m_place = false;
 
     MouseState m_mouse;
     Taskbar m_taskbar;

@@ -195,6 +195,12 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
         return m_what [ m_active ] = static_cast<display> ( static_cast<int> ( m_what [ m_active ] ) - 3 );
     }
 
+    void set ( const hex & h_, display d_ ) noexcept {
+        m_active = m_vertex_indices [ h_ ];
+        m_what [ m_active ] = d_;
+        setQuadTex ( m_active, d_ );
+    }
+
     void activate ( const hex & h_ ) noexcept {
         const int active = m_vertex_indices [ h_ ];
         if ( active != m_active ) {

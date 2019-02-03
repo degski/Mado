@@ -148,9 +148,28 @@ void App::mouseEvents ( const sf::Event & event_ ) {
         m_taskbar.update ( mouse_position );
         if ( Taskbar::State::in_active == m_taskbar.state ) {
             if ( playAreaContains ( mouse_position ) ) {
-                m_play_area.activate ( pointToHex ( mouse_position ) );
+                const hex pos = pointToHex ( mouse_position );
+                if ( sf::Mouse::isButtonPressed ( sf::Mouse::Left ) ) {
+                    std::cout << "read place = " << std::boolalpha << m_place << nl;
+                    if ( m_place ) {
+                        std::cout << "place\n";
+                        m_play_area.set ( pos, PlayArea::display::active_red );
+
+                    }
+                    else { // Move select.
+
+                    }
+                    m_place = false;
+                }
+                else {
+                    m_play_area.activate ( pos );
+                }
             }
             else {
+                if ( sf::Mouse::isButtonPressed ( sf::Mouse::Left ) ) {
+                    m_place = true;
+                    std::cout << "set place 1 = " << std::boolalpha << m_place << nl;
+                }
                 m_play_area.reset ( );
             }
         }
@@ -164,6 +183,10 @@ void App::mouseEvents ( const sf::Event & event_ ) {
                     m_taskbar.reset ( );
                     m_play_area.reset ( );
                     m_minimize = true;
+                }
+                else {
+                    m_place = true;
+                    std::cout << "set place 2 = " << std::boolalpha << m_place << nl;
                 }
             }
         }
