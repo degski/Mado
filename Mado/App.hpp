@@ -53,15 +53,14 @@ class App {
     using hex = typename MadoState::hex;
     using PlayArea = PlayArea<MadoState>;
 
-    float m_window_width, m_window_height;
+    MadoState m_state;
+
+    float m_hori, m_vert, m_window_width, m_window_height;
     sf::Vector2f m_center;
-    float m_hori, m_vert;
 
     sf::ContextSettings m_settings;
     sf::RenderWindow m_window;
     sf::FloatRect m_window_bounds;
-
-    MadoState m_state;
 
     sf::Font m_font_regular, m_font_bold, m_font_mono, m_font_numbers;
 

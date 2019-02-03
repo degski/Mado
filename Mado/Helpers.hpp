@@ -442,11 +442,6 @@ class Taskbar : public sf::Drawable {
         }
     }
 
-    [[ nodiscard ]] State getState ( ) const noexcept {
-        return state;
-    }
-
-
     State state = in_active;
 
     private:

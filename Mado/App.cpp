@@ -69,11 +69,12 @@
 
 App::App ( ) :
     // Setup parameters.
-    m_window_width { 701.0f },
-    m_window_height { 647.0f },
-    m_center { sf::Vector2f { m_window_width * 0.5f, m_window_height * 0.5f /*+ 12.0f*/ } },
+    m_state { },
     m_hori { 74.0f },
     m_vert { 64.0f },
+    m_window_width { MadoState::width ( ) * m_hori + m_vert + 1.0f },
+    m_window_height { MadoState::height ( ) * m_vert + m_vert + 1.0f + 12.0f },
+    m_center { sf::Vector2f { m_window_width * 0.5f, m_window_height * 0.5f + 6.0f } },
     m_taskbar { m_window_width },
     m_play_area { m_center, m_hori, m_vert, 67.0f } {
     m_settings.antialiasingLevel = 8u;
