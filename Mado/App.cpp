@@ -74,7 +74,7 @@ App::App ( ) :
     m_center { sf::Vector2f { m_window_width * 0.5f, m_window_height * 0.5f /*+ 12.0f*/ } },
     m_hori { 74.0f },
     m_vert { 64.0f },
-    m_taskbar_ { m_window_width },
+    m_taskbar { m_window_width },
     m_play_area { m_center, m_hori, m_vert, 67.0f } {
     m_settings.antialiasingLevel = 8u;
     // Create the m_window.
@@ -87,18 +87,6 @@ App::App ( ) :
     sf::loadFromResource ( m_font_bold, __BOLD_FONT__ );
     sf::loadFromResource ( m_font_mono, __MONO_FONT__ );
     sf::loadFromResource ( m_font_numbers, __NUMBERS_FONT__ );
-    // Load taskbar graphics.
-    sf::loadFromResource ( m_taskbar_texture, TASKBAR );
-    m_taskbar_texture.setSmooth ( true );
-    m_taskbar.setTexture ( m_taskbar_texture );
-    m_taskbar.setOrigin ( static_cast<float> ( m_taskbar_texture.getSize ( ).x ), 0.0f );
-    m_taskbar.setPosition ( m_window_width, 0.0f );
-    m_taskbar_default = sf::IntRect { 0,  0, 135, 30 };
-    m_taskbar_minimize = sf::IntRect { 0, 30, 135, 30 };
-    m_taskbar_close = sf::IntRect { 0, 90, 135, 30 };
-    // Bounds.
-    m_minimize_bounds = sf::FloatRect { m_window_width - m_taskbar_texture.getSize ( ).x, 0.0f, m_taskbar_texture.getSize ( ).x * 0.3333333433f, m_taskbar_texture.getSize ( ).y * 0.25F };
-    m_close_bounds = sf::FloatRect { m_window_width - m_taskbar_texture.getSize ( ).x * 0.3333333433f, 0.0f, m_taskbar_texture.getSize ( ).x * 0.3333333433f, m_taskbar_texture.getSize ( ).y * 0.25F };
     // Load sound.
     sf::loadFromResource ( m_music, MUSIC );
     m_music.setVolume ( 10.0f );
@@ -140,8 +128,7 @@ bool App::runStartupAnimation ( ) noexcept {
 
 void App::updateWindow ( ) noexcept {
     m_window.clear ( sf::Color { 10u, 10u, 10u, 255u } );
-    m_taskbar.setTextureRect ( m_display_close ? m_taskbar_close : m_display_minimize ? m_taskbar_minimize : m_taskbar_default );
-    m_window.draw ( m_taskbar_ );
+    m_window.draw ( m_taskbar );
     m_window.draw ( m_play_area );
     m_window.display ( );
     // Minimize if required (after updating above).
@@ -154,50 +141,11 @@ void App::updateWindow ( ) noexcept {
 
 // https://en.sfml-dev.org/forums/index.php?topic=9829.0
 
-#if 0
-
 void App::mouseEvents ( const sf::Event & event_ ) {
     const sf::Vector2f & mouse_position = m_mouse.update ( );
     if ( m_window_bounds.contains ( mouse_position ) ) {
-        m_display_close = m_close_bounds.contains ( mouse_position );
-        m_display_minimize = m_minimize_bounds.contains ( mouse_position );
-        if ( not ( m_display_close or m_display_minimize ) ) {
-            if ( playAreaContains ( mouse_position ) ) {
-                m_play_area.activate ( pointToHex ( mouse_position ) );
-            }
-            else {
-                m_play_area.reset ( );
-            }
-        }
-        else {
-            m_play_area.reset ( );
-            if ( sf::Mouse::isButtonPressed ( sf::Mouse::Left ) ) {
-                if ( m_display_close ) {
-                    closeWindow ( );
-                    return;
-                }
-                if ( m_display_minimize ) {
-                    m_display_minimize = false;
-                    m_minimize = true;
-                    return;
-                }
-            }
-        }
-    }
-    else {
-        m_play_area.reset ( );
-        m_display_close = m_display_minimize = false;
-    }
-}
-
-
-#else
-
-void App::mouseEvents ( const sf::Event & event_ ) {
-    const sf::Vector2f & mouse_position = m_mouse.update ( );
-    if ( m_window_bounds.contains ( mouse_position ) ) {
-        m_taskbar_.update ( mouse_position );
-        if ( Taskbar::State::in_active == m_taskbar_.state ) {
+        m_taskbar.update ( mouse_position );
+        if ( Taskbar::State::in_active == m_taskbar.state ) {
             if ( playAreaContains ( mouse_position ) ) {
                 m_play_area.activate ( pointToHex ( mouse_position ) );
             }
@@ -207,12 +155,12 @@ void App::mouseEvents ( const sf::Event & event_ ) {
         }
         else {
             if ( sf::Mouse::isButtonPressed ( sf::Mouse::Left ) ) {
-                if ( Taskbar::State::close == m_taskbar_.state ) {
+                if ( Taskbar::State::close == m_taskbar.state ) {
                     closeWindow ( );
                     return;
                 }
-                else if ( Taskbar::State::minimize == m_taskbar_.state ) {
-                    m_taskbar_.reset ( );
+                else if ( Taskbar::State::minimize == m_taskbar.state ) {
+                    m_taskbar.reset ( );
                     m_play_area.reset ( );
                     m_minimize = true;
                 }
@@ -220,12 +168,10 @@ void App::mouseEvents ( const sf::Event & event_ ) {
         }
     }
     else {
-        m_taskbar_.reset ( );
+        m_taskbar.reset ( );
         m_play_area.reset ( );
     }
 }
-
-#endif
 
 
 #if 0

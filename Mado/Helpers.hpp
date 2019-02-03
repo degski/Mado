@@ -414,7 +414,7 @@ class Taskbar : public sf::Drawable {
     public:
 
     Taskbar ( const float window_width_ ) :
-        m_texture_box { { { 0.0f, in_active * height, width, height }, { 0.0f, minimize * height, width, height }, { 0.0f, maximize * height, width, height }, { 0.0f, close * height, width, height } } },
+        m_texture_box { { { 0.0f, in_active * height, width, minimize * height }, { 0.0f, minimize * height, width, maximize * height }, { 0.0f, maximize * height, width, close * height }, { 0.0f, close * height, width, close * height + height } } },
         m_minimize_bounds { window_width_ - width, 0.0f, width / 3.0f, height },
         m_close_bounds { window_width_ - width / 3.0f, 0.0f, width / 3.0f, height } {
         sf::loadFromResource ( m_texture, TASKBAR );

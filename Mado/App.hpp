@@ -64,16 +64,11 @@ class App {
 
     sf::Font m_font_regular, m_font_bold, m_font_mono, m_font_numbers;
 
-    sf::Texture m_taskbar_texture;
-    sf::Sprite m_taskbar;
-    sf::IntRect m_taskbar_default, m_taskbar_minimize, m_taskbar_close;
-    sf::FloatRect m_close_bounds, m_minimize_bounds;
-
     bool m_is_running = true;
-    bool m_display_close = false, m_display_minimize = false, m_close = false, m_minimize = false, m_left_mousebutton_pressed = false;
+    bool m_minimize = false, m_left_mousebutton_pressed = false;
 
     MouseState m_mouse;
-    Taskbar m_taskbar_;
+    Taskbar m_taskbar;
     PlayArea<MadoState> m_play_area;
 
     sf::CallbackAnimator m_animator;
