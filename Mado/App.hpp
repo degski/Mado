@@ -51,6 +51,7 @@ class App {
     using uidx = typename MadoState::uidx;
     using sidx = typename MadoState::sidx;
     using hex = typename MadoState::hex;
+    using PlayArea = PlayArea<MadoState>;
 
     float m_window_width, m_window_height;
     sf::Vector2f m_center;
@@ -64,12 +65,11 @@ class App {
 
     sf::Font m_font_regular, m_font_bold, m_font_mono, m_font_numbers;
 
-    bool m_is_running = true;
-    bool m_minimize = false, m_left_mousebutton_pressed = false;
+    bool m_is_running = true, m_minimize = false, m_left_mousebutton_pressed = false;
 
     MouseState m_mouse;
     Taskbar m_taskbar;
-    PlayArea<MadoState> m_play_area;
+    PlayArea m_play_area;
 
     sf::CallbackAnimator m_animator;
     sf::Music m_music;
