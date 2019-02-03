@@ -49,7 +49,7 @@
     <ClInclude Include="Globals.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Helpers.hpp">
+    <ClInclude Include="Drawables.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
