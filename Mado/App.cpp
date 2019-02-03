@@ -39,9 +39,9 @@
 
 
 [[ nodiscard ]] App::uidx App::pointToIdx ( const sf::Vector2f & p_ ) const noexcept {
-    return MadoState::hex_to_idx ( pointToHex ( p_ ) );
+    return MadoState::hex_to_idx ( pointToHex ( p_ ).first );
 }
-[[ nodiscard ]] App::hex App::pointToHex ( sf::Vector2f p_ ) const noexcept {
+[[ nodiscard ]] std::pair<App::hex, bool> App::pointToHex ( sf::Vector2f p_ ) const noexcept {
     // https://www.redblobgames.com/grids/hexagons/#comment-1063818420
     static const float radius { m_hori * 0.5773502588f };
     static const sf::Vector2f center { m_center.x, m_center.y - radius };
@@ -49,17 +49,11 @@
     p_.x /= m_hori; p_.y /= radius;
     int q = int_floorf ( p_.y + p_.x ), r = int_floorf ( ( int_floorf ( p_.y - p_.x ) + q ) * 0.3333333433f );
     q = int_floorf ( ( int_floorf ( 2.0f * p_.x + 1.0f ) + q ) * 0.3333333433f ) - r;
-    q += static_cast<int> ( MadoState::radius ( ) );
-    r += static_cast<int> ( MadoState::radius ( ) );
-    std::cout << ( q - 4 ) << ' ' << ( r - 4 ) << ' ' << ( -( q - 4 ) - ( r - 4 ) ) << nl;
-    return { static_cast< sidx > ( q ), static_cast< sidx > ( r ) };
-}
-
-
-[[ nodiscard ]] bool App::validateHex ( hex h_ ) const noexcept {
-    h_.q -= MadoState::radius ( );
-    h_.r -= MadoState::radius ( );
-    return not ( std::abs ( h_.q ) > MadoState::radius ( ) or std::abs ( h_.r ) > MadoState::radius ( ) or std::abs ( - h_.q - h_.r ) > MadoState::radius ( ) );
+    if ( std::abs ( q ) > MadoState::radius ( ) or std::abs ( r ) > MadoState::radius ( ) or std::abs ( -q - r ) > MadoState::radius ( ) ) {
+        return { { }, false };
+    }
+    q += static_cast<int> ( MadoState::radius ( ) ); r += static_cast<int> ( MadoState::radius ( ) );
+    return { { static_cast<sidx> ( q ), static_cast<sidx> ( r ) }, true };
 }
 
 
@@ -155,36 +149,33 @@ void App::mouseEvents ( const sf::Event & event_ ) {
     const sf::Vector2f & mouse_position = m_mouse.update ( );
     if ( m_window_bounds.contains ( mouse_position ) ) {
         // In window.
-        if ( playAreaContains ( mouse_position ) ) {
-            // In play area.
-            const hex pos = pointToHex ( mouse_position );
-            // Check if it's 'really' in the play area.
-            if ( validateHex ( pos ) ) {
-                if ( sf::Mouse::isButtonPressed ( sf::Mouse::Left ) ) {
-                    // Selected a cicle.
-                    if ( m_place ) {
-                        // Placement.
-                        m_play_area.place ( pos, PlayArea::display::active_red );
-                            m_move.reset ( );
-                    }
-                    // Move select.
-                    else if ( m_move.is_set ( ) and pos != m_move ) {
-                        // Moving from m_move to pos.
-                        m_play_area.move ( m_move, pos, PlayArea::display::active_red );
-                        m_move.reset ( );
-                    }
-                    else {
-                        m_move = pos;
-                    }
-                    m_place = false;
+        const auto [ pos, in_play_area ] = pointToHex ( mouse_position );
+        if ( in_play_area ) {
+            if ( sf::Mouse::isButtonPressed ( sf::Mouse::Left ) ) {
+                // Selected a cicle.
+                if ( m_place ) {
+                    // Placement.
+                    m_play_area.place ( pos, PlayArea::display::active_red );
+                    m_move.reset ( );
+                }
+                // Move select.
+                else if ( m_move.is_valid ( ) and pos != m_move ) {
+                    // Moving from m_move to pos.
+                    m_play_area.move ( m_move, pos, PlayArea::display::active_red );
+                    m_move.reset ( );
                 }
                 else {
-                    // Just hovering in play area.
-                    m_play_area.make_active ( pos );
+                    m_move = pos;
                 }
+                m_place = false;
+            }
+            else {
+                // Just hovering in play area.
+                m_play_area.make_active ( pos );
             }
         }
         else {
+            // Not in play area.
             m_taskbar.update ( mouse_position );
             if ( Taskbar::State::in_active == m_taskbar.state ) {
                 // In new area.

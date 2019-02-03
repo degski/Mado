@@ -58,10 +58,10 @@ struct hex {
     using sidx = sidx<R>;
     sidx q = 0, r = 0;
 
-    [[ nodiscard ]] bool is_set ( ) const noexcept {
+    [[ nodiscard ]] bool is_valid ( ) const noexcept {
         return q or r;
     }
-    [[ nodiscard ]] bool is_not_set ( ) const noexcept {
+    [[ nodiscard ]] bool is_not_valid ( ) const noexcept {
         return not ( q or r );
     }
 
