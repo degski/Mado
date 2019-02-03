@@ -276,7 +276,7 @@ void PlayArea<State>::init ( ) noexcept {
     m_vertices.setPrimitiveType ( sf::Quads );
     m_vertices.resize ( 4 * State::size ( ) );
     const sf::Boxf & tex_box = getQuadTex ( display::in_active_vacant );
-    sf::Quad * quads = reinterpret_cast< sf::Quad* > ( & m_vertices [ 0 ] );
+    sf::Quad * quads = reinterpret_cast<sf::Quad*> ( & m_vertices [ 0 ] );
     int i = 0;
     sf::Vector2f p = m_center - sf::Vector2f { m_circle_radius, m_circle_radius };
     hex ax { static_cast<sidx> ( State::radius ( ) ), static_cast<sidx> ( State::radius ( ) ) };
@@ -383,13 +383,35 @@ void PlayArea<State>::setQuadTex ( int i_, display d_ ) noexcept {
 }
 
 
-struct Taskbar : public sf::Drawable, public sf::Transformable {
+class Taskbar : public sf::Drawable {
 
     static constexpr float width = 135.0f, height = 30.0f;
 
-    using display_type = std::int8_t;
+    public:
 
-    enum display { in_active = 0, minimize, maximize, close };
+    enum State { in_active = 0, minimize, maximize, close };
+
+    private:
+
+    [[ nodiscard ]] sf::Quad makeVertex ( const sf::Vector2f & p_, const sf::Boxf & tex_box_ ) const noexcept {
+        return {
+            sf::Vertex { sf::Vector2f { p_.x, p_.y }, sf::Vector2f { tex_box_.left, tex_box_.top } },
+            sf::Vertex { sf::Vector2f { p_.x + width, p_.y }, sf::Vector2f { tex_box_.right, tex_box_.top } },
+            sf::Vertex { sf::Vector2f { p_.x + width, p_.y + height }, sf::Vector2f { tex_box_.right, tex_box_.bottom } },
+            sf::Vertex { sf::Vector2f { p_.x, p_.y + height }, sf::Vector2f { tex_box_.left, tex_box_.bottom } }
+        };
+    }
+
+    void setQuadTex ( State d_ ) noexcept {
+        sf::Quad & quads = *reinterpret_cast<sf::Quad*> ( & m_vertices [ 0 ] );
+        const sf::Boxf & tex_box = m_texture_box [ d_ ];
+        quads.v0.texCoords = sf::Vector2f { tex_box.left, tex_box.top };
+        quads.v1.texCoords = sf::Vector2f { tex_box.right, tex_box.top };
+        quads.v2.texCoords = sf::Vector2f { tex_box.right, tex_box.bottom };
+        quads.v3.texCoords = sf::Vector2f { tex_box.left, tex_box.bottom };
+    }
+
+    public:
 
     Taskbar ( const float window_width_ ) :
         m_texture_box { { { 0.0f, in_active * height, width, height }, { 0.0f, minimize * height, width, height }, { 0.0f, maximize * height, width, height }, { 0.0f, close * height, width, height } } },
@@ -397,31 +419,31 @@ struct Taskbar : public sf::Drawable, public sf::Transformable {
         m_close_bounds { window_width_ - width / 3.0f, 0.0f, width / 3.0f, height } {
         sf::loadFromResource ( m_texture, TASKBAR );
         m_texture.setSmooth ( true );
-    }
-
-    [[ nodiscard ]] sf::Quad makeVertex ( const sf::Vector2f & p_, const sf::Boxf & tex_box_ ) const noexcept {
-        return {
-            sf::Vertex { sf::Vector2f { p_.x, p_.y }, sf::Vector2f { tex_box_.left, tex_box_.top } },
-            sf::Vertex { sf::Vector2f { p_.x + width, p_.y }, sf::Vector2f { tex_box_.right, tex_box_.top } },
-            sf::Vertex { sf::Vector2f { p_.x + width, p_.y + width }, sf::Vector2f { tex_box_.right, tex_box_.bottom } },
-            sf::Vertex { sf::Vector2f { p_.x, p_.y + width }, sf::Vector2f { tex_box_.left, tex_box_.bottom } }
-        };
+        m_vertices.setPrimitiveType ( sf::Quads );
+        m_vertices.resize ( 4 );
+        sf::Quad * quads = reinterpret_cast<sf::Quad*> ( & m_vertices [ 0 ] );
+        quads [ 0 ] = makeVertex ( sf::Vector2f { window_width_ - width, 0.0f }, m_texture_box [ in_active ] );
     }
 
     virtual void draw ( sf::RenderTarget & target, sf::RenderStates states ) const {
-        // Apply the entity's transform -- combine it with the one that was passed by the caller.
-        // states.transform *= getTransform ( ); // getTransform() is defined by sf::Transformable.
-        // Apply the texture.
         states.texture = & m_texture;
-        // You may also override states.shader or states.blendMode if you want.
-        // Draw the vertex array.
         target.draw ( m_vertices, states );
     }
 
-    bool m_display_close = false, m_display_minimize = false;
+    void update ( const sf::Vector2f & p_ ) noexcept {
+        state = m_minimize_bounds.contains ( p_ ) ? minimize : m_close_bounds.contains ( p_ ) ? close : in_active;
+        setQuadTex ( state );
+    }
+
+    [[ nodiscard ]] State getState ( ) const noexcept {
+        return state;
+    }
+
+    State state = in_active;
+
+    private:
 
     const std::array<sf::Boxf, 4> m_texture_box;
-
     sf::FloatRect m_minimize_bounds, m_close_bounds;
 
     sf::Texture m_texture;

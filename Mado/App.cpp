@@ -189,6 +189,41 @@ void App::mouseEvents ( const sf::Event & event_ ) {
 }
 
 
+/*
+
+void App::mouseEvents ( const sf::Event & event_ ) {
+    const sf::Vector2f & mouse_position = m_mouse.update ( );
+    if ( m_window_bounds.contains ( mouse_position ) ) {
+        m_taskbar_.update ( mouse_position );
+        if ( Taskbar::State::in_active == m_taskbar_.state ) {
+            if ( playAreaContains ( mouse_position ) ) {
+                m_play_area.activate ( pointToHex ( mouse_position ) );
+            }
+            else {
+                m_play_area.de_activate ( );
+            }
+        }
+        else {
+            m_play_area.de_activate ( );
+            if ( sf::Mouse::isButtonPressed ( sf::Mouse::Left ) ) {
+                if ( Taskbar::State::close == m_taskbar_.state ) {
+                    closeWindow ( );
+                }
+                else if ( Taskbar::State::minimize == m_taskbar_.state ) {
+                    m_taskbar_.state = Taskbar::State::in_active;
+                    m_minimize = true;
+                }
+            }
+        }
+    }
+    else {
+        m_play_area.de_activate ( );
+        m_taskbar_.state = Taskbar::State::in_active;
+    }
+}
+
+*/
+
 
 #if 0
 
