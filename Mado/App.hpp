@@ -36,6 +36,8 @@
 #include <SFML/Audio.hpp>
 #include <SFML/Extensions.hpp>
 
+#include <fsmlite/fsm.hpp>
+
 #include "Types.hpp"
 #include "Globals.hpp"
 #include "Mado.hpp"
@@ -43,6 +45,9 @@
 
 
 #include "resource.h"
+
+
+
 
 
 class App {
@@ -64,7 +69,10 @@ class App {
 
     sf::Font m_font_regular, m_font_bold, m_font_mono, m_font_numbers;
 
-    bool m_is_running = true, m_minimize = false, m_left_mousebutton_pressed = false, m_place = false;
+    bool m_is_running = true, m_minimize = false, m_left_mousebutton_pressed = false;
+
+    bool m_place = false;
+    hex m_move;
 
     MouseState m_mouse;
     Taskbar m_taskbar;
@@ -72,6 +80,41 @@ class App {
 
     sf::CallbackAnimator m_animator;
     sf::Music m_music;
+
+    struct Fsm : public fsmlite::fsm<Fsm> {
+        friend class fsm; // Base class needs access to transition_table.
+
+        enum states { s_waiting, s_run, s_pause, };
+
+        Fsm ( App & app_, state_type init_state = s_waiting ) :
+            fsm ( init_state ),
+            app { app_ } {
+        }
+        /*
+        // Events.
+
+        struct mouse_active { };
+
+        // Actions.
+
+        void handle_ ( const mouse_active & ) {
+            app.runStartupAnimation ( );
+        }
+
+
+        using transition_table = table<
+        //              Start    Event        Target   Action
+        //  -----------+--------+------------+--------+------------------------+--
+            mem_fn_row<s_waiting, left_mouse_click, s_run, & Fsm::run_startup>,
+
+
+            //  -----------+--------+------------+--------+------------------------+--
+        >;
+        */
+        App & app;
+    };
+
+    friend struct Fsm;
 
     public:
 

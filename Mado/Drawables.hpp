@@ -113,10 +113,9 @@ struct HexContainer {
 };
 
 
-enum mouse_state : int { none = 0, moved = 1, left_clicked = 2, moved_and_left_clicked = 3 };
-
-
 struct MouseState {
+
+    enum mouse_state : int { idle = 0, moved = 1, left_clicked = 2, moved_and_left_clicked = 3 };
 
     sf::RenderWindow * m_window_ptr = nullptr;
     int m_current = 0;
@@ -151,7 +150,7 @@ struct MouseState {
     }
 
     const sf::Vector2f & update ( ) noexcept {
-        m_mouse_state = mouse_state::none;
+        m_mouse_state = mouse_state::idle;
         if ( sf::Mouse::isButtonPressed ( sf::Mouse::Left ) ) {
             m_mouse_state = mouse_state::left_clicked;
         }
@@ -195,10 +194,29 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
         return m_what [ m_active ] = static_cast<display> ( static_cast<int> ( m_what [ m_active ] ) - 3 );
     }
 
-    void set ( const hex & h_, display d_ ) noexcept {
-        m_active = m_vertex_indices [ h_ ];
-        m_what [ m_active ] = d_;
-        setQuadTex ( m_active, d_ );
+    // Returns true if succesfully set.
+    [[ maybe_unused ]] bool place ( const hex & t_, display d_ ) noexcept {
+        const int t = m_vertex_indices [ t_ ];
+        if ( display::in_active_vacant == static_cast<display> ( static_cast<int> ( m_what [ t ] ) % 3 ) ) {
+            m_what [ t ] = d_;
+            setQuadTex ( t, d_ );
+            m_active = t;
+            return true;
+        }
+        return false;
+    }
+
+    [[ maybe_unused ]] bool move ( const hex & f_, const hex & t_, const display d_ ) noexcept {
+        const int f = m_vertex_indices [ f_ ], t = m_vertex_indices [ t_ ];
+        if ( d_ == static_cast<display> ( static_cast<int> ( m_what [ f ] ) % 3 ) and display::in_active_vacant == static_cast<display> ( static_cast<int> ( m_what [ f ] ) % 3 ) ) {
+            m_what [ f ] = display::in_active_vacant;
+            setQuadTex ( f, display::in_active_vacant );
+            m_what [ t ] = d_;
+            setQuadTex ( t, d_ );
+            m_active = t;
+            return true;
+        }
+        return false;
     }
 
     void activate ( const hex & h_ ) noexcept {
