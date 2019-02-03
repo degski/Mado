@@ -149,29 +149,29 @@ void App::mouseEvents ( const sf::Event & event_ ) {
     const sf::Vector2f & mouse_position = m_mouse.update ( );
     if ( m_window_bounds.contains ( mouse_position ) ) {
         // In window.
-        const auto [ pos, in_play_area ] = pointToHex ( mouse_position );
+        const auto [ hex_position, in_play_area ] = pointToHex ( mouse_position );
         if ( in_play_area ) {
             if ( sf::Mouse::isButtonPressed ( sf::Mouse::Left ) ) {
                 // Selected a cicle.
                 if ( m_place ) {
                     // Placement.
-                    m_play_area.place ( pos, PlayArea::display::active_red );
+                    m_play_area.place ( hex_position, PlayArea::display::active_red );
                     m_move.reset ( );
                 }
                 // Move select.
-                else if ( m_move.is_valid ( ) and pos != m_move ) {
+                else if ( m_move.is_valid ( ) and hex_position != m_move ) {
                     // Moving from m_move to pos.
-                    m_play_area.move ( m_move, pos, PlayArea::display::active_red );
+                    m_play_area.move ( m_move, hex_position, PlayArea::display::active_red );
                     m_move.reset ( );
                 }
                 else {
-                    m_move = pos;
+                    m_move = hex_position;
                 }
                 m_place = false;
             }
             else {
                 // Just hovering in play area.
-                m_play_area.make_active ( pos );
+                m_play_area.make_active ( hex_position );
             }
         }
         else {
