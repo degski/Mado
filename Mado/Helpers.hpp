@@ -205,7 +205,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
             setQuadTex ( m_active, make_active ( m_active ) );
         }
     }
-    void de_activate ( ) noexcept {
+    void reset ( ) noexcept {
         if ( not_set != m_active ) {
             setQuadTex ( m_active, make_in_active ( m_active ) );
             m_active = not_set;
@@ -435,9 +435,17 @@ class Taskbar : public sf::Drawable {
         setQuadTex ( state );
     }
 
+    void reset ( ) noexcept {
+        if ( in_active != state ) {
+            state = in_active;
+            setQuadTex ( state );
+        }
+    }
+
     [[ nodiscard ]] State getState ( ) const noexcept {
         return state;
     }
+
 
     State state = in_active;
 

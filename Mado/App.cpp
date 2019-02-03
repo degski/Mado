@@ -141,7 +141,7 @@ bool App::runStartupAnimation ( ) noexcept {
 void App::updateWindow ( ) noexcept {
     m_window.clear ( sf::Color { 10u, 10u, 10u, 255u } );
     m_taskbar.setTextureRect ( m_display_close ? m_taskbar_close : m_display_minimize ? m_taskbar_minimize : m_taskbar_default );
-    m_window.draw ( m_taskbar );
+    m_window.draw ( m_taskbar_ );
     m_window.draw ( m_play_area );
     m_window.display ( );
     // Minimize if required (after updating above).
@@ -154,6 +154,8 @@ void App::updateWindow ( ) noexcept {
 
 // https://en.sfml-dev.org/forums/index.php?topic=9829.0
 
+#if 0
+
 void App::mouseEvents ( const sf::Event & event_ ) {
     const sf::Vector2f & mouse_position = m_mouse.update ( );
     if ( m_window_bounds.contains ( mouse_position ) ) {
@@ -164,11 +166,11 @@ void App::mouseEvents ( const sf::Event & event_ ) {
                 m_play_area.activate ( pointToHex ( mouse_position ) );
             }
             else {
-                m_play_area.de_activate ( );
+                m_play_area.reset ( );
             }
         }
         else {
-            m_play_area.de_activate ( );
+            m_play_area.reset ( );
             if ( sf::Mouse::isButtonPressed ( sf::Mouse::Left ) ) {
                 if ( m_display_close ) {
                     closeWindow ( );
@@ -183,13 +185,13 @@ void App::mouseEvents ( const sf::Event & event_ ) {
         }
     }
     else {
-        m_play_area.de_activate ( );
+        m_play_area.reset ( );
         m_display_close = m_display_minimize = false;
     }
 }
 
 
-/*
+#else
 
 void App::mouseEvents ( const sf::Event & event_ ) {
     const sf::Vector2f & mouse_position = m_mouse.update ( );
@@ -200,29 +202,30 @@ void App::mouseEvents ( const sf::Event & event_ ) {
                 m_play_area.activate ( pointToHex ( mouse_position ) );
             }
             else {
-                m_play_area.de_activate ( );
+                m_play_area.reset ( );
             }
         }
         else {
-            m_play_area.de_activate ( );
             if ( sf::Mouse::isButtonPressed ( sf::Mouse::Left ) ) {
                 if ( Taskbar::State::close == m_taskbar_.state ) {
                     closeWindow ( );
+                    return;
                 }
                 else if ( Taskbar::State::minimize == m_taskbar_.state ) {
-                    m_taskbar_.state = Taskbar::State::in_active;
+                    m_taskbar_.reset ( );
+                    m_play_area.reset ( );
                     m_minimize = true;
                 }
             }
         }
     }
     else {
-        m_play_area.de_activate ( );
-        m_taskbar_.state = Taskbar::State::in_active;
+        m_taskbar_.reset ( );
+        m_play_area.reset ( );
     }
 }
 
-*/
+#endif
 
 
 #if 0
