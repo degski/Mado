@@ -187,12 +187,16 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
     }
     void setQuadTex ( int i_, display d_ ) noexcept;
 
+    private:
+
     [[ nodiscard ]] display make_active ( const int a_ ) noexcept {
         return m_what [ m_active ] = static_cast<display> ( static_cast<int> ( m_what [ m_active ] ) + 3 );
     }
     [[ nodiscard ]] display make_in_active ( const int a_ ) noexcept {
         return m_what [ m_active ] = static_cast<display> ( static_cast<int> ( m_what [ m_active ] ) - 3 );
     }
+
+    public:
 
     // Returns true if succesfully set.
     [[ maybe_unused ]] bool place ( const hex & t_, display d_ ) noexcept {
@@ -219,7 +223,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
         return false;
     }
 
-    void activate ( const hex & h_ ) noexcept {
+    void make_active ( const hex & h_ ) noexcept {
         const int active = m_vertex_indices [ h_ ];
         if ( active != m_active ) {
             if ( not_set != m_active ) {
@@ -229,7 +233,8 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
             setQuadTex ( m_active, make_active ( m_active ) );
         }
     }
-    void reset ( ) noexcept {
+    // Reset the active tile.
+    void reset_active_tile ( ) noexcept {
         if ( not_set != m_active ) {
             setQuadTex ( m_active, make_in_active ( m_active ) );
             m_active = not_set;

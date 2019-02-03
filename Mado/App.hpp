@@ -132,7 +132,7 @@ private:
 
     [[ nodiscard ]] uidx pointToIdx ( const sf::Vector2f & p ) const noexcept;
     [[ nodiscard ]] hex pointToHex ( sf::Vector2f p_ ) const noexcept;
-
+    [[ nodiscard ]] bool validateHex ( hex h_ ) const noexcept;
     [[ nodiscard ]] bool playAreaContains ( sf::Vector2f p_ ) const noexcept;
 
     void setIcon ( ) noexcept;

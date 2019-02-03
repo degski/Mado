@@ -51,7 +51,15 @@
     q = int_floorf ( ( int_floorf ( 2.0f * p_.x + 1.0f ) + q ) * 0.3333333433f ) - r;
     q += static_cast<int> ( MadoState::radius ( ) );
     r += static_cast<int> ( MadoState::radius ( ) );
-    return { static_cast<sidx> ( std::clamp ( q, 0, 2 * static_cast<int> ( MadoState::radius ( ) ) ) ), static_cast<sidx> ( std::clamp ( r, 0, 2 * static_cast<int> ( MadoState::radius ( ) ) ) ) };
+    std::cout << ( q - 4 ) << ' ' << ( r - 4 ) << ' ' << ( -( q - 4 ) - ( r - 4 ) ) << nl;
+    return { static_cast< sidx > ( q ), static_cast< sidx > ( r ) };
+}
+
+
+[[ nodiscard ]] bool App::validateHex ( hex h_ ) const noexcept {
+    h_.q -= MadoState::radius ( );
+    h_.r -= MadoState::radius ( );
+    return not ( std::abs ( h_.q ) > MadoState::radius ( ) or std::abs ( h_.r ) > MadoState::radius ( ) or std::abs ( - h_.q - h_.r ) > MadoState::radius ( ) );
 }
 
 
@@ -63,7 +71,7 @@
     // x- and y-coordinates swapped (for flat-topped hexagon).
     if ( p_.y > hori or p_.x > vert_2 )
         return false;
-    return ( hori_vert_2 - vert * p_.y - hori * p_.x ) >= 0.0f;
+    return ( hori_vert_2 - vert * p_.y - hori * p_.x ) > 0.0f;
 }
 
 
@@ -150,27 +158,30 @@ void App::mouseEvents ( const sf::Event & event_ ) {
         if ( playAreaContains ( mouse_position ) ) {
             // In play area.
             const hex pos = pointToHex ( mouse_position );
-            if ( sf::Mouse::isButtonPressed ( sf::Mouse::Left ) ) {
-                // Selected a cicle.
-                if ( m_place ) {
-                    // Placement.
-                    m_play_area.place ( pos, PlayArea::display::active_red );
-                    m_move.reset ( );
-                }
-                // Move select.
-                else if ( m_move.is_set ( ) and pos != m_move ) {
-                    // Moving from m_move to pos.
-                    m_play_area.move ( m_move, pos, PlayArea::display::active_red );
-                    m_move.reset ( );
+            // Check if it's 'really' in the play area.
+            if ( validateHex ( pos ) ) {
+                if ( sf::Mouse::isButtonPressed ( sf::Mouse::Left ) ) {
+                    // Selected a cicle.
+                    if ( m_place ) {
+                        // Placement.
+                        m_play_area.place ( pos, PlayArea::display::active_red );
+                            m_move.reset ( );
+                    }
+                    // Move select.
+                    else if ( m_move.is_set ( ) and pos != m_move ) {
+                        // Moving from m_move to pos.
+                        m_play_area.move ( m_move, pos, PlayArea::display::active_red );
+                        m_move.reset ( );
+                    }
+                    else {
+                        m_move = pos;
+                    }
+                    m_place = false;
                 }
                 else {
-                    m_move = pos;
+                    // Just hovering in play area.
+                    m_play_area.make_active ( pos );
                 }
-                m_place = false;
-            }
-            else {
-                // Just hovering in play area.
-                m_play_area.activate ( pos );
             }
         }
         else {
@@ -181,7 +192,7 @@ void App::mouseEvents ( const sf::Event & event_ ) {
                     // Requested placement.
                     m_place = true;
                 }
-                m_play_area.reset ( );
+                m_play_area.reset_active_tile ( );
             }
             else {
                 // In taskbar area.
@@ -192,7 +203,7 @@ void App::mouseEvents ( const sf::Event & event_ ) {
                     }
                     else if ( Taskbar::State::minimize == m_taskbar.state ) {
                         m_taskbar.reset ( );
-                        m_play_area.reset ( );
+                        m_play_area.reset_active_tile ( );
                         m_minimize = true;
                         m_move.reset ( );
                     }
@@ -204,7 +215,7 @@ void App::mouseEvents ( const sf::Event & event_ ) {
     else {
         // Outside window.
         m_taskbar.reset ( );
-        m_play_area.reset ( );
+        m_play_area.reset_active_tile ( );
         m_move.reset ( );
     }
 }
