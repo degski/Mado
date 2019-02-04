@@ -192,7 +192,8 @@ private:
     }
 
     [[ nodiscard ]] bool are_neighbors ( const hex a_, const hex b_ ) const noexcept {
-        return std::abs ( a_.q - b_.q ) + std::abs ( a_.r - b_.r ) + std::abs ( ( -a_.q - a_.r ) - ( -b_.q - b_.r ) ) == hex::value_type { 2 };
+        const hex::value_type dq = a_.q - b_.q, dr = a_.r - b_.r;
+        return std::abs ( dq ) + std::abs ( dr ) + std::abs ( - dq - dr ) == hex::value_type { 2 };
     }
 
     void setIcon ( ) noexcept;
