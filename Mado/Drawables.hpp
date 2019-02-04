@@ -198,8 +198,12 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
 
     public:
 
+    [[ maybe_unused ]] bool is ( const hex & t_, const Display d_ ) noexcept {
+        return d_ % 3 == m_what [ m_vertex_indices [ t_ ] ] % 3;
+    }
+
     // Returns true if succesfully set.
-    [[ maybe_unused ]] bool place ( const hex & t_, Display d_ ) noexcept {
+    [[ maybe_unused ]] bool place ( const hex & t_, const Display d_ ) noexcept {
         const int t = m_vertex_indices [ t_ ];
         if ( Display::in_active_vacant == m_what [ t ] % 3 ) {
             m_what [ t ] = d_;

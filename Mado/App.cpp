@@ -153,29 +153,39 @@ void App::mouseEvents ( const sf::Event & event_ ) {
         if ( in_play_area ) {
             if ( sf::Mouse::isButtonPressed ( sf::Mouse::Left ) ) {
                 // Selected a cicle.
-                switch ( m_human_move.state ) {
+                switch ( m_human_move.state ( ) ) {
                 case NextMove::State::none:
                 {
-                    std::cout << "move from " << hex_position << nl;
-                    m_human_move.from = hex_position;
-                    m_human_move.state = NextMove::State::move;
+                    std::cout << "move from " << hex_position << ' ';
+                    bool r;
+                    if ( ( r = m_play_area.is ( hex_position, PlayArea::Display::active_red ) ) )
+                        m_human_move.from ( hex_position );
+                    else
+                        m_human_move.reset ( );
+                    std::cout << std::boolalpha << r << nl;
                     break;
                 }
                 case NextMove::State::place :
                 {
                     std::cout << "place " << hex_position << ' ';
-                    m_human_move.from.nil ( );
-                    m_human_move.to = hex_position;
-                    std::cout << std::boolalpha << m_play_area.place ( m_human_move.to, PlayArea::Display::active_red ) << nl;
-                    m_human_move.state = NextMove::State::none;
+                    bool r;
+                    if ( ( r = m_play_area.place ( hex_position, PlayArea::Display::active_red ) ) )
+                        m_human_move.to ( hex_position );
+                    else
+                        m_human_move.reset ( );
+                    std::cout << std::boolalpha << r << nl;
                     break;
                 }
                 case NextMove::State::move :
                 {
                     std::cout << "move to " << hex_position << ' ';
-                    m_human_move.to = hex_position;
-                    std::cout << std::boolalpha << m_play_area.move ( m_human_move.from, m_human_move.to, PlayArea::Display::active_red ) << nl;
-                    m_human_move.state = NextMove::State::none;
+                    bool r;
+                    if ( ( r = m_play_area.move ( m_human_move.from ( ), hex_position, PlayArea::Display::active_red ) ) )
+                        m_human_move.to ( hex_position );
+                    else
+                        m_human_move.reset ( );
+                    std::cout << std::boolalpha << r << nl;
+                    break;
                 }
                 }
             }
@@ -192,7 +202,7 @@ void App::mouseEvents ( const sf::Event & event_ ) {
                 if ( sf::Mouse::isButtonPressed ( sf::Mouse::Left ) ) {
                     // Requested placement.
                     std::cout << "place requested" << nl;
-                    m_human_move.state = NextMove::State::place;
+                    m_human_move.state ( NextMove::State::place );
                 }
                 m_play_area.reset_active_tile ( );
             }
@@ -207,7 +217,7 @@ void App::mouseEvents ( const sf::Event & event_ ) {
                         m_taskbar.reset ( );
                         m_play_area.reset_active_tile ( );
                         m_minimize = true;
-                        m_human_move.state = NextMove::State::none;
+                        m_human_move.reset ( );
                     }
                 }
                 // Just hovering in taskbar area.
@@ -218,7 +228,7 @@ void App::mouseEvents ( const sf::Event & event_ ) {
         // Outside window.
         m_taskbar.reset ( );
         m_play_area.reset_active_tile ( );
-        m_human_move.state = NextMove::State::none;
+        m_human_move.reset ( );
     }
 }
 

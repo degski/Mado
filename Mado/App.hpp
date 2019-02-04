@@ -27,6 +27,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
+#include <cstring>
 
 #include <array>
 #include <vector>
@@ -56,8 +57,39 @@ struct NextMove {
 
     using hex = typename GameState::hex;
 
-    hex from, to;
-    State state = State::none;
+    void reset ( ) noexcept {
+        std::memset ( this, 0, sizeof ( NextMove ) );
+    }
+
+    [[ nodiscard ]] const hex & from ( ) const noexcept {
+        return m_from;
+    }
+    void from ( const hex & f_ ) noexcept {
+        m_from = f_;
+        m_state = State::move;
+        sf::sleepForMilliseconds ( 150 ); // To deal with (in-voluntary) double-clicking, TODO: fix that in MouseState class.
+    }
+
+    [[ nodiscard ]] const hex & to ( ) const noexcept {
+        return m_to;
+    }
+    void to ( const hex & t_ ) noexcept {
+        m_to = t_;
+        m_state = State::none;
+        sf::sleepForMilliseconds ( 150 );
+    }
+
+    [[ nodiscard ]] State state ( ) const noexcept {
+        return m_state;
+    }
+    void state ( const State & s_ ) noexcept {
+        m_state = s_;
+    }
+
+    private:
+
+    hex m_from, m_to;
+    State m_state = State::none;
 };
 
 
