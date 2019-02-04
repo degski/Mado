@@ -50,30 +50,30 @@
 
 
 
-template<typename GameState>
+template<typename GameState, typename Position>
 struct NextMove {
 
     enum State : int { none = 0, place, move };
 
-    using hex = typename GameState::hex;
+    using position = Position;
 
     void reset ( ) noexcept {
         std::memset ( this, 0, sizeof ( NextMove ) );
     }
 
-    [[ nodiscard ]] const hex & from ( ) const noexcept {
+    [[ nodiscard ]] const position & from ( ) const noexcept {
         return m_from;
     }
-    void from ( const hex & f_ ) noexcept {
+    void from ( const position & f_ ) noexcept {
         m_from = f_;
         m_state = State::move;
         sf::sleepForMilliseconds ( 150 ); // To deal with (in-voluntary) double-clicking, TODO: fix that in MouseState class.
     }
 
-    [[ nodiscard ]] const hex & to ( ) const noexcept {
+    [[ nodiscard ]] const position & to ( ) const noexcept {
         return m_to;
     }
-    void to ( const hex & t_ ) noexcept {
+    void to ( const position & t_ ) noexcept {
         m_to = t_;
         m_state = State::none;
         sf::sleepForMilliseconds ( 150 );
@@ -88,7 +88,7 @@ struct NextMove {
 
     private:
 
-    hex m_from, m_to;
+    position m_from, m_to;
     State m_state = State::none;
 };
 
@@ -101,7 +101,7 @@ class App {
     using sidx = typename MadoState::sidx;
     using hex = typename MadoState::hex;
     using PlayArea = PlayArea<MadoState>;
-    using NextMove = NextMove<MadoState>;
+    using NextMove = NextMove<MadoState, hex>;
 
     MadoState m_state;
 
