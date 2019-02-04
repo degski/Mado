@@ -196,14 +196,17 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
         return m_what [ a_ ] = static_cast<Display> ( static_cast<int> ( m_what [ a_ ] ) - 3 );
     }
 
-    public:
-
-    [[ maybe_unused ]] bool is ( const hex & t_, const Display d_ ) noexcept {
-        return d_ % 3 == m_what [ m_vertex_indices [ t_ ] ] % 3;
+    [[ nodiscard ]] bool are_neighbors ( const hex a_, const hex b_ ) const noexcept {
+        const typename hex::value_type dq = a_.q - b_.q, dr = a_.r - b_.r;
+        return std::abs ( dq ) + std::abs ( dr ) + std::abs ( -dq - dr ) == typename hex::value_type { 2 };
     }
 
-    // Returns true if succesfully set.
-    [[ maybe_unused ]] bool place ( const hex & t_, const Display d_ ) noexcept {
+    public:
+
+    [[ nodiscard ]] bool equal ( const hex & t_, const Display d_ ) noexcept {
+        return d_ % 3 == m_what [ m_vertex_indices [ t_ ] ] % 3;
+    }
+    [[ nodiscard ]] bool place ( const hex & t_, const Display d_ ) noexcept {
         const int t = m_vertex_indices [ t_ ];
         if ( Display::in_active_vacant == m_what [ t ] % 3 ) {
             m_what [ t ] = d_;
@@ -213,28 +216,17 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
         }
         return false;
     }
-
-    [[ maybe_unused ]] bool move ( const hex & f_, const hex & t_, const Display d_ ) noexcept {
-        if ( f_ == t_ ) {
-            std::cout << "c3" << ' ';
-            return false;
-        }
-
-        const int f = m_vertex_indices [ f_ ], t = m_vertex_indices [ t_ ];
-
-        if ( not ( d_ % 3 == m_what [ f ] ) )
-            std::cout << "c1 " << ( d_ % 3 ) << ' ' << m_what [ f ] << ' ';
-
-        if ( not ( Display::active_vacant == m_what [ t ] ) )
-            std::cout << "c2" << ' ';
-
-        if ( d_ % 3 == m_what [ f ] and Display::active_vacant == m_what [ t ] ) {
-            m_what [ f ] = Display::in_active_vacant;
-            setQuadTex ( f, Display::in_active_vacant );
-            m_what [ t ] = d_;
-            setQuadTex ( t, d_ );
-            m_active = t;
-            return true;
+    [[ nodiscard ]] bool move ( const hex & f_, const hex & t_, const Display d_ ) noexcept {
+        if ( are_neighbors ( f_, t_ ) ) {
+            const int f = m_vertex_indices [ f_ ], t = m_vertex_indices [ t_ ];
+            if ( d_ % 3 == m_what [ f ] and Display::active_vacant == m_what [ t ] ) {
+                m_what [ f ] = Display::in_active_vacant;
+                setQuadTex ( f, Display::in_active_vacant );
+                m_what [ t ] = d_;
+                setQuadTex ( t, d_ );
+                m_active = t;
+                return true;
+            }
         }
         return false;
     }

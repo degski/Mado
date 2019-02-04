@@ -191,11 +191,6 @@ private:
         return not ( in_valid ( h_.q, h_.r ) );
     }
 
-    [[ nodiscard ]] bool are_neighbors ( const hex a_, const hex b_ ) const noexcept {
-        const hex::value_type dq = a_.q - b_.q, dr = a_.r - b_.r;
-        return std::abs ( dq ) + std::abs ( dr ) + std::abs ( - dq - dr ) == hex::value_type { 2 };
-    }
-
     void setIcon ( ) noexcept;
 
 public:

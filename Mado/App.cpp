@@ -152,40 +152,22 @@ void App::mouseEvents ( const sf::Event & event_ ) {
         if ( in_play_area ) {
             if ( sf::Mouse::isButtonPressed ( sf::Mouse::Left ) ) {
                 // Selected a cicle.
+                bool no_reset;
                 switch ( m_human_move.state ( ) ) {
                 case NextMove::State::none:
-                {
-                    std::cout << "move from " << hex_position << ' ';
-                    bool r;
-                    if ( ( r = m_play_area.is ( hex_position, PlayArea::Display::active_red ) ) )
+                    if ( ( no_reset = m_play_area.equal ( hex_position, PlayArea::Display::active_red ) ) )
                         m_human_move.from ( hex_position );
-                    else
-                        m_human_move.reset ( );
-                    std::cout << std::boolalpha << r << nl;
                     break;
-                }
                 case NextMove::State::place :
-                {
-                    std::cout << "place " << hex_position << ' ';
-                    bool r;
-                    if ( ( r = m_play_area.place ( hex_position, PlayArea::Display::active_red ) ) )
+                    if ( ( no_reset = m_play_area.place ( hex_position, PlayArea::Display::active_red ) ) )
                         m_human_move.to ( hex_position );
-                    else
-                        m_human_move.reset ( );
-                    std::cout << std::boolalpha << r << nl;
                     break;
-                }
                 case NextMove::State::move :
-                {
-                    std::cout << "move to " << hex_position << ' ';
-                    bool r = false;
-                    if ( are_neighbors ( m_human_move.from ( ), hex_position ) and ( r = m_play_area.move ( m_human_move.from ( ), hex_position, PlayArea::Display::active_red ) ) )
+                    if ( ( no_reset = m_play_area.move ( m_human_move.from ( ), hex_position, PlayArea::Display::active_red ) ) )
                         m_human_move.to ( hex_position );
-                    else
-                        m_human_move.reset ( );
-                    std::cout << std::boolalpha << r << nl;
-                    break;
                 }
+                if ( not ( no_reset ) ) {
+                    m_human_move.reset ( );
                 }
             }
             else {
