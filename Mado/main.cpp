@@ -148,10 +148,6 @@ int main97979 ( ) {
 
     using board = Mado<9>;
     using move = typename board::move;
-    using value = typename board::value;
-    using value_type = typename board::value_type;
-    using hex = typename board::hex;
-    using uidx = typename board::uidx;
 
     board b;
 
