@@ -55,8 +55,10 @@
 
 template<std::size_t R>
 struct hex {
-    using sidx = sidx<R>;
-    sidx q = 0, r = 0;
+
+    using value_type = sidx<R>;
+
+    value_type q = 0, r = 0;
 
     [[ nodiscard ]] bool is_valid ( ) const noexcept {
         return q or r;
