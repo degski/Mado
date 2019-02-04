@@ -65,7 +65,7 @@ struct hex {
         return not ( q or r );
     }
 
-    void reset ( ) noexcept {
+    void nil ( ) noexcept {
         q = 0; r = 0;
     }
 

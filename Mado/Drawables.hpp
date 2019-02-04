@@ -172,7 +172,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
 
     using display_type = std::int8_t;
 
-    enum class display : display_type { in_active_vacant = 0, in_active_red, in_active_green, active_vacant, active_red, active_green };
+    enum Display : display_type { in_active_vacant = 0, in_active_red, in_active_green, active_vacant, active_red, active_green };
 
     using sidx = typename State::sidx;
     using hex = typename State::hex;
@@ -182,26 +182,26 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
 
     PlayArea ( const sf::Vector2f & center_, float hori_, float vert_, float circle_diameter_ );
 
-    [[ nodiscard ]] const sf::Boxf & getQuadTex ( display d_ ) const noexcept {
-        return m_texture_box [ static_cast<int> ( d_ ) ];
+    [[ nodiscard ]] const sf::Boxf & getQuadTex ( Display d_ ) const noexcept {
+        return m_texture_box [ d_ ];
     }
-    void setQuadTex ( int i_, display d_ ) noexcept;
+    void setQuadTex ( int i_, Display d_ ) noexcept;
 
     private:
 
-    [[ nodiscard ]] display make_active ( const int a_ ) noexcept {
-        return m_what [ m_active ] = static_cast<display> ( static_cast<int> ( m_what [ m_active ] ) + 3 );
+    [[ nodiscard ]] Display make_active ( const int a_ ) noexcept {
+        return m_what [ a_ ] = static_cast<Display> ( static_cast<int> ( m_what [ a_ ] ) + 3 );
     }
-    [[ nodiscard ]] display make_in_active ( const int a_ ) noexcept {
-        return m_what [ m_active ] = static_cast<display> ( static_cast<int> ( m_what [ m_active ] ) - 3 );
+    [[ nodiscard ]] Display make_in_active ( const int a_ ) noexcept {
+        return m_what [ a_ ] = static_cast<Display> ( static_cast<int> ( m_what [ a_ ] ) - 3 );
     }
 
     public:
 
     // Returns true if succesfully set.
-    [[ maybe_unused ]] bool place ( const hex & t_, display d_ ) noexcept {
+    [[ maybe_unused ]] bool place ( const hex & t_, Display d_ ) noexcept {
         const int t = m_vertex_indices [ t_ ];
-        if ( display::in_active_vacant == static_cast<display> ( static_cast<int> ( m_what [ t ] ) % 3 ) ) {
+        if ( Display::in_active_vacant == m_what [ t ] % 3 ) {
             m_what [ t ] = d_;
             setQuadTex ( t, d_ );
             m_active = t;
@@ -210,11 +210,14 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
         return false;
     }
 
-    [[ maybe_unused ]] bool move ( const hex & f_, const hex & t_, const display d_ ) noexcept {
+    [[ maybe_unused ]] bool move ( const hex & f_, const hex & t_, const Display d_ ) noexcept {
+        if ( f_ == t_ ) {
+            return false;
+        }
         const int f = m_vertex_indices [ f_ ], t = m_vertex_indices [ t_ ];
-        if ( d_ == static_cast<display> ( static_cast<int> ( m_what [ f ] ) % 3 ) and display::in_active_vacant == static_cast<display> ( static_cast<int> ( m_what [ f ] ) % 3 ) ) {
-            m_what [ f ] = display::in_active_vacant;
-            setQuadTex ( f, display::in_active_vacant );
+        if ( d_ % 3 == m_what [ f ] and Display::active_vacant == m_what [ t ] ) {
+            m_what [ f ] = Display::in_active_vacant;
+            setQuadTex ( f, Display::in_active_vacant );
             m_what [ t ] = d_;
             setQuadTex ( t, d_ );
             m_active = t;
@@ -261,7 +264,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
     sf::Texture m_texture;
 
     HexContainer<int, State::radius ( )> m_vertex_indices;
-    std::array<display, State::size ( )> m_what;
+    std::array<Display, State::size ( )> m_what;
     sf::VertexArray m_vertices;
 };
 
@@ -304,7 +307,7 @@ template<typename State>
 void PlayArea<State>::init ( ) noexcept {
     m_vertices.setPrimitiveType ( sf::Quads );
     m_vertices.resize ( 4 * State::size ( ) );
-    const sf::Boxf & tex_box = getQuadTex ( display::in_active_vacant );
+    const sf::Boxf & tex_box = getQuadTex ( Display::in_active_vacant );
     sf::Quad * quads = reinterpret_cast<sf::Quad*> ( & m_vertices [ 0 ] );
     int i = 0;
     sf::Vector2f p = m_center - sf::Vector2f { m_circle_radius, m_circle_radius };
@@ -394,14 +397,14 @@ void PlayArea<State>::init ( ) noexcept {
         }
     }
     // Fill the initial displays.
-    std::fill ( std::begin ( m_what ), std::end ( m_what ), display::in_active_vacant );
+    std::fill ( std::begin ( m_what ), std::end ( m_what ), Display::in_active_vacant );
     // Finally, sort the vertices.
     std::sort ( quads, quads + m_vertices.getVertexCount ( ) / 4, quads_less );
 }
 
 
 template<typename State>
-void PlayArea<State>::setQuadTex ( int i_, display d_ ) noexcept {
+void PlayArea<State>::setQuadTex ( int i_, Display d_ ) noexcept {
     i_ *= 4;
     const sf::Boxf & tex_box = getQuadTex ( d_ );
     sf::Quad & quads = *reinterpret_cast<sf::Quad*> ( & m_vertices [ i_ ] );
@@ -418,7 +421,7 @@ class Taskbar : public sf::Drawable {
 
     public:
 
-    enum State { in_active = 0, minimize, maximize, close };
+    enum State : int { in_active = 0, minimize, maximize, close };
 
     private:
 

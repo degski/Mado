@@ -49,6 +49,18 @@
 
 
 
+template<typename GameState>
+struct NextMove {
+
+    enum State : int { none = 0, place, move };
+
+    using hex = typename GameState::hex;
+
+    hex from, to;
+    State state = State::none;
+};
+
+
 
 class App {
 
@@ -57,6 +69,7 @@ class App {
     using sidx = typename MadoState::sidx;
     using hex = typename MadoState::hex;
     using PlayArea = PlayArea<MadoState>;
+    using NextMove = NextMove<MadoState>;
 
     MadoState m_state;
 
@@ -71,13 +84,11 @@ class App {
 
     bool m_is_running = true, m_minimize = false, m_left_mousebutton_pressed = false;
 
-    bool m_place = false;
-    hex m_move;
-
     MouseState m_mouse;
+
     Taskbar m_taskbar;
     PlayArea m_play_area;
-
+    NextMove m_next_move;
     sf::CallbackAnimator m_animator;
     sf::Music m_music;
 
