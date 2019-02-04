@@ -217,7 +217,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
         return false;
     }
     [[ nodiscard ]] bool move ( const hex & f_, const hex & t_, const Display d_ ) noexcept {
-        if ( are_neighbors ( f_, t_ ) ) {
+        if ( f_ != t_ and are_neighbors ( f_, t_ ) ) {
             const int f = m_vertex_indices [ f_ ], t = m_vertex_indices [ t_ ];
             if ( d_ % 3 == m_what [ f ] and Display::active_vacant == m_what [ t ] ) {
                 m_what [ f ] = Display::in_active_vacant;

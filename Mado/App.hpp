@@ -49,6 +49,15 @@
 
 
 
+struct GameClock {
+
+
+
+
+    sf::Clock m_agent_clock, m_human_clock;
+};
+
+
 
 template<typename GameState, typename Position>
 struct NextMove {
