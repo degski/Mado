@@ -197,8 +197,11 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
     }
 
     [[ nodiscard ]] bool are_neighbors ( const hex a_, const hex b_ ) const noexcept {
-        const typename hex::value_type dq = a_.q - b_.q, dr = a_.r - b_.r;
-        return std::abs ( dq ) + std::abs ( dr ) + std::abs ( -dq - dr ) == typename hex::value_type { 2 };
+        if ( a_ != b_ ) {
+            const typename hex::value_type dq = a_.q - b_.q, dr = a_.r - b_.r;
+            return std::abs ( dq ) + std::abs ( dr ) + std::abs ( -dq - dr ) == typename hex::value_type { 2 };
+        }
+        return false;
     }
 
     public:
@@ -217,7 +220,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
         return false;
     }
     [[ nodiscard ]] bool move ( const hex & f_, const hex & t_, const Display d_ ) noexcept {
-        if ( f_ != t_ and are_neighbors ( f_, t_ ) ) {
+        if ( are_neighbors ( f_, t_ ) ) {
             const int f = m_vertex_indices [ f_ ], t = m_vertex_indices [ t_ ];
             if ( d_ % 3 == m_what [ f ] and Display::active_vacant == m_what [ t ] ) {
                 m_what [ f ] = Display::in_active_vacant;
