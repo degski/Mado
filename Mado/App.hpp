@@ -178,6 +178,19 @@ private:
     [[ nodiscard ]] std::pair<hex, bool> pointToHex ( sf::Vector2f p_ ) const noexcept;
     [[ nodiscard ]] bool playAreaContains ( sf::Vector2f p_ ) const noexcept;
 
+    [[ nodiscard ]] bool in_valid ( const sidx q_, const sidx r_ ) const noexcept {
+        return std::abs ( q_ ) > MadoState::radius ( ) or std::abs ( r_ ) > MadoState::radius ( ) or std::abs ( -q_ - r_ ) > MadoState::radius ( );
+    }
+    [[ nodiscard ]] bool in_valid ( const hex h_ ) const noexcept {
+        return in_valid ( h_.q, h_.r );
+    }
+    [[ nodiscard ]] bool valid ( const sidx q_, const sidx r_ ) const noexcept {
+        return not ( in_valid ( q_, r_ ) );
+    }
+    [[ nodiscard ]] bool valid ( const hex h_ ) const noexcept {
+        return not ( in_valid ( h_.q, h_.r ) );
+    }
+
     void setIcon ( ) noexcept;
 
 public:
