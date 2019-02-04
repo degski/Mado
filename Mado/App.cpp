@@ -49,9 +49,8 @@
     p_.x /= m_hori; p_.y /= radius;
     int q = int_floorf ( p_.y + p_.x ), r = int_floorf ( ( int_floorf ( p_.y - p_.x ) + q ) * 0.3333333433f );
     q = int_floorf ( ( int_floorf ( 2.0f * p_.x + 1.0f ) + q ) * 0.3333333433f ) - r;
-    if ( in_valid ( q, r ) ) {
+    if ( in_valid ( q, r ) )
         return { { }, false };
-    }
     q += static_cast<int> ( MadoState::radius ( ) ); r += static_cast<int> ( MadoState::radius ( ) );
     return { { static_cast<sidx> ( q ), static_cast<sidx> ( r ) }, true };
 }
@@ -179,8 +178,8 @@ void App::mouseEvents ( const sf::Event & event_ ) {
                 case NextMove::State::move :
                 {
                     std::cout << "move to " << hex_position << ' ';
-                    bool r;
-                    if ( ( r = m_play_area.move ( m_human_move.from ( ), hex_position, PlayArea::Display::active_red ) ) )
+                    bool r = false;
+                    if ( are_neighbors ( m_human_move.from ( ), hex_position ) and ( r = m_play_area.move ( m_human_move.from ( ), hex_position, PlayArea::Display::active_red ) ) )
                         m_human_move.to ( hex_position );
                     else
                         m_human_move.reset ( );
