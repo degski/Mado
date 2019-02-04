@@ -212,9 +212,18 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
 
     [[ maybe_unused ]] bool move ( const hex & f_, const hex & t_, const Display d_ ) noexcept {
         if ( f_ == t_ ) {
+            std::cout << "c3" << ' ';
             return false;
         }
+
         const int f = m_vertex_indices [ f_ ], t = m_vertex_indices [ t_ ];
+
+        if ( not ( d_ % 3 == m_what [ f ] ) )
+            std::cout << "c1 " << ( d_ % 3 ) << ' ' << m_what [ f ] << ' ';
+
+        if ( not ( Display::active_vacant == m_what [ t ] ) )
+            std::cout << "c2" << ' ';
+
         if ( d_ % 3 == m_what [ f ] and Display::active_vacant == m_what [ t ] ) {
             m_what [ f ] = Display::in_active_vacant;
             setQuadTex ( f, Display::in_active_vacant );

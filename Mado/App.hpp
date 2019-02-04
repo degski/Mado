@@ -82,13 +82,14 @@ class App {
 
     sf::Font m_font_regular, m_font_bold, m_font_mono, m_font_numbers;
 
-    bool m_is_running = true, m_minimize = false, m_left_mousebutton_pressed = false;
+    bool m_is_running = true, m_minimize = false;
 
     MouseState m_mouse;
 
     Taskbar m_taskbar;
     PlayArea m_play_area;
-    NextMove m_next_move;
+    NextMove m_human_move;
+
     sf::CallbackAnimator m_animator;
     sf::Music m_music;
 
