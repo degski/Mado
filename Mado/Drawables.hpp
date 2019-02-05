@@ -420,28 +420,27 @@ class Taskbar : public sf::Drawable {
 
     private:
 
-    [[ nodiscard ]] sf::Quad makeVertex ( const sf::Vector2f & p_, const sf::Boxf & tex_box_ ) const noexcept {
+    [[ nodiscard ]] sf::Quad makeVertex ( const sf::Vector2f & p_ ) const noexcept {
         return {
-            sf::Vertex { sf::Vector2f { p_.x, p_.y }, sf::Vector2f { tex_box_.left, tex_box_.top } },
-            sf::Vertex { sf::Vector2f { p_.x + width, p_.y }, sf::Vector2f { tex_box_.right, tex_box_.top } },
-            sf::Vertex { sf::Vector2f { p_.x + width, p_.y + height }, sf::Vector2f { tex_box_.right, tex_box_.bottom } },
-            sf::Vertex { sf::Vector2f { p_.x, p_.y + height }, sf::Vector2f { tex_box_.left, tex_box_.bottom } }
+            sf::Vertex { sf::Vector2f { p_.x, p_.y }, sf::Vector2f { 0.0f, 0.0f } },
+            sf::Vertex { sf::Vector2f { p_.x + width, p_.y }, sf::Vector2f { width, 0.0f } },
+            sf::Vertex { sf::Vector2f { p_.x + width, p_.y + height }, sf::Vector2f { width, height } },
+            sf::Vertex { sf::Vector2f { p_.x, p_.y + height }, sf::Vector2f { 0.0f, height } }
         };
     }
 
     void setTexture ( State d_ ) noexcept {
         sf::Quad & quads = *reinterpret_cast<sf::Quad*> ( & m_vertices [ 0 ] );
-        const sf::Boxf & tex_box = m_texture_box [ d_ ];
-        quads.v0.texCoords = sf::Vector2f { tex_box.left, tex_box.top };
-        quads.v1.texCoords = sf::Vector2f { tex_box.right, tex_box.top };
-        quads.v2.texCoords = sf::Vector2f { tex_box.right, tex_box.bottom };
-        quads.v3.texCoords = sf::Vector2f { tex_box.left, tex_box.bottom };
+        const float left { d_ * width }, right { left + width };
+        quads.v0.texCoords.x = left;
+        quads.v1.texCoords.x = right;
+        quads.v2.texCoords.x = right;
+        quads.v3.texCoords.x = left;
     }
 
     public:
 
     Taskbar ( const float window_width_ ) :
-        m_texture_box { { { 0.0f, in_active * height, width, minimize * height }, { 0.0f, minimize * height, width, maximize * height }, { 0.0f, maximize * height, width, close * height }, { 0.0f, close * height, width, close * height + height } } },
         m_minimize_bounds { window_width_ - width, 0.0f, width / 3.0f, height },
         m_close_bounds { window_width_ - width / 3.0f, 0.0f, width / 3.0f, height } {
         sf::loadFromResource ( m_texture, TASKBAR );
@@ -449,12 +448,16 @@ class Taskbar : public sf::Drawable {
         m_vertices.setPrimitiveType ( sf::Quads );
         m_vertices.resize ( 4 );
         sf::Quad * quads = reinterpret_cast<sf::Quad*> ( & m_vertices [ 0 ] );
-        quads [ 0 ] = makeVertex ( sf::Vector2f { window_width_ - width, 0.0f }, m_texture_box [ in_active ] );
+        quads [ 0 ] = makeVertex ( sf::Vector2f { window_width_ - width, 0.0f } );
     }
 
     virtual void draw ( sf::RenderTarget & target, sf::RenderStates states ) const {
         states.texture = & m_texture;
         target.draw ( m_vertices, states );
+    }
+
+    [[ nodiscard ]] int what ( ) const noexcept {
+        return static_cast<int> ( m_vertices [ 0 ].texCoords.x ) % static_cast<int> ( width );
     }
 
     void update ( const sf::Vector2f & p_ ) noexcept {
@@ -473,7 +476,6 @@ class Taskbar : public sf::Drawable {
 
     private:
 
-    const std::array<sf::Boxf, 4> m_texture_box;
     sf::FloatRect m_minimize_bounds, m_close_bounds;
 
     sf::Texture m_texture;
