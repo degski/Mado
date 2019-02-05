@@ -170,9 +170,8 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
 
     static constexpr int not_set = -1;
 
-    using display_type = std::int8_t;
-
-    enum Display : display_type { in_active_vacant = 0, in_active_red, in_active_green, active_vacant, active_red, active_green };
+    enum DisplayType : int { vacant = 0, red, green };
+    enum Display : int { in_active_vacant = 0, in_active_red, in_active_green, active_vacant, active_red, active_green, selected_vacant, selected_red, selected_green };
 
     using sidx = typename State::sidx;
     using hex = typename State::hex;
@@ -182,18 +181,40 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
 
     PlayArea ( const sf::Vector2f & center_, float hori_, float vert_, float circle_diameter_ );
 
-    [[ nodiscard ]] const sf::Boxf & getQuadTex ( Display d_ ) const noexcept {
-        return m_texture_box [ d_ ];
-    }
-    void setQuadTex ( int i_, Display d_ ) noexcept;
-
     private:
 
-    [[ nodiscard ]] Display make_active ( const int a_ ) noexcept {
-        return m_what [ a_ ] = static_cast<Display> ( static_cast<int> ( m_what [ a_ ] ) + 3 );
+    [[ nodiscard ]] sf::Boxf getQuadTex ( int i_ ) const noexcept {
+        return { i_ * m_circle_diameter, 0.0f, ( i_ + 1 ) * m_circle_diameter, m_circle_diameter };
     }
-    [[ nodiscard ]] Display make_in_active ( const int a_ ) noexcept {
-        return m_what [ a_ ] = static_cast<Display> ( static_cast<int> ( m_what [ a_ ] ) - 3 );
+    [[ nodiscard ]] sf::Boxf getQuadTex ( Display d_ ) const noexcept {
+        return getQuadTex ( static_cast<int> ( d_ ) );
+    }
+    void setQuadTex ( int v_, int i_ ) noexcept {
+        v_ *= 4;
+        const sf::Boxf tex_box = getQuadTex ( i_ );
+        sf::Quad & quads = *reinterpret_cast<sf::Quad*> ( & m_vertices [ v_ ] );
+        quads.v0.texCoords = sf::Vector2f { tex_box.left, tex_box.top };
+        quads.v1.texCoords = sf::Vector2f { tex_box.right, tex_box.top };
+        quads.v2.texCoords = sf::Vector2f { tex_box.right, tex_box.bottom };
+        quads.v3.texCoords = sf::Vector2f { tex_box.left, tex_box.bottom };
+    }
+    void setQuadTex ( Display d_ ) noexcept {
+        return setQuadTex ( static_cast< int > ( d_ ) );
+    }
+
+    [[ nodiscard ]] int what ( int i_ ) const noexcept {
+        static const int radius = static_cast< int > ( m_circle_radius );
+        return static_cast< int > ( m_vertices [ 4 * i_ ].texCoords.x ) % radius;
+    }
+    [[ nodiscard ]] Display what_display ( int i_ ) const noexcept {
+        return static_cast< Display > ( what ( i_ ) );
+    }
+    [[ nodiscard ]] DisplayType what_type ( int i_ ) const noexcept {
+        return static_cast< DisplayType > ( what ( i_ ) % 3 );
+    }
+
+    [[ nodiscard ]] DisplayType display_type ( Display d_ ) const noexcept {
+        return static_cast< DisplayType > ( static_cast< int > ( d_ ) % 3 );
     }
 
     [[ nodiscard ]] bool are_neighbors ( const hex a_, const hex b_ ) const noexcept {
@@ -207,12 +228,14 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
     public:
 
     [[ nodiscard ]] bool equal ( const hex & t_, const Display d_ ) noexcept {
-        return d_ % 3 == m_what [ m_vertex_indices [ t_ ] ] % 3;
+        if ( display_type ( d_ ) == what_type ( m_vertex_indices [ t_ ] ) ) {
+            return true;
+        }
+        return false;
     }
     [[ nodiscard ]] bool place ( const hex & t_, const Display d_ ) noexcept {
         const int t = m_vertex_indices [ t_ ];
-        if ( Display::in_active_vacant == m_what [ t ] % 3 ) {
-            m_what [ t ] = d_;
+        if ( DisplayType::vacant == what_type ( t ) ) {
             setQuadTex ( t, d_ );
             m_active = t;
             return true;
@@ -222,10 +245,8 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
     [[ nodiscard ]] bool move ( const hex & f_, const hex & t_, const Display d_ ) noexcept {
         if ( are_neighbors ( f_, t_ ) ) {
             const int f = m_vertex_indices [ f_ ], t = m_vertex_indices [ t_ ];
-            if ( d_ % 3 == m_what [ f ] and Display::active_vacant == m_what [ t ] ) {
-                m_what [ f ] = Display::in_active_vacant;
+            if ( display_type ( d_ ) == what_type ( f ) and Display::active_vacant == what_display ( t ) ) {
                 setQuadTex ( f, Display::in_active_vacant );
-                m_what [ t ] = d_;
                 setQuadTex ( t, d_ );
                 m_active = t;
                 return true;
@@ -236,18 +257,25 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
 
     void make_active ( const hex & h_ ) noexcept {
         const int active = m_vertex_indices [ h_ ];
+        std::cout << "hover " << active << nl;
         if ( active != m_active ) {
             if ( not_set != m_active ) {
-                setQuadTex ( m_active, make_in_active ( m_active ) );
+                int w = what ( m_active );
+                std::cout << "unset " << m_active << " from " << w << nl;
+                setQuadTex ( m_active, what ( m_active ) - 3 );
             }
             m_active = active;
-            setQuadTex ( m_active, make_active ( m_active ) );
+            int w = what ( m_active );
+            std::cout << "set " << m_active << " from " << w << " to " << ( what ( m_active ) + 3 ) << nl;
+            setQuadTex ( m_active, what ( m_active ) + 3 );
         }
     }
     // Reset the active tile.
     void reset_active_tile ( ) noexcept {
         if ( not_set != m_active ) {
-            setQuadTex ( m_active, make_in_active ( m_active ) );
+            int w = what ( m_active );
+            std::cout << "reset " << m_active << " from " << w << " to " << ( what ( m_active ) - 3 ) << nl;
+            setQuadTex ( m_active, what ( m_active ) - 3 );
             m_active = not_set;
         }
     }
@@ -265,18 +293,13 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
     const sf::Vector2f & m_center;
     const float m_hori, m_vert, m_circle_diameter, m_circle_radius;
 
-    int m_active = not_set;
-
-    const std::array<sf::Boxf, 6> m_texture_box;
+    int m_active = not_set, m_selected = not_set;
 
     sf::Texture m_texture;
 
     HexContainer<int, State::radius ( )> m_vertex_indices;
-    std::array<Display, State::size ( )> m_what;
     sf::VertexArray m_vertices;
 };
-
-
 
 
 template<typename State>
@@ -286,13 +309,7 @@ PlayArea<State>::PlayArea ( const sf::Vector2f & center_, float hori_, float ver
     m_hori { hori_ },
     m_vert { vert_ },
     m_circle_diameter { circle_diameter_ },
-    m_circle_radius { std::floorf ( m_circle_diameter * 0.5f ) },
-    m_texture_box  {
-        {
-            { 0.0f, 0.0f, m_circle_diameter, m_circle_diameter }, { m_circle_diameter, 0.0f, 2.0f * m_circle_diameter, m_circle_diameter }, { 2.0f * m_circle_diameter, 0.0f, 3.0f * m_circle_diameter, m_circle_diameter },
-            { 0.0f, m_circle_diameter, m_circle_diameter, 2.0f * m_circle_diameter }, { m_circle_diameter, m_circle_diameter, 2.0f * m_circle_diameter, 2.0f * m_circle_diameter }, { 2.0f * m_circle_diameter, m_circle_diameter, 3.0f * m_circle_diameter, 2.0f * m_circle_diameter }
-        }
-    } {
+    m_circle_radius { std::floorf ( m_circle_diameter * 0.5f ) } {
     // Load play area graphics.
     sf::loadFromResource ( m_texture, CIRCLES_LARGE );
     m_texture.setSmooth ( true );
@@ -404,22 +421,8 @@ void PlayArea<State>::init ( ) noexcept {
             m_vertex_indices.at ( ax ) = inverted [ m_vertex_indices.at ( ax ) ];
         }
     }
-    // Fill the initial displays.
-    std::fill ( std::begin ( m_what ), std::end ( m_what ), Display::in_active_vacant );
     // Finally, sort the vertices.
     std::sort ( quads, quads + m_vertices.getVertexCount ( ) / 4, quads_less );
-}
-
-
-template<typename State>
-void PlayArea<State>::setQuadTex ( int i_, Display d_ ) noexcept {
-    i_ *= 4;
-    const sf::Boxf & tex_box = getQuadTex ( d_ );
-    sf::Quad & quads = *reinterpret_cast<sf::Quad*> ( & m_vertices [ i_ ] );
-    quads.v0.texCoords = sf::Vector2f { tex_box.left, tex_box.top };
-    quads.v1.texCoords = sf::Vector2f { tex_box.right, tex_box.top };
-    quads.v2.texCoords = sf::Vector2f { tex_box.right, tex_box.bottom };
-    quads.v3.texCoords = sf::Vector2f { tex_box.left, tex_box.bottom };
 }
 
 
