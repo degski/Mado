@@ -176,37 +176,21 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
     using sidx = typename State::sidx;
     using hex = typename State::hex;
 
-    [[ nodiscard ]] sf::Quad makeVertex ( const sf::Vector2f & p_, const sf::Boxf & tex_box_ ) const noexcept;
+    [[ nodiscard ]] sf::Quad makeVertex ( const sf::Vector2f & p_ ) const noexcept;
     void init ( ) noexcept;
 
     PlayArea ( const sf::Vector2f & center_, float hori_, float vert_, float circle_diameter_ );
 
     private:
 
-    [[ nodiscard ]] sf::Boxf getQuadTex ( int i_ ) const noexcept {
-        return { i_ * m_circle_diameter, 0.0f, ( i_ + 1 ) * m_circle_diameter, m_circle_diameter };
-    }
-    [[ nodiscard ]] sf::Boxf getQuadTex ( DisplayValue d_ ) const noexcept {
-        return getQuadTex ( static_cast<int> ( d_ ) );
-    }
-    [[ nodiscard ]] sf::Boxf getQuadTex ( DisplayType d_ ) const noexcept {
-        return getQuadTex ( static_cast<int> ( d_ ) );
-    }
-
-    void setQuadTex ( int v_, int i_ ) noexcept {
+    void setTexture ( int v_, int i_ ) noexcept {
         v_ *= 4;
-        const sf::Boxf tex_box = getQuadTex ( i_ );
-        sf::Quad & quads = *reinterpret_cast<sf::Quad*> ( & m_vertices [ v_ ] );
-        quads.v0.texCoords = sf::Vector2f { tex_box.left, tex_box.top };
-        quads.v1.texCoords = sf::Vector2f { tex_box.right, tex_box.top };
-        quads.v2.texCoords = sf::Vector2f { tex_box.right, tex_box.bottom };
-        quads.v3.texCoords = sf::Vector2f { tex_box.left, tex_box.bottom };
-    }
-    void setQuadTex ( DisplayValue d_ ) noexcept {
-        return setQuadTex ( static_cast<int> ( d_ ) );
-    }
-    void setQuadTex ( DisplayType d_ ) noexcept {
-        return setQuadTex ( static_cast<int> ( d_ ) );
+        const float left { i_ * m_circle_diameter }, right { left + m_circle_diameter };
+        sf::Quad & quad = *reinterpret_cast<sf::Quad*> ( & m_vertices [ v_ ] );
+        quad.v0.texCoords.x = left;
+        quad.v1.texCoords.x = right;
+        quad.v2.texCoords.x = right;
+        quad.v3.texCoords.x = left;
     }
 
     [[ nodiscard ]] DisplayType display_type ( DisplayValue d_ ) const noexcept {
@@ -243,7 +227,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
     [[ nodiscard ]] bool place ( const hex & t_, const DisplayValue d_ ) noexcept {
         const int t = m_vertex_indices [ t_ ];
         if ( DisplayType::vacant == what_type ( t ) ) {
-            setQuadTex ( t, d_ );
+            setTexture ( t, d_ );
             m_active = t;
             return true;
         }
@@ -253,8 +237,8 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
         if ( are_neighbors ( f_, t_ ) ) {
             const int f = m_vertex_indices [ f_ ], t = m_vertex_indices [ t_ ];
             if ( display_type ( d_ ) == what_type ( f ) and DisplayValue::active_vacant == what_value ( t ) ) {
-                setQuadTex ( f, DisplayValue::in_active_vacant );
-                setQuadTex ( t, d_ );
+                setTexture ( f, DisplayValue::in_active_vacant );
+                setTexture ( t, d_ );
                 m_active = t;
                 return true;
             }
@@ -266,17 +250,17 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
         const int active = m_vertex_indices [ h_ ];
         if ( active != m_active ) {
             if ( not_set != m_active ) {
-                setQuadTex ( m_active, what ( m_active ) - 3 ); // This is too simple !!!!!!!!!!!!!
+                setTexture ( m_active, what ( m_active ) - 3 ); // This is too simple !!!!!!!!!!!!!
             }
             m_active = active;
             int w = what ( m_active );
-            setQuadTex ( m_active, what ( m_active ) + 3 );
+            setTexture ( m_active, what ( m_active ) + 3 );
         }
     }
     // Reset the active tile.
     void reset_active_tile ( ) noexcept {
         if ( not_set != m_active ) {
-            setQuadTex ( m_active, what ( m_active ) - 3 );
+            setTexture ( m_active, what ( m_active ) - 3 );
             m_active = not_set;
         }
     }
@@ -320,12 +304,12 @@ PlayArea<State>::PlayArea ( const sf::Vector2f & center_, float hori_, float ver
 
 
 template<typename State>
-[[ nodiscard ]] sf::Quad PlayArea<State>::makeVertex ( const sf::Vector2f & p_, const sf::Boxf & tex_box_ ) const noexcept {
+[[ nodiscard ]] sf::Quad PlayArea<State>::makeVertex ( const sf::Vector2f & p_ ) const noexcept {
     return {
-        sf::Vertex { sf::Vector2f { p_.x, p_.y }, sf::Vector2f { tex_box_.left, tex_box_.top } },
-        sf::Vertex { sf::Vector2f { p_.x + m_circle_diameter, p_.y }, sf::Vector2f { tex_box_.right, tex_box_.top } },
-        sf::Vertex { sf::Vector2f { p_.x + m_circle_diameter, p_.y + m_circle_diameter }, sf::Vector2f { tex_box_.right, tex_box_.bottom } },
-        sf::Vertex { sf::Vector2f { p_.x, p_.y + m_circle_diameter }, sf::Vector2f { tex_box_.left, tex_box_.bottom } }
+        sf::Vertex { sf::Vector2f { p_.x, p_.y }, sf::Vector2f { 0.0f, 0.0f } },
+        sf::Vertex { sf::Vector2f { p_.x + m_circle_diameter, p_.y }, sf::Vector2f { m_circle_diameter, 0.0f } },
+        sf::Vertex { sf::Vector2f { p_.x + m_circle_diameter, p_.y + m_circle_diameter }, sf::Vector2f { m_circle_diameter, m_circle_diameter } },
+        sf::Vertex { sf::Vector2f { p_.x, p_.y + m_circle_diameter }, sf::Vector2f { 0.0f, m_circle_diameter } }
     };
 }
 
@@ -333,12 +317,11 @@ template<typename State>
 void PlayArea<State>::init ( ) noexcept {
     m_vertices.setPrimitiveType ( sf::Quads );
     m_vertices.resize ( 4 * State::size ( ) );
-    const sf::Boxf & tex_box = getQuadTex ( DisplayValue::in_active_vacant );
     sf::Quad * quads = reinterpret_cast<sf::Quad*> ( & m_vertices [ 0 ] );
     int i = 0;
     sf::Vector2f p = m_center - sf::Vector2f { m_circle_radius, m_circle_radius };
     hex ax { static_cast<sidx> ( State::radius ( ) ), static_cast<sidx> ( State::radius ( ) ) };
-    quads [ i ] = makeVertex ( p, tex_box );
+    quads [ i ] = makeVertex ( p );
     m_vertex_indices.at ( ax ) = i;
     for ( int ring = 1; ring <= int { State::radius ( ) }; ++ring ) {
         p.x += m_hori; // Move east.
@@ -346,37 +329,37 @@ void PlayArea<State>::init ( ) noexcept {
         for ( int j = 0; j < ring; ++j ) { // nw.
             p.x -= m_hori / 2; p.y -= m_vert;
             --ax.r;
-            quads [ ++i ] = makeVertex ( p, tex_box );
+            quads [ ++i ] = makeVertex ( p );
             m_vertex_indices.at ( ax ) = i;
         }
         for ( int j = 0; j < ring; ++j ) { // w.
             p.x -= m_hori;
             --ax.q;
-            quads [ ++i ] = makeVertex ( p, tex_box );
+            quads [ ++i ] = makeVertex ( p );
             m_vertex_indices.at ( ax ) = i;
         }
         for ( int j = 0; j < ring; ++j ) { // sw.
             p.x -= m_hori / 2; p.y += m_vert;
             --ax.q; ++ax.r;
-            quads [ ++i ] = makeVertex ( p, tex_box );
+            quads [ ++i ] = makeVertex ( p );
             m_vertex_indices.at ( ax ) = i;
         }
         for ( int j = 0; j < ring; ++j ) { // se.
             p.x += m_hori / 2; p.y += m_vert;
             ++ax.r;
-            quads [ ++i ] = makeVertex ( p, tex_box );
+            quads [ ++i ] = makeVertex ( p );
             m_vertex_indices.at ( ax ) = i;
         }
         for ( int j = 0; j < ring; ++j ) { // e.
             p.x += m_hori;
             ++ax.q;
-            quads [ ++i ] = makeVertex ( p, tex_box );
+            quads [ ++i ] = makeVertex ( p );
             m_vertex_indices.at ( ax ) = i;
         }
         for ( int j = 0; j < ring; ++j ) { // ne.
             p.x += m_hori / 2; p.y -= m_vert;
             ++ax.q; --ax.r;
-            quads [ ++i ] = makeVertex ( p, tex_box );
+            quads [ ++i ] = makeVertex ( p );
             m_vertex_indices.at ( ax ) = i;
         }
     }
@@ -446,7 +429,7 @@ class Taskbar : public sf::Drawable {
         };
     }
 
-    void setQuadTex ( State d_ ) noexcept {
+    void setTexture ( State d_ ) noexcept {
         sf::Quad & quads = *reinterpret_cast<sf::Quad*> ( & m_vertices [ 0 ] );
         const sf::Boxf & tex_box = m_texture_box [ d_ ];
         quads.v0.texCoords = sf::Vector2f { tex_box.left, tex_box.top };
@@ -476,13 +459,13 @@ class Taskbar : public sf::Drawable {
 
     void update ( const sf::Vector2f & p_ ) noexcept {
         state = m_minimize_bounds.contains ( p_ ) ? minimize : m_close_bounds.contains ( p_ ) ? close : in_active;
-        setQuadTex ( state );
+        setTexture ( state );
     }
 
     void reset ( ) noexcept {
         if ( in_active != state ) {
             state = in_active;
-            setQuadTex ( state );
+            setTexture ( state );
         }
     }
 
