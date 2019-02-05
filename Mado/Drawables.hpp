@@ -429,13 +429,15 @@ class Taskbar : public sf::Drawable {
         };
     }
 
-    void setTexture ( State d_ ) noexcept {
-        sf::Quad & quads = *reinterpret_cast<sf::Quad*> ( & m_vertices [ 0 ] );
-        const float left { d_ * width }, right { left + width };
-        quads.v0.texCoords.x = left;
-        quads.v1.texCoords.x = right;
-        quads.v2.texCoords.x = right;
-        quads.v3.texCoords.x = left;
+    void setTexture ( const State state_ ) noexcept {
+        if ( state_ != state ( ) ) {
+            sf::Quad & quads = *reinterpret_cast< sf::Quad* > ( &m_vertices [ 0 ] );
+            const float left { state_ * width }, right { left + width };
+            quads.v0.texCoords.x = left;
+            quads.v1.texCoords.x = right;
+            quads.v2.texCoords.x = right;
+            quads.v3.texCoords.x = left;
+        }
     }
 
     public:
@@ -456,23 +458,17 @@ class Taskbar : public sf::Drawable {
         target.draw ( m_vertices, states );
     }
 
-    [[ nodiscard ]] int what ( ) const noexcept {
-        return static_cast<int> ( m_vertices [ 0 ].texCoords.x ) % static_cast<int> ( width );
+    [[ nodiscard ]] State state ( ) const noexcept {
+        return static_cast<State> ( static_cast<int> ( m_vertices [ 0 ].texCoords.x ) / static_cast<int> ( width ) );
     }
 
     void update ( const sf::Vector2f & p_ ) noexcept {
-        state = m_minimize_bounds.contains ( p_ ) ? minimize : m_close_bounds.contains ( p_ ) ? close : in_active;
-        setTexture ( state );
+        setTexture ( m_minimize_bounds.contains ( p_ ) ? State::minimize : m_close_bounds.contains ( p_ ) ? State::close : State::in_active );
     }
 
     void reset ( ) noexcept {
-        if ( in_active != state ) {
-            state = in_active;
-            setTexture ( state );
-        }
+        setTexture ( State::in_active );
     }
-
-    State state = in_active;
 
     private:
 

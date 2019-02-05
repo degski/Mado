@@ -178,7 +178,7 @@ void App::mouseEvents ( const sf::Event & event_ ) {
         else {
             // Not in play area.
             m_taskbar.update ( mouse_position );
-            if ( Taskbar::State::in_active == m_taskbar.state ) {
+            if ( Taskbar::State::in_active == m_taskbar.state ( ) ) {
                 // In new area.
                 if ( sf::Mouse::isButtonPressed ( sf::Mouse::Left ) ) {
                     // Requested placement.
@@ -190,11 +190,11 @@ void App::mouseEvents ( const sf::Event & event_ ) {
             else {
                 // In taskbar area.
                 if ( sf::Mouse::isButtonPressed ( sf::Mouse::Left ) ) {
-                    if ( Taskbar::State::close == m_taskbar.state ) {
+                    if ( Taskbar::State::close == m_taskbar.state ( ) ) {
                         closeWindow ( );
                         return;
                     }
-                    else if ( Taskbar::State::minimize == m_taskbar.state ) {
+                    else if ( Taskbar::State::minimize == m_taskbar.state ( ) ) {
                         m_taskbar.reset ( );
                         m_play_area.reset_active_tile ( );
                         m_minimize = true;
