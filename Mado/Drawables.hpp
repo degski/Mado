@@ -219,7 +219,9 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
     public:
 
     [[ nodiscard ]] bool equal ( const hex & t_, const DisplayValue d_ ) noexcept {
-        if ( display_type ( d_ ) == what_type ( m_vertex_indices [ t_ ] ) ) {
+        const auto t = what_type ( m_vertex_indices [ t_ ] );
+        if ( display_type ( d_ ) == t ) {
+            setTexture ( m_active, what_type ( m_active ) + 6 );
             return true;
         }
         return false;
@@ -247,20 +249,20 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
     }
 
     void make_active ( const hex & h_ ) noexcept {
-        const int active = m_vertex_indices [ h_ ];
-        if ( active != m_active ) {
+        const int i = m_vertex_indices [ h_ ];
+        if ( i != m_active ) {
             if ( not_set != m_active ) {
-                setTexture ( m_active, what ( m_active ) - 3 ); // This is too simple !!!!!!!!!!!!!
+                setTexture ( m_active, what_type ( m_active ) ); // This is too simple !!!!!!!!!!!!!
             }
-            m_active = active;
-            int w = what ( m_active );
-            setTexture ( m_active, what ( m_active ) + 3 );
+            m_active = i;
+            setTexture ( m_active, what_type ( m_active ) + 3 );
         }
     }
-    // Reset the active tile.
-    void reset_active_tile ( ) noexcept {
+
+    void reset ( ) noexcept {
         if ( not_set != m_active ) {
-            setTexture ( m_active, what ( m_active ) - 3 );
+            std::cout << "reset" << nl;
+            setTexture ( m_active, what_type ( m_active ) );
             m_active = not_set;
         }
     }
