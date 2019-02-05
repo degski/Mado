@@ -155,15 +155,15 @@ void App::mouseEvents ( const sf::Event & event_ ) {
                 bool no_reset;
                 switch ( m_human_move.state ( ) ) {
                 case NextMove::State::none:
-                    if ( ( no_reset = m_play_area.equal ( hex_position, PlayArea::Display::active_red ) ) )
+                    if ( ( no_reset = m_play_area.equal ( hex_position, PlayArea::DisplayValue::active_red ) ) )
                         m_human_move.from ( hex_position );
                     break;
                 case NextMove::State::place :
-                    if ( ( no_reset = m_play_area.place ( hex_position, PlayArea::Display::active_red ) ) )
+                    if ( ( no_reset = m_play_area.place ( hex_position, PlayArea::DisplayValue::active_red ) ) )
                         m_human_move.to ( hex_position );
                     break;
                 case NextMove::State::move :
-                    if ( ( no_reset = m_play_area.move ( m_human_move.from ( ), hex_position, PlayArea::Display::active_red ) ) )
+                    if ( ( no_reset = m_play_area.move ( m_human_move.from ( ), hex_position, PlayArea::DisplayValue::active_red ) ) )
                         m_human_move.to ( hex_position );
                 }
                 if ( not ( no_reset ) ) {
