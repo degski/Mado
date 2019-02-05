@@ -69,9 +69,9 @@
 namespace exp = std::experimental;
 
 
-int main6757 ( ) {
+int main986 ( ) {
 
-    std::cout << std::numeric_limits< float >::digits << nl;
+    std::cout << sizeof ( sf::Vertex ) << nl;
 
     return EXIT_SUCCESS;
 }

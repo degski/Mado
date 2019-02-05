@@ -282,7 +282,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
 
     sf::Texture m_texture;
 
-    HexContainer<int, State::radius ( )> m_vertex_indices;
+    HexContainer<sidx, State::radius ( )> m_vertex_indices;
     sf::VertexArray m_vertices;
 };
 
