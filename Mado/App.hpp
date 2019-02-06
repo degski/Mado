@@ -60,11 +60,13 @@ struct DelayTimer {
 
     void set ( const int d_ ) {
         m_delay = std::chrono::milliseconds { 1'000 * d_ };
+        expired = m_delay == std::chrono::milliseconds { 0 };
     }
 
     void restart ( const sf::HrClock::time_point now_ ) {
-        m_end_time = now_ + m_delay;
-        expired = false;
+        if ( not ( expired = m_delay == std::chrono::milliseconds { 0 } ) ) {
+            m_end_time = now_ + m_delay;
+        }
     }
 
     [[ nodiscard ]] bool update ( const sf::HrClock::time_point now_ ) noexcept {
