@@ -85,17 +85,10 @@ struct GameClock {
         m_delay_timer.set ( delay_ );
     }
 
-    void start ( const Player p_ ) noexcept {
+    void restart ( const Player p_ ) noexcept {
         m_player = p_;
         m_start = m_clock.now ( ); // In case delay == 0 or very short.
         m_delay_timer.start ( m_start );
-    }
-
-    [[ maybe_unused ]] GameClockTimes update_next ( ) noexcept {
-        GameClockTimes t = update ( );
-        m_player = Player::agent == m_player ? Player::human : Player::agent;
-        m_delay_timer.start ( m_clock.now ( ) );
-        return t;
     }
 
     [[ nodiscard ]] GameClockTimes update ( ) noexcept {
@@ -112,6 +105,12 @@ struct GameClock {
         }
         const int agent_time = static_cast<int> ( m_time [ Player::agent ].count ( ) ), human_time = static_cast<int> ( m_time [ Player::human ].count ( ) );
         return { { agent_time / 60, agent_time % 60 }, { human_time / 60, human_time % 60 } };
+    }
+
+    [[ maybe_unused ]] GameClockTimes update_next ( ) noexcept {
+        GameClockTimes t = update ( );
+        restart ( Player::agent == m_player ? Player::human : Player::agent );
+        return t;
     }
 
     private:
