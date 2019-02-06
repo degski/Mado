@@ -173,6 +173,10 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
     enum DisplayType : int { vacant = 0, red, green };
     enum DisplayValue : int { in_active_vacant = 0, in_active_red, in_active_green, active_vacant, active_red, active_green, selected_vacant, selected_red, selected_green };
 
+    // sf::VertexArray m_vertices; is an array of quads. The x coordinate of the texCoords of the
+    // first sf::Vertex of the sf::Quad is a multiple of the DisplayValue, as per above, i.e. the
+    // texCoords store the information as to which sub-texture is referenced.
+
     using sidx = typename State::sidx;
     using hex = typename State::hex;
 
