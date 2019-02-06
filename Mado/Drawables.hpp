@@ -105,7 +105,7 @@ struct HexContainer {
     void print ( ) {
         for ( int j = 0; j < 2 * R + 1; ++j ) {
             for ( int i = 0; i < 2 * R + 1; ++i ) {
-                std::cout << std::setw ( 3 ) << m_data [ i ] [ j ];
+                std::cout << std::setw ( 3 ) << m_data [ j ] [ i ];
             }
             std::cout << nl;
         }

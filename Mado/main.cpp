@@ -120,11 +120,90 @@ struct State {
 };
 
 
-int main7898 ( ) {
 
-    for ( float f = -15.0f; f < 16.0f; ++f ) {
-        std::cout << std::setw ( 15 ) << f << ' ' << float_as_bits { f } << nl;
+
+template<typename T, std::size_t R, typename SizeType = int, typename = std::enable_if_t<std::is_default_constructible_v<T>, T>>
+struct HexContainer2 {
+
+    using size_type = SizeType;
+
+    [[ nodiscard ]] static constexpr size_type radius ( ) noexcept {
+        return static_cast< std::size_t > ( R );
     }
+    [[ nodiscard ]] static constexpr size_type width ( ) noexcept {
+        return 2 * radius ( ) + 1;
+    }
+    [[ nodiscard ]] static constexpr size_type height ( ) noexcept {
+        return 2 * radius ( ) + 1;
+    }
+    [[ nodiscard ]] static constexpr size_type size ( ) noexcept {
+        return width ( ) * height ( );
+    }
+
+    T m_data [ 2 * R + 1 ] [ 2 * R + 1 ];
+
+    HexContainer2 ( ) noexcept : m_data { { T ( ) } } { }
+
+
+
+    [[ nodiscard ]] T & at ( const size_type q_, const size_type r_ ) noexcept {
+
+        return m_data [ r_ + radius ( ) ] [ q_ + std::max ( size_type { radius ( ) }, r_ ) ];
+    }
+
+
+
+    [[ nodiscard ]] T at ( const size_type q_, const size_type r_ ) const noexcept {
+        return m_data [ r_ + radius ( ) ] [ q_ - std::max ( size_type { radius ( ) }, - r_ ) ];
+    }
+    [[ nodiscard ]] T & at ( const hex<R> & h_ ) noexcept {
+        return m_data [ static_cast< size_type > ( h_.r ) ] [ static_cast< size_type > ( h_.q ) - std::max ( size_type { 0 }, radius ( ) - static_cast< size_type > ( h_.r ) ) ];
+    }
+    [[ nodiscard ]] T at ( const hex<R> & h_ ) const noexcept {
+        return m_data [ static_cast< size_type > ( h_.r ) ] [ static_cast< size_type > ( h_.q ) - std::max ( size_type { 0 }, radius ( ) - static_cast< size_type > ( h_.r ) ) ];
+    }
+
+    [[ nodiscard ]] T & operator [ ] ( const hex<R> & h_ ) noexcept {
+        return at ( h_ );
+    }
+    [[ nodiscard ]] T operator [ ] ( const hex<R> & h_ ) const noexcept {
+        return at ( h_ );
+    }
+
+    [[ nodiscard ]] T * data ( ) noexcept {
+        return &m_data [ 0 ] [ 0 ];
+    }
+    [[ nodiscard ]] const T * data ( ) const noexcept {
+        return &m_data [ 0 ] [ 0 ];
+    }
+
+    void print ( ) {
+        for ( int j = 0; j < 2 * R + 1; ++j ) {
+            for ( int i = 0; i < 2 * R + 1; ++i ) {
+                std::cout << std::setw ( 3 ) << m_data [ j ] [ i ];
+            }
+            std::cout << nl;
+        }
+    }
+};
+
+
+int main ( ) {
+
+    GameClock c;
+
+    c.set ( 5, 10 );
+
+
+    /*
+
+    HexContainer2<int, 3> hc;
+
+    hc.at ( 0, -3 ) = 1;
+    hc.at ( 1, -3 ) = 2;
+
+    hc.print ( );
+    */
 
     return EXIT_SUCCESS;
 }
@@ -146,7 +225,7 @@ void handleEptr ( std::exception_ptr eptr ) { // Passing by value is ok.
 }
 
 
-int main ( ) {
+int main78989 ( ) {
     std::exception_ptr eptr;
     try {
         std::unique_ptr<App> app_uptr = std::make_unique<App> ( );
