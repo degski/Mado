@@ -45,6 +45,18 @@ using uidx = std::conditional_t<data_size<(2 * R + 1)>::value < std::numeric_lim
 template<std::size_t R>
 using sidx = std::conditional_t<data_size<(2 * R + 1)>::value < std::numeric_limits<std::int8_t >::max ( ), std::int8_t , std::int16_t >;
 
+
+/*
+    https://philippegroarke.com/posts/2018/chrono_for_humans/
+
+    dminutes m{ 0 };
+    while (m.count() < 1) {
+        m += dseconds{ 1 };
+    }
+    printf("minutes : %fm\n", m.count());
+
+*/
+
 using fmilliseconds = std::chrono::duration<float, std::milli>;
 using fseconds = std::chrono::duration<float>;
 using fminutes = std::chrono::duration<float, std::ratio<60>>;

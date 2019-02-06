@@ -69,9 +69,62 @@
 namespace exp = std::experimental;
 
 
-int main986 ( ) {
 
-    std::cout << sizeof ( sf::Vertex ) << nl;
+template<typename T, typename = std::enable_if_t<std::conjunction_v<std::is_integral<T>, std::is_unsigned<T>>>>
+void print_bits ( const T n ) noexcept {
+    int c = 0;
+    T i = T ( 1 ) << ( sizeof ( T ) * 8 - 1 );
+    while ( i ) {
+        putchar ( int ( ( n & i ) > 0 ) + int ( 48 ) );
+        if ( 0 == c or 8 == c ) {
+            putchar ( 32 );
+        }
+        i >>= 1;
+        ++c;
+    }
+}
+
+
+struct float_as_bits {
+
+    float_as_bits ( const float & v_ ) : value { v_ } { };
+    float_as_bits ( float && v_ ) : value { std::move ( v_ ) } { };
+
+    template<typename Stream>
+    [[ maybe_unused ]] friend Stream & operator << ( Stream & out_, const float_as_bits & v_ ) noexcept {
+        std::uint32_t v;
+        std::memcpy ( &v, &v_.value, 4 );
+        int c = 0;
+        std::uint32_t i = std::uint32_t { 1 } << 31;
+        while ( i ) {
+            putchar ( int ( ( v & i ) > 0 ) + int ( 48 ) );
+            if ( 0 == c or 8 == c ) {
+                putchar ( 32 );
+            }
+            i >>= 1;
+            ++c;
+        }
+        return out_;
+    }
+
+    float value;
+};
+
+
+struct State {
+
+    enum DisplayValue : int { in_active_vacant = 0, in_active_red, in_active_green, active_vacant, active_red, active_green, selected_vacant, selected_red, selected_green };
+
+
+    float state = 0.0f;
+};
+
+
+int main7898 ( ) {
+
+    for ( float f = -15.0f; f < 16.0f; ++f ) {
+        std::cout << std::setw ( 15 ) << f << ' ' << float_as_bits { f } << nl;
+    }
 
     return EXIT_SUCCESS;
 }

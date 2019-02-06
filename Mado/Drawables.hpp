@@ -218,19 +218,19 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
 
     public:
 
-    [[ nodiscard ]] bool equal ( const hex & t_, const DisplayValue d_ ) noexcept {
-        const auto t = what_type ( m_vertex_indices [ t_ ] );
-        if ( display_type ( d_ ) == t ) {
-            setTexture ( m_active, what_type ( m_active ) + 6 );
+    [[ nodiscard ]] bool equal ( const hex & i_, const DisplayValue d_ ) noexcept {
+        const int i = m_vertex_indices [ i_ ], w = what_type ( i );
+        if ( display_type ( d_ ) == w ) {
+            setTexture ( i, w + 6 );
             return true;
         }
         return false;
     }
-    [[ nodiscard ]] bool place ( const hex & t_, const DisplayValue d_ ) noexcept {
-        const int t = m_vertex_indices [ t_ ];
-        if ( DisplayType::vacant == what_type ( t ) ) {
-            setTexture ( t, d_ );
-            m_active = t;
+    [[ nodiscard ]] bool place ( const hex & i_, const DisplayValue d_ ) noexcept {
+        const int i = m_vertex_indices [ i_ ];
+        if ( DisplayType::vacant == what_type ( i ) ) {
+            setTexture ( i, d_ );
+            m_last = i;
             return true;
         }
         return false;
@@ -241,29 +241,31 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
             if ( display_type ( d_ ) == what_type ( f ) and DisplayValue::active_vacant == what_value ( t ) ) {
                 setTexture ( f, DisplayValue::in_active_vacant );
                 setTexture ( t, d_ );
-                m_active = t;
+                m_last = t;
                 return true;
             }
         }
+        const int f = m_vertex_indices [ f_ ];
+        setTexture ( f, what_type ( f ) );
         return false;
     }
 
-    void make_active ( const hex & h_ ) noexcept {
-        const int i = m_vertex_indices [ h_ ];
-        if ( i != m_active ) {
-            if ( not_set != m_active ) {
-                setTexture ( m_active, what_type ( m_active ) ); // This is too simple !!!!!!!!!!!!!
-            }
-            m_active = i;
-            setTexture ( m_active, what_type ( m_active ) + 3 );
+    void make_active ( const hex & i_ ) noexcept {
+        const int i = m_vertex_indices [ i_ ], w = what ( i );
+        if ( w < 3 ) {
+            reset ( );
+            m_last = i;
+            setTexture ( i, w + 3 );
         }
     }
 
     void reset ( ) noexcept {
-        if ( not_set != m_active ) {
-            std::cout << "reset" << nl;
-            setTexture ( m_active, what_type ( m_active ) );
-            m_active = not_set;
+        if ( not_set != m_last ) {
+            const int l = what ( m_last );
+            if ( 2 < l and l < 6 ) {
+                setTexture ( m_last, l % 3 );
+            }
+            m_last = not_set;
         }
     }
 
@@ -280,7 +282,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
     const sf::Vector2f & m_center;
     const float m_hori, m_vert, m_circle_diameter, m_circle_radius;
 
-    int m_active = not_set, m_selected = not_set;
+    int m_last = not_set;
 
     sf::Texture m_texture;
 
