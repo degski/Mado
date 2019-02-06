@@ -56,30 +56,60 @@ struct GameClockTimes {
     PlayerTime agent, human;
 };
 
+struct DelayTimer {
+
+    void set ( const int d_ ) {
+        m_delay = std::chrono::seconds { d_ };
+    }
+
+    void start ( const sf::HrClock::time_point now_ ) {
+        m_end_time = now_ + std::chrono::seconds { m_delay };
+        expired = false;
+    }
+
+    [[ nodiscard ]] bool update ( const sf::HrClock::time_point now_ ) noexcept {
+        return expired = now_ > m_end_time;
+    }
+
+    sf::HrClock::time_point m_end_time;
+    std::chrono::seconds m_delay;
+    bool expired = false;
+};
+
 struct GameClock {
 
     enum Player : int { agent, human };
 
-    void set ( const int min_, const int sec_ = 0 ) noexcept {
+    void set ( const int min_, const int sec_ = 0, const int delay_ = 0 ) noexcept {
         m_time [ Player::agent ] = m_time [ Player::human ] = fminutes { min_ } + fseconds { sec_ };
+        m_delay_timer.set ( delay_ );
     }
 
     void start ( const Player p_ ) noexcept {
         m_player = p_;
-        m_start = m_clock.now ( );
+        m_start = m_clock.now ( ); // In case delay == 0 or very short.
+        m_delay_timer.start ( m_start );
     }
 
     [[ maybe_unused ]] GameClockTimes update_next ( ) noexcept {
         GameClockTimes t = update ( );
         m_player = Player::agent == m_player ? Player::human : Player::agent;
-        m_start = m_clock.now ( );
+        m_delay_timer.start ( m_clock.now ( ) );
         return t;
     }
 
     [[ nodiscard ]] GameClockTimes update ( ) noexcept {
         const sf::HrClock::time_point now = m_clock.now ( );
-        m_time [ m_player ] -= now - m_start;
-        m_start = now;
+        if ( m_delay_timer.expired ) {
+            m_time [ m_player ] -= now - m_start;
+            m_start = now;
+        }
+        else {
+            if ( m_delay_timer.update ( now ) ) {
+                // Just expired, start timing.
+                m_start = now;
+            }
+        }
         const int agent_time = static_cast<int> ( m_time [ Player::agent ].count ( ) ), human_time = static_cast<int> ( m_time [ Player::human ].count ( ) );
         return { { agent_time / 60, agent_time % 60 }, { human_time / 60, human_time % 60 } };
     }
@@ -89,6 +119,7 @@ struct GameClock {
     sf::HrClock::time_point m_start;
     sf::HrClock m_clock;
     std::array<fseconds, 2> m_time;
+    DelayTimer m_delay_timer;
     Player m_player = Player::human;
 };
 
