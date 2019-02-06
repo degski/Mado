@@ -57,6 +57,9 @@ using sidx = std::conditional_t<data_size<(2 * R + 1)>::value < std::numeric_lim
 
 */
 
+
+namespace sf {
+
 using fmilliseconds = std::chrono::duration<float, std::milli>;
 using fseconds = std::chrono::duration<float>;
 using fminutes = std::chrono::duration<float, std::ratio<60>>;
@@ -65,3 +68,5 @@ using fdays = std::chrono::duration<float, std::ratio<86400>>;
 using fweeks = std::chrono::duration<float, std::ratio<604800>>;
 using fmonths = std::chrono::duration<float, std::ratio<2629746>>;
 using fyears = std::chrono::duration<float, std::ratio<31556952>>;
+
+}
