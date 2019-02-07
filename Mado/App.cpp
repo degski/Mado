@@ -46,6 +46,7 @@
     static const float radius { m_hori * 0.5773502588f };
     static const sf::Vector2f center { m_center.x, m_center.y - radius };
     p_ -= center;
+    // p_.y += radius;
     p_.x /= m_hori; p_.y /= radius;
     int q = int_floorf ( p_.y + p_.x ), r = int_floorf ( ( int_floorf ( p_.y - p_.x ) + q ) * 0.3333333433f );
     q = int_floorf ( ( int_floorf ( 2.0f * p_.x + 1.0f ) + q ) * 0.3333333433f ) - r;
