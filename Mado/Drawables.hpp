@@ -53,13 +53,14 @@ struct Quad {
 }
 
 
-template<typename T, std::size_t R, typename SizeType = int, typename = std::enable_if_t<std::is_default_constructible_v<T>, T>>
+
+template<typename T, std::size_t R, bool zero_base = false, typename SizeType = int, typename = std::enable_if_t<std::is_default_constructible_v<T>, T>>
 struct HexContainer {
 
     using size_type = SizeType;
 
     [[ nodiscard ]] static constexpr size_type radius ( ) noexcept {
-        return static_cast<std::size_t> ( R );
+        return static_cast< std::size_t > ( R );
     }
     [[ nodiscard ]] static constexpr size_type width ( ) noexcept {
         return 2 * radius ( ) + 1;
@@ -76,16 +77,23 @@ struct HexContainer {
     HexContainer ( ) noexcept : m_data { { T ( ) } } { }
 
     [[ nodiscard ]] T & at ( const size_type q_, const size_type r_ ) noexcept {
-        return m_data [ r_ ] [ q_ - std::max ( size_type { 0 }, radius ( ) - r_ ) ];
+        if constexpr ( zero_base ) {
+            // Center at { 0, 0 }.
+            return m_data [ q_ + std::max ( radius ( ), r_ ) ] [ r_ + radius ( ) ];
+        }
+        else {
+            // Center at { radius, radius }.
+            return m_data [ q_ + std::max ( size_type { 0 }, r_ - 2 * radius ( ) ) ] [ r_ ];
+        }
     }
     [[ nodiscard ]] T at ( const size_type q_, const size_type r_ ) const noexcept {
-        return m_data [ r_ ] [ q_ - std::max ( size_type { 0 }, radius ( ) - r_ ) ];
+        return at ( q_, r_ );
     }
     [[ nodiscard ]] T & at ( const Hex<R> & h_ ) noexcept {
-        return m_data [ static_cast<size_type> ( h_.r ) ] [ static_cast<size_type> ( h_.q ) - std::max ( size_type { 0 }, radius ( ) - static_cast<size_type> ( h_.r ) ) ];
+        return at ( h_.q, h_.r );
     }
     [[ nodiscard ]] T at ( const Hex<R> & h_ ) const noexcept {
-        return m_data [ static_cast<size_type> ( h_.r ) ] [ static_cast<size_type> ( h_.q ) - std::max ( size_type { 0 }, radius ( ) - static_cast<size_type> ( h_.r ) ) ];
+        return at ( h_.q, h_.r );
     }
 
     [[ nodiscard ]] T & operator [ ] ( const Hex<R> & h_ ) noexcept {
@@ -96,22 +104,21 @@ struct HexContainer {
     }
 
     [[ nodiscard ]] T * data ( ) noexcept {
-        return & m_data [ 0 ] [ 0 ];
+        return &m_data [ 0 ] [ 0 ];
     }
     [[ nodiscard ]] const T * data ( ) const noexcept {
-        return & m_data [ 0 ] [ 0 ];
+        return &m_data [ 0 ] [ 0 ];
     }
 
     void print ( ) {
-        for ( int j = 0; j < 2 * R + 1; ++j ) {
-            for ( int i = 0; i < 2 * R + 1; ++i ) {
-                std::cout << std::setw ( 3 ) << m_data [ j ] [ i ];
+        for ( int r = 0; r < height ( ); ++r ) {
+            for ( int q = 0; q < width ( ); ++q ) {
+                std::cout << std::setw ( 3 ) << m_data [ q ] [ r ];
             }
             std::cout << nl;
         }
     }
 };
-
 
 struct MouseState {
 

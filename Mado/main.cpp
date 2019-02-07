@@ -189,7 +189,7 @@ struct HexContainer2 {
 };
 
 
-int main ( ) {
+int main96431 ( ) {
 
     //GameClock c;
 
@@ -199,7 +199,9 @@ int main ( ) {
 
     hc1.at ( 3, 0 ) = 1;
     hc1.at ( 4, 0 ) = 2;
+    hc1.at ( 0, 3 ) = 3;
     hc1.at ( 3, 3 ) = 4;
+    hc1.at ( 6, 3 ) = 5;
     hc1.at ( 5, 4 ) = 8;
     hc1.at ( 3, 6 ) = 16;
 
@@ -209,11 +211,13 @@ int main ( ) {
 
     HexContainer2<int, 3, true> hc2;
 
-    hc2.at ( 0, -3 ) = 1;
-    hc2.at ( 1, -3 ) = 2;
-    hc2.at ( 0,  0 ) = 4;
-    hc2.at ( 2,  1 ) = 8;
-    hc2.at ( 0,  3 ) = 16;
+    hc2.at (  0, -3 ) = 1;
+    hc2.at (  1, -3 ) = 2;
+    hc2.at ( -3,  0 ) = 3;
+    hc2.at (  0,  0 ) = 4;
+    hc2.at (  3,  0 ) = 5;
+    hc2.at (  2,  1 ) = 8;
+    hc2.at (  0,  3 ) = 16;
 
     hc2.print ( );
 
@@ -238,7 +242,7 @@ void handleEptr ( std::exception_ptr eptr ) { // Passing by value is ok.
 }
 
 
-int main78989 ( ) {
+int main ( ) {
     std::exception_ptr eptr;
     try {
         std::unique_ptr<App> app_uptr = std::make_unique<App> ( );
