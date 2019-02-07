@@ -54,7 +54,7 @@ struct Quad {
 
 
 
-template<typename T, std::size_t R, bool zero_base = false, typename SizeType = int, typename = std::enable_if_t<std::is_default_constructible_v<T>, T>>
+template<typename T, std::size_t R, bool zero_base = true, typename SizeType = int, typename = std::enable_if_t<std::is_default_constructible_v<T>, T>>
 struct HexContainer {
 
     using size_type = SizeType;
@@ -188,7 +188,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
     using Hex = typename State::Hex;
 
     [[ nodiscard ]] sf::Quad makeVertex ( const sf::Vector2f & p_ ) const noexcept;
-    void init ( ) noexcept;
+    void init ( const sf::Vector2f & center_ ) noexcept;
 
     PlayArea ( const sf::Vector2f & center_, float hori_, float vert_, float circle_diameter_ );
 
@@ -290,7 +290,6 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
         target.draw ( m_vertices, states );
     }
 
-    const sf::Vector2f & m_center;
     const float m_hori, m_vert, m_circle_diameter, m_circle_radius;
 
     int m_last = not_set;
@@ -305,7 +304,6 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
 template<typename State>
 PlayArea<State>::PlayArea ( const sf::Vector2f & center_, float hori_, float vert_, float circle_diameter_ ) :
     // Parameters.
-    m_center { center_ },
     m_hori { hori_ },
     m_vert { vert_ },
     m_circle_diameter { circle_diameter_ },
@@ -314,7 +312,7 @@ PlayArea<State>::PlayArea ( const sf::Vector2f & center_, float hori_, float ver
     sf::loadFromResource ( m_texture, CIRCLES_LARGE );
     m_texture.setSmooth ( true );
     // Init data structures.
-    init ( );
+    init ( center_ );
 }
 
 
@@ -329,13 +327,13 @@ template<typename State>
 }
 
 template<typename State>
-void PlayArea<State>::init ( ) noexcept {
+void PlayArea<State>::init ( const sf::Vector2f & center_ ) noexcept {
     m_vertices.setPrimitiveType ( sf::Quads );
     m_vertices.resize ( 4 * State::size ( ) );
     sf::Quad * quads = reinterpret_cast<sf::Quad*> ( & m_vertices [ 0 ] );
     int i = 0;
-    sf::Vector2f p = m_center - sf::Vector2f { m_circle_radius, m_circle_radius };
-    Hex ax { static_cast<sidx> ( State::radius ( ) ), static_cast<sidx> ( State::radius ( ) ) };
+    sf::Vector2f p = center_ - sf::Vector2f { m_circle_radius, m_circle_radius };
+    Hex ax { 0 , 0 };
     quads [ i ] = makeVertex ( p );
     m_vertex_indices.at ( ax ) = i;
     for ( int ring = 1; ring <= int { State::radius ( ) }; ++ring ) {
@@ -391,7 +389,7 @@ void PlayArea<State>::init ( ) noexcept {
     std::iota ( std::begin ( inverted ), std::end ( inverted ), 0 );
     std::sort ( std::begin ( inverted ), std::end ( inverted ), [ &sorted_index ] ( int i, int j ) { return sorted_index [ i ] < sorted_index [ j ]; } );
     // Replace the old index with the new index.
-    ax = { static_cast<sidx> ( State::radius ( ) ), static_cast<sidx> ( State::radius ( ) ) };
+    ax = { 0, 0 };
     m_vertex_indices.at ( ax ) = inverted [ m_vertex_indices.at ( ax ) ];
     for ( int ring = 1; ring <= int { State::radius ( ) }; ++ring ) {
         ++ax.q;
@@ -420,7 +418,29 @@ void PlayArea<State>::init ( ) noexcept {
             m_vertex_indices.at ( ax ) = inverted [ m_vertex_indices.at ( ax ) ];
         }
     }
-    // Finally, sort the vertices.
+    //
+    m_vertex_indices.print ( );
+
+    HexContainer<sidx, State::radius ( )> vertex_indices;
+
+    int s = State::radius ( ), c = 0, idx = 0;
+
+    for ( ; s > -1; --s ) {
+
+        std::cout << s << ' ' << ( State::width ( ) - s ) << nl;
+    }
+    ++s;
+    for ( ; s < State::radius ( ); ++s ) {
+
+        std::cout << s << ' ' << ( State::width ( ) - 1 - s ) << nl;
+    }
+
+    std::cout << nl;
+
+    vertex_indices.print ( );
+
+    std::cout << nl;
+
     std::sort ( quads, quads + m_vertices.getVertexCount ( ) / 4, quads_less );
 }
 

@@ -189,7 +189,7 @@ struct HexContainer2 {
 };
 
 
-int main ( ) {
+int main64532 ( ) {
 
     //GameClock c;
 
@@ -242,7 +242,7 @@ void handleEptr ( std::exception_ptr eptr ) { // Passing by value is ok.
 }
 
 
-int main54455 ( ) {
+int main ( ) {
     std::exception_ptr eptr;
     try {
         std::unique_ptr<App> app_uptr = std::make_unique<App> ( );
