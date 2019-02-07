@@ -105,12 +105,13 @@ struct GameClock {
                 m_start = now;
             }
         }
+        // TODO: there's probably a better way.
         const int agent_time = static_cast<int> ( m_time [ Player::agent ].count ( ) ), human_time = static_cast<int> ( m_time [ Player::human ].count ( ) );
         return { { agent_time / 60'000, agent_time % 60'000 }, { human_time / 60'000, human_time % 60'000 } };
     }
 
     [[ maybe_unused ]] GameClockTimes update_next ( ) noexcept {
-        GameClockTimes t = update ( );
+        const GameClockTimes t = update ( );
         restart ( Player::agent == m_player ? Player::human : Player::agent );
         return t;
     }
@@ -175,9 +176,9 @@ class App {
     using MadoState = Mado<4>;
     using uidx = typename MadoState::uidx;
     using sidx = typename MadoState::sidx;
-    using hex = typename MadoState::hex;
+    using Hex = typename MadoState::Hex;
     using PlayArea = PlayArea<MadoState>;
-    using NextMove = NextMove<MadoState, hex>;
+    using NextMove = NextMove<MadoState, Hex>;
 
     MadoState m_state;
 
@@ -251,19 +252,19 @@ private:
     }
 
     [[ nodiscard ]] uidx pointToIdx ( const sf::Vector2f & p ) const noexcept;
-    [[ nodiscard ]] std::pair<hex, bool> pointToHex ( sf::Vector2f p_ ) const noexcept;
+    [[ nodiscard ]] std::pair<Hex, bool> pointToHex ( sf::Vector2f p_ ) const noexcept;
     [[ nodiscard ]] bool playAreaContains ( sf::Vector2f p_ ) const noexcept;
 
     [[ nodiscard ]] inline bool in_valid ( const sidx q_, const sidx r_ ) const noexcept {
         return std::abs ( q_ ) > MadoState::radius ( ) or std::abs ( r_ ) > MadoState::radius ( ) or std::abs ( -q_ - r_ ) > MadoState::radius ( );
     }
-    [[ nodiscard ]] bool in_valid ( const hex h_ ) const noexcept {
+    [[ nodiscard ]] bool in_valid ( const Hex h_ ) const noexcept {
         return in_valid ( h_.q, h_.r );
     }
     [[ nodiscard ]] bool valid ( const sidx q_, const sidx r_ ) const noexcept {
         return not ( in_valid ( q_, r_ ) );
     }
-    [[ nodiscard ]] bool valid ( const hex h_ ) const noexcept {
+    [[ nodiscard ]] bool valid ( const Hex h_ ) const noexcept {
         return not ( in_valid ( h_.q, h_.r ) );
     }
 

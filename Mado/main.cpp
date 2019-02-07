@@ -156,17 +156,17 @@ struct HexContainer2 {
     [[ nodiscard ]] T at ( const size_type q_, const size_type r_ ) const noexcept {
         return m_data [ r_ + radius ( ) ] [ q_ - std::max ( size_type { radius ( ) }, - r_ ) ];
     }
-    [[ nodiscard ]] T & at ( const hex<R> & h_ ) noexcept {
+    [[ nodiscard ]] T & at ( const Hex<R> & h_ ) noexcept {
         return m_data [ static_cast< size_type > ( h_.r ) ] [ static_cast< size_type > ( h_.q ) - std::max ( size_type { 0 }, radius ( ) - static_cast< size_type > ( h_.r ) ) ];
     }
-    [[ nodiscard ]] T at ( const hex<R> & h_ ) const noexcept {
+    [[ nodiscard ]] T at ( const Hex<R> & h_ ) const noexcept {
         return m_data [ static_cast< size_type > ( h_.r ) ] [ static_cast< size_type > ( h_.q ) - std::max ( size_type { 0 }, radius ( ) - static_cast< size_type > ( h_.r ) ) ];
     }
 
-    [[ nodiscard ]] T & operator [ ] ( const hex<R> & h_ ) noexcept {
+    [[ nodiscard ]] T & operator [ ] ( const Hex<R> & h_ ) noexcept {
         return at ( h_ );
     }
-    [[ nodiscard ]] T operator [ ] ( const hex<R> & h_ ) const noexcept {
+    [[ nodiscard ]] T operator [ ] ( const Hex<R> & h_ ) const noexcept {
         return at ( h_ );
     }
 

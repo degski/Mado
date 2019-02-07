@@ -81,17 +81,17 @@ struct HexContainer {
     [[ nodiscard ]] T at ( const size_type q_, const size_type r_ ) const noexcept {
         return m_data [ r_ ] [ q_ - std::max ( size_type { 0 }, radius ( ) - r_ ) ];
     }
-    [[ nodiscard ]] T & at ( const hex<R> & h_ ) noexcept {
+    [[ nodiscard ]] T & at ( const Hex<R> & h_ ) noexcept {
         return m_data [ static_cast<size_type> ( h_.r ) ] [ static_cast<size_type> ( h_.q ) - std::max ( size_type { 0 }, radius ( ) - static_cast<size_type> ( h_.r ) ) ];
     }
-    [[ nodiscard ]] T at ( const hex<R> & h_ ) const noexcept {
+    [[ nodiscard ]] T at ( const Hex<R> & h_ ) const noexcept {
         return m_data [ static_cast<size_type> ( h_.r ) ] [ static_cast<size_type> ( h_.q ) - std::max ( size_type { 0 }, radius ( ) - static_cast<size_type> ( h_.r ) ) ];
     }
 
-    [[ nodiscard ]] T & operator [ ] ( const hex<R> & h_ ) noexcept {
+    [[ nodiscard ]] T & operator [ ] ( const Hex<R> & h_ ) noexcept {
         return at ( h_ );
     }
-    [[ nodiscard ]] T operator [ ] ( const hex<R> & h_ ) const noexcept {
+    [[ nodiscard ]] T operator [ ] ( const Hex<R> & h_ ) const noexcept {
         return at ( h_ );
     }
 
@@ -178,7 +178,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
     // texCoords store the information as to which sub-texture is referenced.
 
     using sidx = typename State::sidx;
-    using hex = typename State::hex;
+    using Hex = typename State::Hex;
 
     [[ nodiscard ]] sf::Quad makeVertex ( const sf::Vector2f & p_ ) const noexcept;
     void init ( ) noexcept;
@@ -212,17 +212,17 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
         return static_cast<DisplayType> ( what ( i_ ) % 3 );
     }
 
-    [[ nodiscard ]] bool are_neighbors ( const hex a_, const hex b_ ) const noexcept {
+    [[ nodiscard ]] bool are_neighbors ( const Hex a_, const Hex b_ ) const noexcept {
         if ( a_ != b_ ) {
-            const typename hex::value_type dq = a_.q - b_.q, dr = a_.r - b_.r;
-            return std::abs ( dq ) + std::abs ( dr ) + std::abs ( -dq - dr ) == typename hex::value_type { 2 };
+            const typename Hex::value_type dq = a_.q - b_.q, dr = a_.r - b_.r;
+            return std::abs ( dq ) + std::abs ( dr ) + std::abs ( -dq - dr ) == typename Hex::value_type { 2 };
         }
         return false;
     }
 
     public:
 
-    [[ nodiscard ]] bool equal ( const hex & i_, const DisplayValue d_ ) noexcept {
+    [[ nodiscard ]] bool equal ( const Hex & i_, const DisplayValue d_ ) noexcept {
         const int i = m_vertex_indices [ i_ ], w = what_type ( i );
         if ( display_type ( d_ ) == w ) {
             setTexture ( i, w + 6 );
@@ -230,7 +230,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
         }
         return false;
     }
-    [[ nodiscard ]] bool place ( const hex & i_, const DisplayValue d_ ) noexcept {
+    [[ nodiscard ]] bool place ( const Hex & i_, const DisplayValue d_ ) noexcept {
         const int i = m_vertex_indices [ i_ ];
         if ( DisplayType::vacant == what_type ( i ) ) {
             setTexture ( i, d_ );
@@ -239,7 +239,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
         }
         return false;
     }
-    [[ nodiscard ]] bool move ( const hex & f_, const hex & t_, const DisplayValue d_ ) noexcept {
+    [[ nodiscard ]] bool move ( const Hex & f_, const Hex & t_, const DisplayValue d_ ) noexcept {
         if ( are_neighbors ( f_, t_ ) ) {
             const int f = m_vertex_indices [ f_ ], t = m_vertex_indices [ t_ ];
             if ( display_type ( d_ ) == what_type ( f ) and DisplayValue::active_vacant == what_value ( t ) ) {
@@ -254,7 +254,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
         return false;
     }
 
-    void make_active ( const hex & i_ ) noexcept {
+    void make_active ( const Hex & i_ ) noexcept {
         const int i = m_vertex_indices [ i_ ], w = what ( i );
         if ( w < 3 ) {
             reset ( );
@@ -328,7 +328,7 @@ void PlayArea<State>::init ( ) noexcept {
     sf::Quad * quads = reinterpret_cast<sf::Quad*> ( & m_vertices [ 0 ] );
     int i = 0;
     sf::Vector2f p = m_center - sf::Vector2f { m_circle_radius, m_circle_radius };
-    hex ax { static_cast<sidx> ( State::radius ( ) ), static_cast<sidx> ( State::radius ( ) ) };
+    Hex ax { static_cast<sidx> ( State::radius ( ) ), static_cast<sidx> ( State::radius ( ) ) };
     quads [ i ] = makeVertex ( p );
     m_vertex_indices.at ( ax ) = i;
     for ( int ring = 1; ring <= int { State::radius ( ) }; ++ring ) {

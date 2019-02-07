@@ -54,7 +54,7 @@
 
 
 template<std::size_t R>
-struct hex {
+struct Hex {
 
     using value_type = sidx<R>;
 
@@ -71,15 +71,15 @@ struct hex {
         q = 0; r = 0;
     }
 
-    [[ nodiscard ]] bool operator == ( const hex & rhs_ ) const noexcept {
+    [[ nodiscard ]] bool operator == ( const Hex & rhs_ ) const noexcept {
         return q == rhs_.q and r == rhs_.r;
     }
-    [[ nodiscard ]] bool operator != ( const hex & rhs_ ) const noexcept {
+    [[ nodiscard ]] bool operator != ( const Hex & rhs_ ) const noexcept {
         return q != rhs_.q or r != rhs_.r;
     }
 
     template<typename Stream>
-    [ [ maybe_unused ] ] friend Stream & operator << ( Stream & out_, const hex & h_ ) noexcept {
+    [ [ maybe_unused ] ] friend Stream & operator << ( Stream & out_, const Hex & h_ ) noexcept {
         out_ << '<' << h_.q << ' ' << h_.r << '>';
         return out_;
     }
@@ -121,18 +121,18 @@ struct Mado {
         return static_cast<uidx> ( cols ( ) * ( radius ( ) + 1 ) + width ( ) );
     }
 
-    using hex = hex<radius ( )>;
+    using Hex = Hex<radius ( )>;
 
     // https://www.redblobgames.com/grids/hexagons/
 
     [[ nodiscard ]] static constexpr uidx hex_to_idx ( const sidx q_, const sidx r_ ) noexcept {
         return center ( ) + 2 * q_ + ( cols ( ) + 1 ) * r_;
     }
-    [[ nodiscard ]] static constexpr uidx hex_to_idx ( const hex & h_ ) noexcept {
+    [[ nodiscard ]] static constexpr uidx hex_to_idx ( const Hex & h_ ) noexcept {
         return center ( ) + 2 * h_.q + ( cols ( ) + 1 ) * h_.r;
     }
-    [[ nodiscard ]] static constexpr hex idx_to_hex ( const uidx i_ ) noexcept {
-        hex h { i_, i_ };
+    [[ nodiscard ]] static constexpr Hex idx_to_hex ( const uidx i_ ) noexcept {
+        Hex h { i_, i_ };
         h.r /= cols ( );
         h.q -= center ( );
         h.r -= rows ( ) / 2;
@@ -450,7 +450,7 @@ struct Mado {
     void set ( uidx x_, value_type v_ ) noexcept {
         m_board [ x_ ] = v_;
     }
-    void set ( hex & h_, value_type v_ ) noexcept {
+    void set ( Hex & h_, value_type v_ ) noexcept {
         m_board [ hex_to_idx ( h_ ) ] = v_;
     }
     void set ( sidx q_, sidx r_, value_type v_ ) noexcept {

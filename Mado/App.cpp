@@ -41,7 +41,7 @@
 [[ nodiscard ]] App::uidx App::pointToIdx ( const sf::Vector2f & p_ ) const noexcept {
     return MadoState::hex_to_idx ( pointToHex ( p_ ).first );
 }
-[[ nodiscard ]] std::pair<App::hex, bool> App::pointToHex ( sf::Vector2f p_ ) const noexcept {
+[[ nodiscard ]] std::pair<App::Hex, bool> App::pointToHex ( sf::Vector2f p_ ) const noexcept {
     // https://www.redblobgames.com/grids/hexagons/#comment-1063818420
     static const float radius { m_hori * 0.5773502588f };
     static const sf::Vector2f center { m_center.x, m_center.y - radius };
