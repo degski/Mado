@@ -53,22 +53,21 @@
 
 
 
-template<std::size_t R>
+template<std::intptr_t R>
 struct Hex {
+
+    static_assert ( R > 0, "the radius should be larger than 0" );
 
     using value_type = sidx<R>;
 
-    value_type q = 0, r = 0;
+    [[ nodiscard ]] static constexpr value_type radius ( ) noexcept {
+        return R;
+    }
 
-    [[ nodiscard ]] bool is_valid ( ) const noexcept {
-        return q or r;
-    }
-    [[ nodiscard ]] bool is_not_valid ( ) const noexcept {
-        return not ( q or r );
-    }
+    value_type q = value_type { -Hex::radius ( ) - 1 }, r = value_type { -Hex::radius ( ) - 1 };
 
     void nil ( ) noexcept {
-        q = 0; r = 0;
+        q = value_type { -Hex::radius ( ) - 1 }; r = value_type { -Hex::radius ( ) - 1 };
     }
 
     [[ nodiscard ]] bool operator == ( const Hex & rhs_ ) const noexcept {
@@ -76,6 +75,19 @@ struct Hex {
     }
     [[ nodiscard ]] bool operator != ( const Hex & rhs_ ) const noexcept {
         return q != rhs_.q or r != rhs_.r;
+    }
+
+    [[ nodiscard ]] inline bool in_valid ( ) const noexcept {
+        return std::abs ( q ) > Hex::radius ( ) or std::abs ( r ) > Hex::radius ( ) or std::abs ( -q - r ) > Hex::radius ( );
+    }
+    [[ nodiscard ]] static constexpr bool in_valid ( value_type q_, value_type r_ ) noexcept {
+        return std::abs ( q_ ) > Hex::radius ( ) or std::abs ( r_ ) > Hex::radius ( ) or std::abs ( -q_ - r_ ) > Hex::radius ( );
+    }
+    [[ nodiscard ]] inline bool valid ( ) const noexcept {
+        return not ( in_valid ( ) );
+    }
+    [[ nodiscard ]] static constexpr bool valid ( value_type q_, value_type r_ ) noexcept {
+        return not ( in_valid ( q_, r_ ) );
     }
 
     template<typename Stream>

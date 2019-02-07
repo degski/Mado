@@ -122,7 +122,7 @@ struct State {
 
 
 
-template<typename T, std::size_t R, typename SizeType = int, typename = std::enable_if_t<std::is_default_constructible_v<T>, T>>
+template<typename T, std::size_t R, bool zero_base = true, typename SizeType = int, typename = std::enable_if_t<std::is_default_constructible_v<T>, T>>
 struct HexContainer2 {
 
     using size_type = SizeType;
@@ -144,23 +144,24 @@ struct HexContainer2 {
 
     HexContainer2 ( ) noexcept : m_data { { T ( ) } } { }
 
-
-
     [[ nodiscard ]] T & at ( const size_type q_, const size_type r_ ) noexcept {
-
-        return m_data [ r_ + radius ( ) ] [ q_ + std::max ( size_type { radius ( ) }, r_ ) ];
+        if constexpr ( zero_base ) {
+            // Center at { 0, 0 }.
+            return m_data [ q_ + std::max ( radius ( ), r_ ) ] [ r_ + radius ( ) ];
+        }
+        else {
+            // Center at { radius, radius }.
+            return m_data [ q_ + std::max ( size_type { 0 }, r_ - 2 * radius ( ) ) ] [ r_ ];
+        }
     }
-
-
-
     [[ nodiscard ]] T at ( const size_type q_, const size_type r_ ) const noexcept {
-        return m_data [ r_ + radius ( ) ] [ q_ - std::max ( size_type { radius ( ) }, - r_ ) ];
+        return at ( q_, r_ );
     }
     [[ nodiscard ]] T & at ( const Hex<R> & h_ ) noexcept {
-        return m_data [ static_cast< size_type > ( h_.r ) ] [ static_cast< size_type > ( h_.q ) - std::max ( size_type { 0 }, radius ( ) - static_cast< size_type > ( h_.r ) ) ];
+        return at ( h_.q, h_.r );
     }
     [[ nodiscard ]] T at ( const Hex<R> & h_ ) const noexcept {
-        return m_data [ static_cast< size_type > ( h_.r ) ] [ static_cast< size_type > ( h_.q ) - std::max ( size_type { 0 }, radius ( ) - static_cast< size_type > ( h_.r ) ) ];
+        return at ( h_.q, h_.r );
     }
 
     [[ nodiscard ]] T & operator [ ] ( const Hex<R> & h_ ) noexcept {
@@ -171,16 +172,16 @@ struct HexContainer2 {
     }
 
     [[ nodiscard ]] T * data ( ) noexcept {
-        return &m_data [ 0 ] [ 0 ];
+        return & m_data [ 0 ] [ 0 ];
     }
     [[ nodiscard ]] const T * data ( ) const noexcept {
-        return &m_data [ 0 ] [ 0 ];
+        return & m_data [ 0 ] [ 0 ];
     }
 
     void print ( ) {
-        for ( int j = 0; j < 2 * R + 1; ++j ) {
-            for ( int i = 0; i < 2 * R + 1; ++i ) {
-                std::cout << std::setw ( 3 ) << m_data [ j ] [ i ];
+        for ( int r = 0; r < height ( ); ++r ) {
+            for ( int q = 0; q < width ( ); ++q ) {
+                std::cout << std::setw ( 3 ) << m_data [ q ] [ r ];
             }
             std::cout << nl;
         }
@@ -190,20 +191,32 @@ struct HexContainer2 {
 
 int main ( ) {
 
-    GameClock c;
+    //GameClock c;
 
-    c.set ( 5, 10 );
+    //c.set ( 5, 10 );
 
+    HexContainer2<int, 3, false> hc1;
 
-    /*
+    hc1.at ( 3, 0 ) = 1;
+    hc1.at ( 4, 0 ) = 2;
+    hc1.at ( 3, 3 ) = 4;
+    hc1.at ( 5, 4 ) = 8;
+    hc1.at ( 3, 6 ) = 16;
 
-    HexContainer2<int, 3> hc;
+    hc1.print ( );
 
-    hc.at ( 0, -3 ) = 1;
-    hc.at ( 1, -3 ) = 2;
+    std::cout << nl;
 
-    hc.print ( );
-    */
+    HexContainer2<int, 3, true> hc2;
+
+    hc2.at ( 0, -3 ) = 1;
+    hc2.at ( 1, -3 ) = 2;
+    hc2.at ( 0,  0 ) = 4;
+    hc2.at ( 2,  1 ) = 8;
+    hc2.at ( 0,  3 ) = 16;
+
+    hc2.print ( );
+
 
     return EXIT_SUCCESS;
 }
