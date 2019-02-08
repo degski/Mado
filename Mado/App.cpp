@@ -75,7 +75,8 @@ App::App ( ) :
     m_window_height { MadoState::height ( ) * m_vert + m_vert + 1.0f + 12.0f },
     m_center { sf::Vector2f { m_window_width * 0.5f, m_window_height * 0.5f + 6.0f } },
     m_taskbar { m_window_width },
-    m_play_area { m_center, m_hori, m_vert, 67.0f } {
+    m_play_area { m_center, m_hori, m_vert, 67.0f },
+    m_game_clock ( std::floorf ( ( m_window_width - ( MadoState::radius ( ) + 1 ) * m_hori ) / 4 ),  m_window_width - std::floorf ( ( m_window_width - ( MadoState::radius ( ) + 1 ) * m_hori ) / 4 ), m_play_area.heightFirstHex ( ) ) {
     m_settings.antialiasingLevel = 8u;
     // Create the m_window.
     m_window.create ( sf::VideoMode ( static_cast<std::uint32_t> ( m_window_width ), static_cast<std::uint32_t> ( m_window_height ) ), L"Mado", sf::Style::None, m_settings );
@@ -130,6 +131,7 @@ void App::updateWindow ( ) noexcept {
     m_window.clear ( sf::Color { 10u, 10u, 10u, 255u } );
     m_window.draw ( m_taskbar );
     m_window.draw ( m_play_area );
+    m_window.draw ( m_game_clock );
     m_window.display ( );
     // Minimize if required (after updating above).
     if ( m_minimize ) {

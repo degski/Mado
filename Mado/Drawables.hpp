@@ -199,6 +199,10 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
 
     PlayArea ( const sf::Vector2f & center_, float hori_, float vert_, float circle_diameter_ );
 
+    [[ nodiscard ]] float heightFirstHex ( ) const noexcept {
+        return m_vertices [ 0 ].position.y + m_circle_radius;
+    }
+
     private:
 
     void setTexture ( int v_, int i_ ) noexcept {
@@ -498,7 +502,21 @@ struct GameClock : public sf::Drawable, public sf::Transformable {
 
     enum Player : int { agent, human };
 
-    GameClock ( ) noexcept { }
+    void init ( sf::Text & text_ ) const noexcept {
+        text_.setFont ( m_font_numbers );
+        text_.setCharacterSize ( 36 );
+        text_.setString ( "00:00" );
+        text_.setColor ( sf::Color { 178, 178, 178, 255 } );
+        sf::centreOrigin ( text_ );
+    }
+
+    GameClock ( const float left_, const float right_, const float height_ ) noexcept {
+        sf::loadFromResource ( m_font_numbers, __NUMBERS_FONT__ );
+        init ( m_left_text );
+        m_left_text.setPosition ( left_, height_ );
+        init ( m_right_text );
+        m_right_text.setPosition ( right_, height_ );
+    }
 
     void set ( const int min_, const int sec_ = 0, const int delay_ = 0 ) noexcept {
         m_time [ Player::agent ] = m_time [ Player::human ] = sf::fminutes { min_ } +sf::fseconds { sec_ };
@@ -547,8 +565,10 @@ struct GameClock : public sf::Drawable, public sf::Transformable {
     // Stuff to draw it.
 
     virtual void draw ( sf::RenderTarget & target, sf::RenderStates states ) const {
-        states.texture = & m_texture;
-        target.draw ( m_vertices, states );
+        // states.texture = & m_texture;
+        // target.draw ( m_vertices, states );
+        target.draw ( m_left_text );
+        target.draw ( m_right_text );
     }
 
     void update ( const sf::Vector2f & p_ ) noexcept {
@@ -561,6 +581,9 @@ struct GameClock : public sf::Drawable, public sf::Transformable {
 
     private:
 
+    sf::Font m_font_numbers;
+
+    sf::Text m_left_text, m_right_text;
     sf::FloatRect m_left_bounds, m_right_bounds;
 
     sf::Texture m_texture;

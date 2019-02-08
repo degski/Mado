@@ -125,9 +125,6 @@ struct State {
 
 int main64532 ( ) {
 
-    GameClock c;
-
-    c.set ( 5, 10 );
 
     return EXIT_SUCCESS;
 }
