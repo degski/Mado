@@ -541,7 +541,7 @@ struct GameClock : public sf::Drawable, public sf::Transformable {
         m_delay_timer.restart ( m_start );
     }
 
-    void update ( ) noexcept {
+    void update ( ) const noexcept {
         if ( is_running ) {
             const sf::HrClock::time_point now = m_clock.now ( );
             if ( m_delay_timer.expired ) {
@@ -552,6 +552,9 @@ struct GameClock : public sf::Drawable, public sf::Transformable {
                 if ( m_delay_timer.update ( now ) ) {
                     // Just expired, start timing.
                     m_start = now;
+                }
+                else {
+                    return;
                 }
             }
             char buf [ 7 ] = { 0 };
@@ -567,8 +570,9 @@ struct GameClock : public sf::Drawable, public sf::Transformable {
     }
 
     virtual void draw ( sf::RenderTarget & target, sf::RenderStates states ) const {
-        target.draw ( m_text [ 0 ] );
-        target.draw ( m_text [ 1 ] );
+        update ( );
+        target.draw ( m_text [ Player::human ] );
+        target.draw ( m_text [ Player::agent ] );
     }
 
     [[ nodiscard ]] bool is_stopped ( const sf::Vector2f & mouse_position_ ) noexcept {
@@ -584,25 +588,25 @@ struct GameClock : public sf::Drawable, public sf::Transformable {
     }
 
     void resume ( ) noexcept {
-        m_start = m_clock.now ( );
         is_running = true;
+        m_start = m_clock.now ( );
     }
 
     private:
 
     // The clock.
 
-    sf::HrClock::time_point m_start;
+    mutable sf::HrClock::time_point m_start;
     sf::HrClock m_clock;
-    std::array<sf::fseconds, 2> m_time;
-    DelayTimer m_delay_timer;
+    mutable std::array<sf::fseconds, 2> m_time;
+    mutable DelayTimer m_delay_timer;
     Player m_player = Player::human;
 
     // Stuff to draw it.
 
     sf::Font m_font_numbers;
 
-    sf::Text m_text [ 2 ];
+    mutable sf::Text m_text [ 2 ];
     sf::FloatRect m_bounds [ 2 ];
 
     bool is_running = true;

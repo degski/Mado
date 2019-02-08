@@ -131,7 +131,6 @@ void App::updateWindow ( ) noexcept {
     m_window.clear ( sf::Color { 10u, 10u, 10u, 255u } );
     m_window.draw ( m_taskbar );
     m_window.draw ( m_play_area );
-    m_game_clock.update ( );
     m_window.draw ( m_game_clock );
     m_window.display ( );
     // Minimize if required (after updating above).
@@ -160,12 +159,16 @@ void App::mouseEvents ( const sf::Event & event_ ) {
                         m_human_move.from ( hex_position );
                     break;
                 case NextMove::State::place :
-                    if ( ( no_reset = m_play_area.place ( hex_position, PlayArea::DisplayValue::active_red ) ) )
+                    if ( ( no_reset = m_play_area.place ( hex_position, PlayArea::DisplayValue::active_red ) ) ) {
                         m_human_move.to ( hex_position );
+                        m_game_clock.update_next ( );
+                    }
                     break;
                 case NextMove::State::move :
-                    if ( ( no_reset = m_play_area.move ( m_human_move.from ( ), hex_position, PlayArea::DisplayValue::active_red ) ) )
+                    if ( ( no_reset = m_play_area.move ( m_human_move.from ( ), hex_position, PlayArea::DisplayValue::active_red ) ) ) {
                         m_human_move.to ( hex_position );
+                        m_game_clock.update_next ( );
+                    }
                 }
                 if ( not ( no_reset ) ) {
                     m_human_move.reset ( );
