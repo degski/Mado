@@ -529,8 +529,10 @@ struct GameClock : public sf::Drawable, public sf::Transformable {
     void set ( const int min_, const int sec_ = 0, const int delay_ = 0 ) noexcept {
         m_time [ Player::human ] = m_time [ Player::agent ] = sf::fminutes { min_ } + sf::fseconds { sec_ };
         m_delay_timer.set ( delay_ );
-        m_text [ Player::human ].setString ( secToTimeString ( min_ * 60 + sec_ ) );
-        m_text [ Player::agent ].setString ( secToTimeString ( min_ * 60 + sec_ ) );
+        char buf [ 7 ] = { 0 };
+        std::snprintf ( buf, 6, "%0.2i:%0.2i", min_, sec_ );
+        m_text [ Player::human ].setString ( buf );
+        m_text [ Player::agent ].setString ( buf );
     }
 
     void restart ( const Player p_ ) noexcept {
@@ -552,7 +554,10 @@ struct GameClock : public sf::Drawable, public sf::Transformable {
                     m_start = now;
                 }
             }
-            m_text [ m_player ].setString ( secToTimeString ( static_cast< int > ( m_time [ m_player ].count ( ) ) ) );
+            char buf [ 7 ] = { 0 };
+            const int s = static_cast<int> ( m_time [ m_player ].count ( ) );
+            std::snprintf ( buf, 6, "%0.2i:%0.2i", s / 60, s % 60 );
+            m_text [ m_player ].setString ( buf );
         }
     }
 
@@ -594,12 +599,6 @@ struct GameClock : public sf::Drawable, public sf::Transformable {
     Player m_player = Player::human;
 
     // Stuff to draw it.
-
-    std::string secToTimeString ( int s_ ) noexcept {
-        char buf [ 7 ] = { 0 };
-        std::snprintf ( buf, 6, "%0.2i:%0.2i", s_ / 60, s_ % 60 );
-        return std::string ( buf );
-    }
 
     sf::Font m_font_numbers;
 
