@@ -461,3 +461,106 @@ class Taskbar : public sf::Drawable {
     sf::Texture m_texture;
     sf::VertexArray m_vertices;
 };
+
+
+
+struct PlayerTime {
+    int min, sec;
+};
+
+struct GameClockTimes {
+    PlayerTime agent, human;
+};
+
+struct DelayTimer {
+
+    void set ( const int d_ ) {
+        m_delay = std::chrono::milliseconds { 1'000 * d_ };
+        expired = m_delay == std::chrono::milliseconds { 0 };
+    }
+
+    void restart ( const sf::HrClock::time_point now_ ) {
+        if ( not ( expired = m_delay == std::chrono::milliseconds { 0 } ) ) {
+            m_end_time = now_ + m_delay;
+        }
+    }
+
+    [[ nodiscard ]] bool update ( const sf::HrClock::time_point now_ ) noexcept {
+        return expired = now_ > m_end_time;
+    }
+
+    sf::HrClock::time_point m_end_time;
+    std::chrono::milliseconds m_delay;
+    bool expired = false;
+};
+
+struct GameClock : public sf::Drawable, public sf::Transformable {
+
+    enum Player : int { agent, human };
+
+    void set ( const int min_, const int sec_ = 0, const int delay_ = 0 ) noexcept {
+        m_time [ Player::agent ] = m_time [ Player::human ] = sf::fminutes { min_ } +sf::fseconds { sec_ };
+        m_delay_timer.set ( delay_ );
+    }
+
+    void restart ( const Player p_ ) noexcept {
+        m_player = p_;
+        m_start = m_clock.now ( ); // In case delay == 0 or very short.
+        m_delay_timer.restart ( m_start );
+    }
+
+    [[ nodiscard ]] GameClockTimes update ( ) noexcept {
+        const sf::HrClock::time_point now = m_clock.now ( );
+        if ( m_delay_timer.expired ) {
+            m_time [ m_player ] -= now - m_start;
+            m_start = now;
+        }
+        else {
+            if ( m_delay_timer.update ( now ) ) {
+                // Just expired, start timing.
+                m_start = now;
+            }
+        }
+        // TODO: there's probably a better way.
+        const int agent_time = static_cast<int> ( m_time [ Player::agent ].count ( ) ), human_time = static_cast<int> ( m_time [ Player::human ].count ( ) );
+        return { { agent_time / 60'000, agent_time % 60'000 }, { human_time / 60'000, human_time % 60'000 } };
+    }
+
+    [[ maybe_unused ]] GameClockTimes update_next ( ) noexcept {
+        const GameClockTimes t = update ( );
+        restart ( Player::agent == m_player ? Player::human : Player::agent );
+        return t;
+    }
+
+    private:
+
+    // The clock.
+
+    sf::HrClock::time_point m_start;
+    sf::HrClock m_clock;
+    std::array<sf::fmilliseconds, 2> m_time;
+    DelayTimer m_delay_timer;
+    Player m_player = Player::human;
+
+    // Stuff to draw it.
+
+    virtual void draw ( sf::RenderTarget & target, sf::RenderStates states ) const {
+        states.texture = & m_texture;
+        target.draw ( m_vertices, states );
+    }
+
+    void update ( const sf::Vector2f & p_ ) noexcept {
+        // setTexture ( m_minimize_bounds.contains ( p_ ) ? State::minimize : m_close_bounds.contains ( p_ ) ? State::close : State::in_active );
+    }
+
+    void reset ( ) noexcept {
+        // setTexture ( State::in_active );
+    }
+
+    private:
+
+    sf::FloatRect m_left_bounds, m_right_bounds;
+
+    sf::Texture m_texture;
+    sf::VertexArray m_vertices;
+};
