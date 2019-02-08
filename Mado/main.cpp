@@ -122,105 +122,12 @@ struct State {
 
 
 
-template<typename T, std::size_t R, bool zero_base = true, typename SizeType = int, typename = std::enable_if_t<std::is_default_constructible_v<T>, T>>
-struct HexContainer2 {
-
-    using size_type = SizeType;
-
-    [[ nodiscard ]] static constexpr size_type radius ( ) noexcept {
-        return static_cast< std::size_t > ( R );
-    }
-    [[ nodiscard ]] static constexpr size_type width ( ) noexcept {
-        return 2 * radius ( ) + 1;
-    }
-    [[ nodiscard ]] static constexpr size_type height ( ) noexcept {
-        return 2 * radius ( ) + 1;
-    }
-    [[ nodiscard ]] static constexpr size_type size ( ) noexcept {
-        return width ( ) * height ( );
-    }
-
-    T m_data [ 2 * R + 1 ] [ 2 * R + 1 ];
-
-    HexContainer2 ( ) noexcept : m_data { { T ( ) } } { }
-
-    [[ nodiscard ]] T & at ( const size_type q_, const size_type r_ ) noexcept {
-        if constexpr ( zero_base ) {
-            // Center at { 0, 0 }.
-            return m_data [ q_ + std::max ( radius ( ), r_ ) ] [ r_ + radius ( ) ];
-        }
-        else {
-            // Center at { radius, radius }.
-            return m_data [ q_ + std::max ( size_type { 0 }, r_ - 2 * radius ( ) ) ] [ r_ ];
-        }
-    }
-    [[ nodiscard ]] T at ( const size_type q_, const size_type r_ ) const noexcept {
-        return at ( q_, r_ );
-    }
-    [[ nodiscard ]] T & at ( const Hex<R> & h_ ) noexcept {
-        return at ( h_.q, h_.r );
-    }
-    [[ nodiscard ]] T at ( const Hex<R> & h_ ) const noexcept {
-        return at ( h_.q, h_.r );
-    }
-
-    [[ nodiscard ]] T & operator [ ] ( const Hex<R> & h_ ) noexcept {
-        return at ( h_ );
-    }
-    [[ nodiscard ]] T operator [ ] ( const Hex<R> & h_ ) const noexcept {
-        return at ( h_ );
-    }
-
-    [[ nodiscard ]] T * data ( ) noexcept {
-        return & m_data [ 0 ] [ 0 ];
-    }
-    [[ nodiscard ]] const T * data ( ) const noexcept {
-        return & m_data [ 0 ] [ 0 ];
-    }
-
-    void print ( ) {
-        for ( int r = 0; r < height ( ); ++r ) {
-            for ( int q = 0; q < width ( ); ++q ) {
-                std::cout << std::setw ( 3 ) << m_data [ q ] [ r ];
-            }
-            std::cout << nl;
-        }
-    }
-};
-
 
 int main64532 ( ) {
 
-    //GameClock c;
+    GameClock c;
 
-    //c.set ( 5, 10 );
-
-    HexContainer2<int, 4, false> hc1;
-
-    hc1.at ( 4, 1 ) = 1;
-    hc1.at ( 5, 1 ) = 2;
-    hc1.at ( 1, 4 ) = 3;
-    hc1.at ( 4, 4 ) = 4;
-    hc1.at ( 7, 4 ) = 5;
-    hc1.at ( 6, 5 ) = 8;
-    hc1.at ( 4, 7 ) = 16;
-
-    hc1.print ( );
-
-    std::cout << nl;
-
-    HexContainer2<int, 4, true> hc2;
-
-    hc2.at (  0, -3 ) = 1;
-    hc2.at (  1, -3 ) = 2;
-    hc2.at ( -3,  0 ) = 3;
-    hc2.at (  0,  0 ) = 4;
-    hc2.at (  3,  0 ) = 5;
-    hc2.at (  2,  1 ) = 8;
-    hc2.at (  0,  3 ) = 16;
-
-    hc2.print ( );
-
+    c.set ( 5, 10 );
 
     return EXIT_SUCCESS;
 }
