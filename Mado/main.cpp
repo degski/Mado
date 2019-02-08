@@ -120,10 +120,8 @@ struct State {
 };
 
 
+int main869869 ( ) {
 
-
-
-int main64532 ( ) {
 
 
     return EXIT_SUCCESS;

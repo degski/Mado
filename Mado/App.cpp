@@ -131,6 +131,7 @@ void App::updateWindow ( ) noexcept {
     m_window.clear ( sf::Color { 10u, 10u, 10u, 255u } );
     m_window.draw ( m_taskbar );
     m_window.draw ( m_play_area );
+    m_game_clock.update ( );
     m_window.draw ( m_game_clock );
     m_window.display ( );
     // Minimize if required (after updating above).
@@ -181,9 +182,14 @@ void App::mouseEvents ( const sf::Event & event_ ) {
             if ( Taskbar::State::in_active == m_taskbar.state ( ) ) {
                 // In new area.
                 if ( sf::Mouse::isButtonPressed ( sf::Mouse::Left ) ) {
+                    if ( m_game_clock.is_stopped ( mouse_position ) ) {
+                        std::cout << "clocked clicked\n";
+                    }
+                    else {
                     // Requested placement.
-                    std::cout << "place requested" << nl;
-                    m_human_move.state ( NextMove::State::place );
+                        std::cout << "place requested" << nl;
+                        m_human_move.state ( NextMove::State::place );
+                    }
                 }
                 m_play_area.reset ( );
             }

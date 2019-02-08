@@ -171,11 +171,13 @@ public:
 
     inline void pause ( ) noexcept {
         std::cout << "pause\n";
+        m_game_clock.pause ( );
         m_music.pause ( );
     }
 
     inline void resume ( ) noexcept {
         std::cout << "resume\n";
+        m_game_clock.resume ( );
         m_music.play ( );
         m_is_running = true;
     }
