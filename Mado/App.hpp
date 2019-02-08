@@ -137,12 +137,13 @@ private:
         return ( ( p1_.x - p2_.x ) * ( p1_.x - p2_.x ) ) + ( ( p1_.y - p2_.y ) * ( p1_.y - p2_.y ) );
     }
 
-    [[ nodiscard ]] inline int int_floorf ( float x ) const noexcept {
-        return static_cast<int> ( x - std::numeric_limits<sidx>::min ( ) ) + std::numeric_limits<sidx>::min ( );
+    template<typename T>
+    [[ nodiscard ]] inline T floorf ( float x ) const noexcept {
+        return static_cast<T> ( static_cast<int> ( x - std::numeric_limits<sidx>::min ( ) ) + std::numeric_limits<sidx>::min ( ) );
     }
 
     [[ nodiscard ]] uidx pointToIdx ( const sf::Vector2f & p ) const noexcept;
-    [[ nodiscard ]] std::pair<Hex, bool> pointToHex ( sf::Vector2f p_ ) const noexcept;
+    [[ nodiscard ]] Hex pointToHex ( sf::Vector2f p_ ) const noexcept;
     [[ nodiscard ]] bool playAreaContains ( sf::Vector2f p_ ) const noexcept;
 
     void setIcon ( ) noexcept;

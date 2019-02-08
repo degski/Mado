@@ -39,19 +39,18 @@
 
 
 [[ nodiscard ]] App::uidx App::pointToIdx ( const sf::Vector2f & p_ ) const noexcept {
-    return MadoState::hex_to_idx ( pointToHex ( p_ ).first );
+    return MadoState::hex_to_idx ( pointToHex ( p_ ) );
 }
-[[ nodiscard ]] std::pair<App::Hex, bool> App::pointToHex ( sf::Vector2f p_ ) const noexcept {
+[[ nodiscard ]] App::Hex App::pointToHex ( sf::Vector2f p_ ) const noexcept {
+    using value_type = typename Hex::value_type;
     // https://www.redblobgames.com/grids/hexagons/#comment-1063818420
     static const float radius { m_hori * 0.5773502588f };
     static const sf::Vector2f center { m_center.x, m_center.y - radius };
     p_ -= center;
     p_.x /= m_hori; p_.y /= radius;
-    int q = int_floorf ( p_.y + p_.x ), r = int_floorf ( ( int_floorf ( p_.y - p_.x ) + q ) * 0.3333333433f );
-    q = int_floorf ( ( int_floorf ( 2.0f * p_.x + 1.0f ) + q ) * 0.3333333433f ) - r;
-    if ( Hex::in_valid ( q, r ) )
-        return { { }, false };
-    return { { static_cast<sidx> ( q ), static_cast<sidx> ( r ) }, true };
+    Hex h { floorf<value_type> ( p_.y + p_.x ), floorf<value_type> ( ( floorf<value_type> ( p_.y - p_.x ) + h.q ) * 0.3333333433f ) };
+    h.q = floorf< value_type> ( ( floorf<value_type> ( 2.0f * p_.x + 1.0f ) + h.q ) * 0.3333333433f ) - h.r;
+    return h;
 }
 
 
@@ -147,8 +146,8 @@ void App::mouseEvents ( const sf::Event & event_ ) {
     const sf::Vector2f & mouse_position = m_mouse.update ( );
     if ( m_window_bounds.contains ( mouse_position ) ) {
         // In window.
-        const auto [ hex_position, in_play_area ] = pointToHex ( mouse_position );
-        if ( in_play_area ) {
+        const Hex hex_position = pointToHex ( mouse_position );
+        if ( hex_position.valid ( ) ) {
             if ( sf::Mouse::isButtonPressed ( sf::Mouse::Left ) ) {
                 // Selected a cicle.
                 bool no_reset;

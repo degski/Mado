@@ -498,6 +498,8 @@ struct GameClock : public sf::Drawable, public sf::Transformable {
 
     enum Player : int { agent, human };
 
+    GameClock ( ) noexcept { }
+
     void set ( const int min_, const int sec_ = 0, const int delay_ = 0 ) noexcept {
         m_time [ Player::agent ] = m_time [ Player::human ] = sf::fminutes { min_ } +sf::fseconds { sec_ };
         m_delay_timer.set ( delay_ );
