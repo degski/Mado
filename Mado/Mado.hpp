@@ -91,7 +91,7 @@ struct Hex {
     }
 
     template<typename Stream>
-    [ [ maybe_unused ] ] friend Stream & operator << ( Stream & out_, const Hex & h_ ) noexcept {
+    [[ maybe_unused ]] friend Stream & operator << ( Stream & out_, const Hex & h_ ) noexcept {
         out_ << '<' << h_.q << ' ' << h_.r << '>';
         return out_;
     }

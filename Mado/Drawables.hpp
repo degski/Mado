@@ -58,6 +58,11 @@ template<typename T, std::size_t R, bool zero_base = true, typename SizeType = i
 struct HexContainer {
 
     using size_type = SizeType;
+    using value_type = T;
+    using pointer = T * ;
+    using const_pointer = const T * ;
+    using reference = T & ;
+    using const_reference = const T &;
 
     [[ nodiscard ]] static constexpr size_type radius ( ) noexcept {
         return static_cast< std::size_t > ( R );
@@ -76,47 +81,49 @@ struct HexContainer {
 
     HexContainer ( ) noexcept : m_data { { T ( ) } } { }
 
-    [[ nodiscard ]] T & at ( const size_type q_, const size_type r_ ) noexcept {
+    [[ nodiscard ]] reference at ( const size_type q_, const size_type r_ ) noexcept {
         if constexpr ( zero_base ) {
             // Center at { 0, 0 }.
-            return m_data [ q_ + std::max ( radius ( ), r_ ) ] [ r_ + radius ( ) ];
+            return m_data [ r_ + radius ( ) ] [ q_ + std::max ( radius ( ), r_ ) ];
         }
         else {
             // Center at { radius, radius }.
-            return m_data [ q_ + std::max ( size_type { 0 }, r_ - 2 * radius ( ) ) ] [ r_ ];
+            return m_data [ r_ ] [ q_ + std::max ( size_type { 0 }, r_ - 2 * radius ( ) ) ];
         }
     }
-    [[ nodiscard ]] T at ( const size_type q_, const size_type r_ ) const noexcept {
+    [[ nodiscard ]] const_reference at ( const size_type q_, const size_type r_ ) const noexcept {
         return at ( q_, r_ );
     }
-    [[ nodiscard ]] T & at ( const Hex<R> & h_ ) noexcept {
+    [[ nodiscard ]] reference at ( const Hex<R> & h_ ) noexcept {
         return at ( h_.q, h_.r );
     }
-    [[ nodiscard ]] T at ( const Hex<R> & h_ ) const noexcept {
+    [[ nodiscard ]] const_reference at ( const Hex<R> & h_ ) const noexcept {
         return at ( h_.q, h_.r );
     }
 
-    [[ nodiscard ]] T & operator [ ] ( const Hex<R> & h_ ) noexcept {
+    [[ nodiscard ]] reference operator [ ] ( const Hex<R> & h_ ) noexcept {
         return at ( h_ );
     }
-    [[ nodiscard ]] T operator [ ] ( const Hex<R> & h_ ) const noexcept {
+    [[ nodiscard ]] const_reference operator [ ] ( const Hex<R> & h_ ) const noexcept {
         return at ( h_ );
     }
 
-    [[ nodiscard ]] T * data ( ) noexcept {
-        return &m_data [ 0 ] [ 0 ];
+    [[ nodiscard ]] pointer data ( ) noexcept {
+        return & m_data [ 0 ] [ 0 ];
     }
-    [[ nodiscard ]] const T * data ( ) const noexcept {
-        return &m_data [ 0 ] [ 0 ];
+    [[ nodiscard ]] const_pointer data ( ) const noexcept {
+        return & m_data [ 0 ] [ 0 ];
     }
 
-    void print ( ) {
+    template<typename Stream>
+    [[ maybe_unused ]] friend Stream & operator << ( Stream & out_, const HexContainer & h_ ) noexcept {
         for ( int r = 0; r < height ( ); ++r ) {
             for ( int q = 0; q < width ( ); ++q ) {
-                std::cout << std::setw ( 3 ) << m_data [ q ] [ r ];
+                out_ << std::setw ( 3 ) << h_.m_data [ r ] [ q ];
             }
-            std::cout << nl;
+            out_ << nl;
         }
+        return out_;
     }
 };
 
@@ -333,114 +340,56 @@ void PlayArea<State>::init ( const sf::Vector2f & center_ ) noexcept {
     sf::Quad * quads = reinterpret_cast<sf::Quad*> ( & m_vertices [ 0 ] );
     int i = 0;
     sf::Vector2f p = center_ - sf::Vector2f { m_circle_radius, m_circle_radius };
-    Hex ax { 0 , 0 };
     quads [ i ] = makeVertex ( p );
-    m_vertex_indices.at ( ax ) = i;
     for ( int ring = 1; ring <= int { State::radius ( ) }; ++ring ) {
         p.x += m_hori; // Move east.
-        ++ax.q;
         for ( int j = 0; j < ring; ++j ) { // nw.
             p.x -= m_hori / 2; p.y -= m_vert;
-            --ax.r;
             quads [ ++i ] = makeVertex ( p );
-            m_vertex_indices.at ( ax ) = i;
         }
         for ( int j = 0; j < ring; ++j ) { // w.
             p.x -= m_hori;
-            --ax.q;
             quads [ ++i ] = makeVertex ( p );
-            m_vertex_indices.at ( ax ) = i;
         }
         for ( int j = 0; j < ring; ++j ) { // sw.
             p.x -= m_hori / 2; p.y += m_vert;
-            --ax.q; ++ax.r;
             quads [ ++i ] = makeVertex ( p );
-            m_vertex_indices.at ( ax ) = i;
         }
         for ( int j = 0; j < ring; ++j ) { // se.
             p.x += m_hori / 2; p.y += m_vert;
-            ++ax.r;
             quads [ ++i ] = makeVertex ( p );
-            m_vertex_indices.at ( ax ) = i;
         }
         for ( int j = 0; j < ring; ++j ) { // e.
             p.x += m_hori;
-            ++ax.q;
             quads [ ++i ] = makeVertex ( p );
-            m_vertex_indices.at ( ax ) = i;
         }
         for ( int j = 0; j < ring; ++j ) { // ne.
             p.x += m_hori / 2; p.y -= m_vert;
-            ++ax.q; --ax.r;
             quads [ ++i ] = makeVertex ( p );
-            m_vertex_indices.at ( ax ) = i;
         }
+    }
+    // Create m_vertex_indices.
+    int c = 0, z = 0;
+    typename HexContainer<sidx, State::radius ( )>::pointer beg = m_vertex_indices.data ( );
+    for ( int s = State::radius ( ); s > 0; --s ) {
+        const int n = State::width ( ) - s;
+        beg += z + s;
+        std::iota ( beg, beg + n, c );
+        c += n;
+        z = n;
+    }
+    for ( int s = 0; s <= State::radius ( ); ++s ) {
+        const int n = State::width ( ) - s;
+        beg += z;
+        std::iota ( beg, beg + n, c );
+        beg += s;
+        c += n;
+        z = n;
     }
     // Sort quads lambda.
     auto quads_less = [ ] ( const auto & a, const auto & b ) {
         return ( a.v0.position.y < b.v0.position.y ) or ( a.v0.position.y == b.v0.position.y and a.v0.position.x < b.v0.position.x );
     };
-    // Establish the new order of the vertices by index.
-    std::array<int, State::size ( )> sorted_index;
-    std::iota ( std::begin ( sorted_index ), std::end ( sorted_index ), 0 );
-    std::sort ( std::begin ( sorted_index ), std::end ( sorted_index ), [ quads, quads_less ] ( int i, int j ) { return quads_less ( quads [ i ], quads [ j ] ); } );
-    // Invert the lookup.
-    std::array<int, State::size ( )> inverted;
-    std::iota ( std::begin ( inverted ), std::end ( inverted ), 0 );
-    std::sort ( std::begin ( inverted ), std::end ( inverted ), [ &sorted_index ] ( int i, int j ) { return sorted_index [ i ] < sorted_index [ j ]; } );
-    // Replace the old index with the new index.
-    ax = { 0, 0 };
-    m_vertex_indices.at ( ax ) = inverted [ m_vertex_indices.at ( ax ) ];
-    for ( int ring = 1; ring <= int { State::radius ( ) }; ++ring ) {
-        ++ax.q;
-        for ( int j = 0; j < ring; ++j ) { // nw.
-            --ax.r;
-            m_vertex_indices.at ( ax ) = inverted [ m_vertex_indices.at ( ax ) ];
-        }
-        for ( int j = 0; j < ring; ++j ) { // w.
-            --ax.q;
-            m_vertex_indices.at ( ax ) = inverted [ m_vertex_indices.at ( ax ) ];
-        }
-        for ( int j = 0; j < ring; ++j ) { // sw.
-            --ax.q, ++ax.r;
-            m_vertex_indices.at ( ax ) = inverted [ m_vertex_indices.at ( ax ) ];
-        }
-        for ( int j = 0; j < ring; ++j ) { // se.
-            ++ax.r;
-            m_vertex_indices.at ( ax ) = inverted [ m_vertex_indices.at ( ax ) ];
-        }
-        for ( int j = 0; j < ring; ++j ) { // e.
-            ++ax.q;
-            m_vertex_indices.at ( ax ) = inverted [ m_vertex_indices.at ( ax ) ];
-        }
-        for ( int j = 0; j < ring; ++j ) { // ne.
-            ++ax.q; --ax.r;
-            m_vertex_indices.at ( ax ) = inverted [ m_vertex_indices.at ( ax ) ];
-        }
-    }
-    //
-    m_vertex_indices.print ( );
-
-    HexContainer<sidx, State::radius ( )> vertex_indices;
-
-    int s = State::radius ( ), c = 0, idx = 0;
-
-    for ( ; s > -1; --s ) {
-
-        std::cout << s << ' ' << ( State::width ( ) - s ) << nl;
-    }
-    ++s;
-    for ( ; s < State::radius ( ); ++s ) {
-
-        std::cout << s << ' ' << ( State::width ( ) - 1 - s ) << nl;
-    }
-
-    std::cout << nl;
-
-    vertex_indices.print ( );
-
-    std::cout << nl;
-
     std::sort ( quads, quads + m_vertices.getVertexCount ( ) / 4, quads_less );
 }
 
