@@ -155,8 +155,9 @@ void App::mouseEvents ( const sf::Event & event_ ) {
                 bool no_reset;
                 switch ( m_human_move.state ( ) ) {
                 case NextMove::State::none:
-                    if ( ( no_reset = m_play_area.equal ( hex_position, PlayArea::DisplayValue::active_red ) ) )
+                    if ( ( no_reset = m_play_area.equal ( hex_position, PlayArea::DisplayValue::active_red ) ) ) {
                         m_human_move.from ( hex_position );
+                    }
                     break;
                 case NextMove::State::place :
                     if ( ( no_reset = m_play_area.place ( hex_position, PlayArea::DisplayValue::active_red ) ) ) {
@@ -185,8 +186,8 @@ void App::mouseEvents ( const sf::Event & event_ ) {
             if ( Taskbar::State::in_active == m_taskbar.state ( ) ) {
                 // In new area.
                 if ( sf::Mouse::isButtonPressed ( sf::Mouse::Left ) ) {
-                    if ( m_game_clock.is_stopped ( mouse_position ) ) {
-                        std::cout << "clocked clicked\n";
+                    if ( m_game_clock.isClicked ( mouse_position ) ) {
+                        std::cout << "clock clicked\n";
                     }
                     else {
                     // Requested placement.

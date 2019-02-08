@@ -467,15 +467,6 @@ class Taskbar : public sf::Drawable {
 };
 
 
-
-struct PlayerTime {
-    int min, sec;
-};
-
-struct GameClockTimes {
-    PlayerTime agent, human;
-};
-
 struct DelayTimer {
 
     void set ( const int d_ ) {
@@ -535,17 +526,11 @@ struct GameClock : public sf::Drawable, public sf::Transformable {
         m_text [ Player::agent ].setString ( buf );
     }
 
-    void restart ( const Player p_ ) noexcept {
-        m_player = p_;
-        m_start = m_clock.now ( ); // In case delay == 0 or very short.
-        m_delay_timer.restart ( m_start );
-    }
-
     void update ( ) const noexcept {
-        if ( is_running ) {
+        if ( m_is_running ) {
             const sf::HrClock::time_point now = m_clock.now ( );
             if ( m_delay_timer.expired ) {
-                m_time [ m_player ] -= now - m_start;
+                m_time [ m_player_to_move ] -= now - m_start;
                 m_start = now;
             }
             else {
@@ -558,15 +543,22 @@ struct GameClock : public sf::Drawable, public sf::Transformable {
                 }
             }
             char buf [ 7 ] = { 0 };
-            const int s = static_cast<int> ( m_time [ m_player ].count ( ) );
+            const int s = static_cast<int> ( m_time [ m_player_to_move ].count ( ) );
             std::snprintf ( buf, 6, "%0.2i:%0.2i", s / 60, s % 60 );
-            m_text [ m_player ].setString ( buf );
+            m_text [ m_player_to_move ].setString ( buf );
         }
+    }
+
+    void restart ( const Player p_ ) noexcept {
+        m_player_to_move = p_;
+        m_start = m_clock.now ( ); // In case delay == 0 or very short.
+        m_delay_timer.restart ( m_start );
+        update ( );
     }
 
     void update_next ( ) noexcept {
         update ( );
-        restart ( Player::agent == m_player ? Player::human : Player::agent );
+        restart ( Player::agent == m_player_to_move ? Player::human : Player::agent );
     }
 
     virtual void draw ( sf::RenderTarget & target, sf::RenderStates states ) const {
@@ -575,8 +567,8 @@ struct GameClock : public sf::Drawable, public sf::Transformable {
         target.draw ( m_text [ Player::agent ] );
     }
 
-    [[ nodiscard ]] bool is_stopped ( const sf::Vector2f & mouse_position_ ) noexcept {
-        const bool is_clicked = m_bounds [ m_player ].contains ( mouse_position_ );
+    [[ nodiscard ]] bool isClicked ( const sf::Vector2f & mouse_position_ ) noexcept {
+        const bool is_clicked = m_bounds [ m_player_to_move ].contains ( mouse_position_ );
         if ( is_clicked ) {
             update_next ( );
         }
@@ -584,11 +576,11 @@ struct GameClock : public sf::Drawable, public sf::Transformable {
     }
 
     void pause ( ) noexcept {
-        is_running = false;
+        m_is_running = false;
     }
 
     void resume ( ) noexcept {
-        is_running = true;
+        m_is_running = true;
         m_start = m_clock.now ( );
     }
 
@@ -600,7 +592,7 @@ struct GameClock : public sf::Drawable, public sf::Transformable {
     sf::HrClock m_clock;
     mutable std::array<sf::fseconds, 2> m_time;
     mutable DelayTimer m_delay_timer;
-    Player m_player = Player::human;
+    Player m_player_to_move = Player::human;
 
     // Stuff to draw it.
 
@@ -609,5 +601,5 @@ struct GameClock : public sf::Drawable, public sf::Transformable {
     mutable sf::Text m_text [ 2 ];
     sf::FloatRect m_bounds [ 2 ];
 
-    bool is_running = true;
+    bool m_is_running = true;
 };
