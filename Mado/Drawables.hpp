@@ -397,6 +397,27 @@ void PlayArea<State>::init ( const sf::Vector2f & center_ ) noexcept {
         }
         beg += s;
     }
+    // Construct indexes.
+    /*
+    value_type index = 0;
+    pointer ptr = &m_index [ 0 ] [ 0 ];
+    for ( int skip = radius ( ); skip > 0; --skip ) {
+        const pointer skip_end = ptr + skip;
+        while ( ptr != skip_end )
+            *ptr++ = -1;
+        const pointer end = ptr + width ( ) - skip;
+        while ( ptr != end )
+            *ptr++ = index++;
+    }
+    for ( int skip = 0; skip <= radius ( ); ++skip ) {
+        const pointer end = ptr - skip + width ( );
+        while ( ptr != end )
+            *ptr++ = index++;
+        const pointer skip_end = ptr + skip;
+        while ( ptr != skip_end )
+            *ptr++ = -1;
+    }
+    */
 }
 
 
