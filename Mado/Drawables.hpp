@@ -372,6 +372,11 @@ void PlayArea<State>::init ( const sf::Vector2f & center_ ) noexcept {
             quads [ ++i ] = makeVertex ( p );
         }
     }
+    // Sort quads lambda.
+    auto quads_less = [ ] ( const auto & a, const auto & b ) {
+        return ( a.v0.position.y < b.v0.position.y ) or ( a.v0.position.y == b.v0.position.y and a.v0.position.x < b.v0.position.x );
+    };
+    std::sort ( quads, quads + m_vertices.getVertexCount ( ) / 4, quads_less );
     // Create m_vertex_indices.
     using hcp = typename HexContainer<sidx, State::radius ( )>::pointer;
     int c = 0;
@@ -392,11 +397,6 @@ void PlayArea<State>::init ( const sf::Vector2f & center_ ) noexcept {
         }
         beg += s;
     }
-    // Sort quads lambda.
-    auto quads_less = [ ] ( const auto & a, const auto & b ) {
-        return ( a.v0.position.y < b.v0.position.y ) or ( a.v0.position.y == b.v0.position.y and a.v0.position.x < b.v0.position.x );
-    };
-    std::sort ( quads, quads + m_vertices.getVertexCount ( ) / 4, quads_less );
 }
 
 
