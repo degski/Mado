@@ -274,7 +274,7 @@ struct HexC2 {
 
     public:
 
-    [[ nodiscard ]] constexpr value_type at ( const value_type q_, const value_type r_ ) const noexcept {
+    [[ nodiscard ]] constexpr value_type at ( const value_type q_, const value_type r_ ) noexcept {
         if constexpr ( zero_base ) {
             // Center at { 0, 0 }.
             return m_index [ r_ + radius ( ) ] [ q_ + std::max ( static_cast<value_type> ( radius ( ) ), r_ ) ];
@@ -283,6 +283,9 @@ struct HexC2 {
             // Center at { radius, radius }.
             return m_index [ r_ ] [ q_ + std::max ( value_type { 0 }, r_ - static_cast<value_type> ( 2 * radius ( ) ) ) ];
         }
+    }
+    [[ nodiscard ]] constexpr value_type at ( const value_type q_, const value_type r_ ) const noexcept {
+        return at ( q_, r_ );
     }
 };
 
