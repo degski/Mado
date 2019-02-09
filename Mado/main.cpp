@@ -201,28 +201,18 @@ struct HexC2 {
 
     private:
 
-    [[ nodiscard ]] constexpr value_type index ( const value_type q_, const value_type r_ ) noexcept {
+    constexpr void push_valid_neighbor ( const value_type i_, const value_type q_, const value_type r_ ) noexcept {
         if constexpr ( zero_base ) {
-            // Center at { 0, 0 }.
-            if ( std::abs ( q_ ) > radius ( ) or std::abs ( r_ ) > radius ( ) or std::abs ( -q_ - r_ ) > radius ( ) )
-                return -1;
-            return m_index [ r_ + radius ( ) ] [ q_ + std::max ( static_cast< value_type > ( radius ( ) ), r_ ) ];
+            if ( not ( std::abs ( q_ ) > radius ( ) or std::abs ( r_ ) > radius ( ) or std::abs ( -q_ - r_ ) > radius ( ) ) )
+                m_data [ i_ ].neighbors.emplace_back ( at ( q_, r_ ) );
         }
         else {
-            // Center at { radius, radius }.
-            if ( std::abs ( q_ - radius ( ) ) > radius ( ) or std::abs ( r_ - radius ( ) ) > radius ( ) or std::abs ( -q_ - r_ ) > radius ( ) )
-                return -1;
-            return m_index [ r_ ] [ q_ + std::max ( value_type { 0 }, r_ - static_cast< value_type > ( 2 * radius ( ) ) ) ];
+            if ( not ( std::abs ( q_ - radius ( ) ) > radius ( ) or std::abs ( r_ - radius ( ) ) > radius ( ) or std::abs ( -q_ - r_ ) > radius ( ) ) )
+                m_data [ i_ ].neighbors.emplace_back ( at ( q_, r_ ) );
         }
     }
-
-    constexpr void push_valid_neighbor ( const value_type i_, const value_type q_, const value_type r_ ) noexcept {
-        const value_type i = index ( q_, r_ );
-        if ( i != -1 )
-            m_data [ i_ ].neighbors.push_back ( i );
-    }
     constexpr void push_neighbors ( const value_type q_, const value_type r_ ) noexcept {
-        const value_type i = index ( q_, r_ );
+        const value_type i = at ( q_, r_ );
         push_valid_neighbor ( i, q_    , r_ - 1 );
         push_valid_neighbor ( i, q_ + 1, r_ - 1 );
         push_valid_neighbor ( i, q_ - 1, r_     );
