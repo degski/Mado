@@ -207,7 +207,7 @@ struct HexC2 {
                 m_data [ i_ ].neighbors.emplace_back ( at ( q_, r_ ) );
         }
         else {
-            if ( not ( std::abs ( q_ - radius ( ) ) > radius ( ) or std::abs ( r_ - radius ( ) ) > radius ( ) or std::abs ( -q_ - r_ ) > radius ( ) ) )
+            if ( not ( std::abs ( q_ - radius ( ) ) > radius ( ) or std::abs ( r_ - radius ( ) ) > radius ( ) or std::abs ( -q_ - r_ + ( 2 * radius ( ) ) ) > radius ( ) ) )
                 m_data [ i_ ].neighbors.emplace_back ( at ( q_, r_ ) );
         }
     }

@@ -53,7 +53,7 @@
 
 
 
-template<std::intptr_t R>
+template<std::intptr_t R, bool zero_base = true>
 struct Hex {
 
     static_assert ( R > 0, "the radius should be larger than 0" );
@@ -78,10 +78,20 @@ struct Hex {
     }
 
     [[ nodiscard ]] inline bool in_valid ( ) const noexcept {
-        return std::abs ( q ) > Hex::radius ( ) or std::abs ( r ) > Hex::radius ( ) or std::abs ( -q - r ) > Hex::radius ( );
+        if constexpr ( zero_base ) {
+            return std::abs ( q ) > radius ( ) or std::abs ( r ) > radius ( ) or std::abs ( -q - r ) > radius ( );
+        }
+        else {
+            return std::abs ( q - radius ( ) ) > radius ( ) or std::abs ( r - radius ( ) ) > radius ( ) or std::abs ( -q - r + ( 2 * radius ( ) ) ) > radius ( );
+        }
     }
     [[ nodiscard ]] static constexpr bool in_valid ( value_type q_, value_type r_ ) noexcept {
-        return std::abs ( q_ ) > Hex::radius ( ) or std::abs ( r_ ) > Hex::radius ( ) or std::abs ( -q_ - r_ ) > Hex::radius ( );
+        if constexpr ( zero_base ) {
+            return std::abs ( q_ ) > radius ( ) or std::abs ( r_ ) > radius ( ) or std::abs ( -q_ - r_ ) > radius ( );
+        }
+        else {
+            return std::abs ( q_ - radius ( ) ) > radius ( ) or std::abs ( r_ - radius ( ) ) > radius ( ) or std::abs ( -q_ - r_ + ( 2 * radius ( ) ) ) > radius ( );
+        }
     }
     [[ nodiscard ]] inline bool valid ( ) const noexcept {
         return not ( in_valid ( ) );
