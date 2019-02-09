@@ -373,22 +373,22 @@ void PlayArea<State>::init ( const sf::Vector2f & center_ ) noexcept {
         }
     }
     // Create m_vertex_indices.
-    int c = 0, z = 0;
-    typename HexContainer<sidx, State::radius ( )>::pointer beg = m_vertex_indices.data ( );
+    using hcp = typename HexContainer<sidx, State::radius ( )>::pointer;
+    int c = 0;
+    hcp beg = m_vertex_indices.data ( );
     for ( int s = State::radius ( ); s > 0; --s ) {
-        const int n = State::width ( ) - s;
-        beg += z + s;
-        std::iota ( beg, beg + n, c );
-        c += n;
-        z = n;
+        beg += s;
+        const hcp end = beg + State::width ( ) - s;
+        while ( beg != end ) {
+            *beg++ = c++;
+        }
     }
     for ( int s = 0; s <= State::radius ( ); ++s ) {
-        const int n = State::width ( ) - s;
-        beg += z;
-        std::iota ( beg, beg + n, c );
+        const hcp end = beg + State::width ( ) - s;
+        while ( beg != end ) {
+            *beg++ = c++;
+        }
         beg += s;
-        c += n;
-        z = n;
     }
     // Sort quads lambda.
     auto quads_less = [ ] ( const auto & a, const auto & b ) {
@@ -520,7 +520,7 @@ struct GameClock : public sf::Drawable, public sf::Transformable {
     void set ( const int min_, const int sec_ = 0, const int delay_ = 0 ) noexcept {
         m_time [ Player::human ] = m_time [ Player::agent ] = sf::fminutes { min_ } + sf::fseconds { sec_ };
         m_delay_timer.set ( delay_ );
-        char buf [ 7 ] = { 0 };
+        char buf [ 6 ] = { 0 };
         std::snprintf ( buf, 6, "%0.2i:%0.2i", min_, sec_ );
         m_text [ Player::human ].setString ( buf );
         m_text [ Player::agent ].setString ( buf );
@@ -542,8 +542,10 @@ struct GameClock : public sf::Drawable, public sf::Transformable {
                     return;
                 }
             }
-            char buf [ 7 ] = { 0 };
-            const int s = static_cast<int> ( m_time [ m_player_to_move ].count ( ) );
+            char buf [ 6 ] = { 0 };
+            int s = static_cast<int> ( m_time [ m_player_to_move ].count ( ) );
+            if ( s < 0 )
+                s = 0;
             std::snprintf ( buf, 6, "%0.2i:%0.2i", s / 60, s % 60 );
             m_text [ m_player_to_move ].setString ( buf );
         }

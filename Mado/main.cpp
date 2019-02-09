@@ -120,9 +120,90 @@ struct State {
 };
 
 
-int main869869 ( ) {
+template<typename T, std::intptr_t I, std::intptr_t BaseI = 0, typename = std::enable_if_t<std::is_default_constructible<T>::value, T>>
+class Vector {
+
+    public:
+
+    using size_type = std::intptr_t;
+    using value_type = T;
+    using pointer = T * ;
+    using const_pointer = const T *;
+    using reference = T & ;
+    using const_reference = const T &;
+
+    private:
+
+    value_type m_data [ I ];
+
+    [[ nodiscard ]] constexpr pointer base ( ) const noexcept {
+        return m_data - BaseI;
+    }
+
+    public:
+
+    constexpr Vector ( ) : m_data { T ( ) } { }
+
+    [[ nodiscard ]] reference at ( const std::intptr_t i_ ) noexcept {
+        assert ( i_ >= BaseI && i_ < I + BaseI );
+        return base ( ) [ i_ ];
+    }
+    [[ nodiscard ]] const_reference at ( const std::intptr_t i_ ) const noexcept {
+        assert ( i_ >= BaseI && i_ < I + BaseI );
+        return base ( ) [ i_ ];
+    }
+
+    [[ nodiscard ]] pointer data ( ) noexcept {
+        return m_data;
+    }
+    [[ nodiscard ]] const_pointer data ( ) const noexcept {
+        return m_data;
+    }
+};
 
 
+template<typename T, std::size_t R, bool zero_base = true, typename SizeType = int, typename = std::enable_if_t<std::is_default_constructible_v<T>, T>>
+struct HexC2 {
+
+    template<typename T, std::size_t S>
+    using fcv = std::experimental::fixed_capacity_vector<T, S>;
+
+    [[ nodiscard ]] static constexpr std::intptr_t radius ( ) noexcept {
+        return static_cast<std::intptr_t> ( R );
+    }
+
+    [[ nodiscard ]] static constexpr std::size_t size ( ) noexcept {
+        return static_cast<std::size_t> ( 1 + 3 * radius ( ) * ( radius ( ) + 1 ) );
+    }
+
+    fcv<fcv<T, 6>, size ( )> m_data;
+
+    constexpr HexC2 ( ) noexcept {
+
+
+        for ( int ring = 1; ring <= static_cast<int> ( radius ( ) ); ++ring ) {
+            // move to next ring, east.
+            for ( int j = 0; j < ring; ++j ) { // nw.
+            }
+            for ( int j = 0; j < ring; ++j ) { // w.
+            }
+            for ( int j = 0; j < ring; ++j ) { // sw.
+            }
+            for ( int j = 0; j < ring; ++j ) { // se.
+            }
+            for ( int j = 0; j < ring; ++j ) { // e.
+            }
+            for ( int j = 0; j < ring; ++j ) { // ne.
+            }
+        }
+    }
+
+};
+
+
+int main7867 ( ) {
+
+    HexC2<char, 3> hc;
 
     return EXIT_SUCCESS;
 }
