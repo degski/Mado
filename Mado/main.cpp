@@ -187,8 +187,32 @@ struct HexC2 {
         return static_cast<std::size_t> ( 1 + 3 * radius ( ) * ( radius ( ) + 1 ) );
     }
 
-    std::array<fcv<value_type, 6>, 1 + 3 * R * ( R + 1 )> m_data;
+    struct Cell {
+        value_type value;
+        fcv<value_type, 6> neighbors;
+    };
+
+    std::array<Cell, 1 + 3 * R * ( R + 1 )> m_data;
     value_type m_index [ 2 * R + 1 ] [ 2 * R + 1 ];
+
+    private:
+
+    constexpr void push_valid_neighbor ( const value_type i_, const value_type q_, const value_type r_ ) noexcept {
+        const value_type i = index ( q_, r_ );
+        if ( i != -1 )
+            m_data [ i_ ].neighbors.push_back ( i );
+    }
+    constexpr void push_neighbors ( const value_type q_, const value_type r_ ) noexcept {
+        const value_type i = index ( q_, r_ );
+        push_valid_neighbor ( i, q_    , r_ - 1 );
+        push_valid_neighbor ( i, q_ + 1, r_ - 1 );
+        push_valid_neighbor ( i, q_ - 1, r_     );
+        push_valid_neighbor ( i, q_ + 1, r_     );
+        push_valid_neighbor ( i, q_ - 1, r_ + 1 );
+        push_valid_neighbor ( i, q_    , r_ + 1 );
+    }
+
+    public:
 
     constexpr HexC2 ( ) noexcept {
 
@@ -216,51 +240,31 @@ struct HexC2 {
         }
 
         value_type q = 0, r = 0;
-        {
-            std::array<value_type, 6> vals { index ( q, r - 1 ), index ( q + 1, r - 1 ), index ( q - 1, r ), index ( q + 1, r ), index ( q - 1, r + 1 ), index ( q, r + 1 ) };
-            std::for_each ( std::begin ( vals ), std::end ( vals ), [ this, & q, & r ] ( const value_type & v ) { if ( v != -1 ) m_data [ index ( q, r ) ].push_back ( v ); } );
-        }
+        push_neighbors ( q, r );
         for ( int ring = 1; ring <= static_cast<int> ( radius ( ) ); ++ring ) {
             ++q; // move to next ring, east.
-            for ( int j = 0; j < ring; ++j ) { // nw.
-                --r;
-                std::array<value_type, 6> vals { index ( q, r - 1 ), index ( q + 1, r - 1 ), index ( q - 1, r ), index ( q + 1, r ), index ( q - 1, r + 1 ), index ( q, r + 1 ) };
-                std::for_each ( std::begin ( vals ), std::end ( vals ), [ this, & q, & r ] ( const value_type & v ) { if ( v != -1 ) m_data [ index ( q, r ) ].push_back ( v ); } );
-            }
-            for ( int j = 0; j < ring; ++j ) { // w.
-                --q;
-                std::array<value_type, 6> vals { index ( q, r - 1 ), index ( q + 1, r - 1 ), index ( q - 1, r ), index ( q + 1, r ), index ( q - 1, r + 1 ), index ( q, r + 1 ) };
-                std::for_each ( std::begin ( vals ), std::end ( vals ), [ this, & q, & r ] ( const value_type & v ) { if ( v != -1 ) m_data [ index ( q, r ) ].push_back ( v ); } );
-            }
-            for ( int j = 0; j < ring; ++j ) { // sw.
-                --q; ++r;
-                std::array<value_type, 6> vals { index ( q, r - 1 ), index ( q + 1, r - 1 ), index ( q - 1, r ), index ( q + 1, r ), index ( q - 1, r + 1 ), index ( q, r + 1 ) };
-                std::for_each ( std::begin ( vals ), std::end ( vals ), [ this, & q, & r ] ( const value_type & v ) { if ( v != -1 ) m_data [ index ( q, r ) ].push_back ( v ); } );
-            }
-            for ( int j = 0; j < ring; ++j ) { // se.
-                ++r;
-                std::array<value_type, 6> vals { index ( q, r - 1 ), index ( q + 1, r - 1 ), index ( q - 1, r ), index ( q + 1, r ), index ( q - 1, r + 1 ), index ( q, r + 1 ) };
-                std::for_each ( std::begin ( vals ), std::end ( vals ), [ this, & q, & r ] ( const value_type & v ) { if ( v != -1 ) m_data [ index ( q, r ) ].push_back ( v ); } );
-            }
-            for ( int j = 0; j < ring; ++j ) { // e.
-                ++q;
-                std::array<value_type, 6> vals { index ( q, r - 1 ), index ( q + 1, r - 1 ), index ( q - 1, r ), index ( q + 1, r ), index ( q - 1, r + 1 ), index ( q, r + 1 ) };
-                std::for_each ( std::begin ( vals ), std::end ( vals ), [ this, & q, & r ] ( const value_type & v ) { if ( v != -1 ) m_data [ index ( q, r ) ].push_back ( v ); } );
-            }
-            for ( int j = 0; j < ring; ++j ) { // ne.
-                ++q; --r;
-                std::array<value_type, 6> vals { index ( q, r - 1 ), index ( q + 1, r - 1 ), index ( q - 1, r ), index ( q + 1, r ), index ( q - 1, r + 1 ), index ( q, r + 1 ) };
-                std::for_each ( std::begin ( vals ), std::end ( vals ), [ this, & q, & r ] ( const value_type & v ) { if ( v != -1 ) m_data [ index ( q, r ) ].push_back ( v ); } );
-            }
+            for ( int j = 0; j < ring; ++j ) // nw.
+                push_neighbors (   q, --r );
+            for ( int j = 0; j < ring; ++j ) // w.
+                push_neighbors ( --q,   r );
+            for ( int j = 0; j < ring; ++j ) // sw.
+                push_neighbors ( --q, ++r );
+            for ( int j = 0; j < ring; ++j ) // se.
+                push_neighbors (   q, ++r );
+            for ( int j = 0; j < ring; ++j ) // e.
+                push_neighbors ( ++q,   r );
+            for ( int j = 0; j < ring; ++j ) // ne.
+                push_neighbors ( ++q, --r );
         }
 
         for ( auto & vec : m_data ) {
-            for ( auto v : vec ) {
+            for ( auto v : vec.neighbors ) {
                 std::cout << ( int ) v << ' ';
             }
             std::cout << nl;
         }
         std::cout << nl;
+        std::cout << sizeof ( m_data ) << ' ' << ( 1 + 3 * R * ( R + 1 ) ) << nl;
     }
 
     private:
