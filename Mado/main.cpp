@@ -171,9 +171,15 @@ struct HexC2 {
     using const_pointer = const T *;
     using reference = T & ;
     using const_reference = const T &;
+    using neighbors_type = std::experimental::fixed_capacity_vector<T, 6>;
 
-    template<typename T, std::size_t S>
-    using fcv = std::experimental::fixed_capacity_vector<T, S>;
+    struct element {
+        value_type value;
+        neighbors_type neighbors;
+    };
+
+    using index_type = value_type [ 2 * R + 1 ] [ 2 * R + 1 ];
+    using data_type = std::array<element, 1 + 3 * R * ( R + 1 )>;
 
     [[ nodiscard ]] static constexpr std::intptr_t radius ( ) noexcept {
         return static_cast<std::intptr_t> ( R );
@@ -182,20 +188,33 @@ struct HexC2 {
     [[ nodiscard ]] static constexpr std::intptr_t width ( ) noexcept {
         return 2 * radius ( ) + 1;
     }
+    [[ nodiscard ]] static constexpr std::intptr_t height ( ) noexcept {
+        return 2 * radius ( ) + 1;
+    }
 
-    [[ nodiscard ]] static constexpr std::size_t size ( ) noexcept {
+    [[ nodiscard ]] static constexpr std::size_t data_size ( ) noexcept {
         return static_cast<std::size_t> ( 1 + 3 * radius ( ) * ( radius ( ) + 1 ) );
     }
 
-    struct Cell {
-        value_type value;
-        fcv<value_type, 6> neighbors;
-    };
-
-    std::array<Cell, 1 + 3 * R * ( R + 1 )> m_data;
-    value_type m_index [ 2 * R + 1 ] [ 2 * R + 1 ];
+    index_type m_index;
+    data_type m_data;
 
     private:
+
+    [[ nodiscard ]] constexpr value_type index ( const value_type q_, const value_type r_ ) noexcept {
+        if constexpr ( zero_base ) {
+            // Center at { 0, 0 }.
+            if ( std::abs ( q_ ) > radius ( ) or std::abs ( r_ ) > radius ( ) or std::abs ( -q_ - r_ ) > radius ( ) )
+                return -1;
+            return m_index [ r_ + radius ( ) ] [ q_ + std::max ( static_cast< value_type > ( radius ( ) ), r_ ) ];
+        }
+        else {
+            // Center at { radius, radius }.
+            if ( std::abs ( q_ - radius ( ) ) > radius ( ) or std::abs ( r_ - radius ( ) ) > radius ( ) or std::abs ( -q_ - r_ ) > radius ( ) )
+                return -1;
+            return m_index [ r_ ] [ q_ + std::max ( value_type { 0 }, r_ - static_cast< value_type > ( 2 * radius ( ) ) ) ];
+        }
+    }
 
     constexpr void push_valid_neighbor ( const value_type i_, const value_type q_, const value_type r_ ) noexcept {
         const value_type i = index ( q_, r_ );
@@ -215,30 +234,26 @@ struct HexC2 {
     public:
 
     constexpr HexC2 ( ) noexcept {
-
-        // Fill Hex to Idx.
-
-        std::fill ( & m_index [ 0 ] [ 0 ], & m_index [ 0 ] [ 0 ] + ( 2 * R + 1 ) * ( 2 * R + 1 ), value_type { 0 } );
-
-        value_type c = 0;
-        pointer beg = & m_index [ 0 ] [ 0 ];
-        for ( int s = radius ( ); s > 0; --s ) {
-            const int n = width ( ) - s;
-            beg += s;
-            const pointer end = beg + n;
-            while ( beg != end ) {
-                *beg++ = c++;
-            }
+        // Construct indexes.
+        value_type index = 0;
+        pointer ptr = & m_index [ 0 ] [ 0 ];
+        for ( int skip = radius ( ); skip > 0; --skip ) {
+            const pointer skip_end = ptr + skip;
+            while ( ptr != skip_end )
+                *ptr++ = -1;
+            const pointer end = ptr + width ( ) - skip;
+            while ( ptr != end )
+                *ptr++ = index++;
         }
-        for ( int s = 0; s <= radius ( ); ++s ) {
-            const int n = width ( ) - s;
-            const pointer end = beg + n;
-            while ( beg != end ) {
-                *beg++ = c++;
-            }
-            beg += s;
+        for ( int skip = 0; skip <= radius ( ); ++skip ) {
+            const pointer end = ptr - skip + width ( );
+            while ( ptr != end )
+                *ptr++ = index++;
+            const pointer skip_end = ptr + skip;
+            while ( ptr != skip_end )
+                *ptr++ = -1;
         }
-
+        // Construct neighbors.
         value_type q = 0, r = 0;
         push_neighbors ( q, r );
         for ( int ring = 1; ring <= static_cast<int> ( radius ( ) ); ++ring ) {
@@ -256,7 +271,7 @@ struct HexC2 {
             for ( int j = 0; j < ring; ++j ) // ne.
                 push_neighbors ( ++q, --r );
         }
-
+        // Print the shit.
         for ( auto & vec : m_data ) {
             for ( auto v : vec.neighbors ) {
                 std::cout << ( int ) v << ' ';
@@ -265,23 +280,6 @@ struct HexC2 {
         }
         std::cout << nl;
         std::cout << sizeof ( m_data ) << ' ' << ( 1 + 3 * R * ( R + 1 ) ) << nl;
-    }
-
-    private:
-
-    [[ nodiscard ]] constexpr value_type index ( const value_type q_, const value_type r_ ) noexcept {
-        if constexpr ( zero_base ) {
-            // Center at { 0, 0 }.
-            if ( std::abs ( q_ ) > radius ( ) or std::abs ( r_ ) > radius ( ) or std::abs ( -q_ - r_ ) > radius ( ) )
-                return -1;
-            return m_index [ r_ + radius ( ) ] [ q_ + std::max ( static_cast<value_type> ( radius ( ) ), r_ ) ];
-        }
-        else {
-            // Center at { radius, radius }.
-            if ( std::abs ( q_ - radius ( ) ) > radius ( ) or std::abs ( r_ - radius ( ) ) > radius ( ) or std::abs ( -q_ - r_ ) > radius ( ) )
-                return -1;
-            return m_index [ r_ ] [ q_ + std::max ( value_type { 0 }, r_ - static_cast<value_type> ( 2 * radius ( ) ) ) ];
-        }
     }
 
     public:
