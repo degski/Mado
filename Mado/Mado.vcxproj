@@ -213,7 +213,6 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\Docs\FSM.md" />
     <None Include="..\LICENSE.md" />
     <None Include="..\README.md" />
   </ItemGroup>

@@ -377,14 +377,16 @@ void PlayArea<State>::init ( const sf::Vector2f & center_ ) noexcept {
     int c = 0;
     hcp beg = m_vertex_indices.data ( );
     for ( int s = State::radius ( ); s > 0; --s ) {
+        const int n = State::width ( ) - s;
         beg += s;
-        const hcp end = beg + State::width ( ) - s;
+        const hcp end = beg + n;
         while ( beg != end ) {
             *beg++ = c++;
         }
     }
     for ( int s = 0; s <= State::radius ( ); ++s ) {
-        const hcp end = beg + State::width ( ) - s;
+        const int n = State::width ( ) - s;
+        const hcp end = beg + n;
         while ( beg != end ) {
             *beg++ = c++;
         }
