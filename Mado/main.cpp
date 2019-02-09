@@ -201,7 +201,7 @@ struct HexC2 {
 
     private:
 
-    constexpr void push_valid_neighbor ( const value_type i_, const value_type q_, const value_type r_ ) noexcept {
+    constexpr void emplace_valid_neighbor ( const value_type i_, const value_type q_, const value_type r_ ) noexcept {
         if constexpr ( zero_base ) {
             if ( not ( std::abs ( q_ ) > radius ( ) or std::abs ( r_ ) > radius ( ) or std::abs ( -q_ - r_ ) > radius ( ) ) )
                 m_data [ i_ ].neighbors.emplace_back ( at ( q_, r_ ) );
@@ -211,14 +211,14 @@ struct HexC2 {
                 m_data [ i_ ].neighbors.emplace_back ( at ( q_, r_ ) );
         }
     }
-    constexpr void push_neighbors ( const value_type q_, const value_type r_ ) noexcept {
+    constexpr void emplace_neighbors ( const value_type q_, const value_type r_ ) noexcept {
         const value_type i = at ( q_, r_ );
-        push_valid_neighbor ( i, q_    , r_ - 1 );
-        push_valid_neighbor ( i, q_ + 1, r_ - 1 );
-        push_valid_neighbor ( i, q_ - 1, r_     );
-        push_valid_neighbor ( i, q_ + 1, r_     );
-        push_valid_neighbor ( i, q_ - 1, r_ + 1 );
-        push_valid_neighbor ( i, q_    , r_ + 1 );
+        emplace_valid_neighbor ( i, q_    , r_ - 1 );
+        emplace_valid_neighbor ( i, q_ + 1, r_ - 1 );
+        emplace_valid_neighbor ( i, q_ - 1, r_     );
+        emplace_valid_neighbor ( i, q_ + 1, r_     );
+        emplace_valid_neighbor ( i, q_ - 1, r_ + 1 );
+        emplace_valid_neighbor ( i, q_    , r_ + 1 );
     }
 
     public:
@@ -245,21 +245,21 @@ struct HexC2 {
         }
         // Construct neighbors.
         value_type q = 0, r = 0;
-        push_neighbors ( q, r );
+        emplace_neighbors ( q, r );
         for ( int ring = 1; ring <= static_cast<int> ( radius ( ) ); ++ring ) {
             ++q; // move to next ring, east.
             for ( int j = 0; j < ring; ++j ) // nw.
-                push_neighbors (   q, --r );
+                emplace_neighbors (   q, --r );
             for ( int j = 0; j < ring; ++j ) // w.
-                push_neighbors ( --q,   r );
+                emplace_neighbors ( --q,   r );
             for ( int j = 0; j < ring; ++j ) // sw.
-                push_neighbors ( --q, ++r );
+                emplace_neighbors ( --q, ++r );
             for ( int j = 0; j < ring; ++j ) // se.
-                push_neighbors (   q, ++r );
+                emplace_neighbors (   q, ++r );
             for ( int j = 0; j < ring; ++j ) // e.
-                push_neighbors ( ++q,   r );
+                emplace_neighbors ( ++q,   r );
             for ( int j = 0; j < ring; ++j ) // ne.
-                push_neighbors ( ++q, --r );
+                emplace_neighbors ( ++q, --r );
         }
         // Print the shit.
         for ( auto & vec : m_data ) {
