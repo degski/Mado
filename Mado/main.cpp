@@ -397,10 +397,10 @@ struct HexC2 {
 
 using namespace std::string_view_literals;
 
-#include <experimental/static_cstring.hpp>
-#include <experimental/cstring_view.hpp>
+int main ( ) {
 
-int main7867867 ( ) {
+
+    constexpr std::experimental::fixed_capacity_vector<int, 3> vec { 1, 2, 3 };
 
     return EXIT_SUCCESS;
 }
@@ -422,7 +422,7 @@ void handleEptr ( std::exception_ptr eptr ) { // Passing by value is ok.
 }
 
 
-int main ( ) {
+int main897897 ( ) {
     std::exception_ptr eptr;
     try {
         std::unique_ptr<App> app_uptr = std::make_unique<App> ( );

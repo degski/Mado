@@ -37,6 +37,8 @@
 #include <type_traits>
 #include <vector>
 
+#include <experimental/fixed_capacity_vector>
+
 #include <cereal/cereal.hpp>
 #include <cereal/archives/binary.hpp>
 
@@ -50,7 +52,6 @@
 #include "Types.hpp"
 #include "Player.hpp"
 #include "Move.hpp"
-
 
 
 template<std::intptr_t R, bool zero_base = true>
@@ -176,6 +177,7 @@ struct Mado {
 
     using zobrist_hash = std::uint64_t;
 
+    using surrounded_vector = std::experimental::fixed_capacity_vector<sidx, 6>;
 
     [[ nodiscard ]] uidx north_east ( const uidx o_ ) const noexcept {
         static_assert ( cols ( ) > 0, "number of columns has to be larger than 0" );
@@ -327,13 +329,6 @@ struct Mado {
 
     private:
 
-    template<typename U, std::size_t V>
-    struct static_vector {
-
-        U data [ V ];
-        int size = 0;
-    };
-
     [[ nodiscard ]] bool is_surrounded ( const uidx idx_ ) const noexcept {
         return
             m_board [ north_west ( idx_ ) ].is_not_vacant ( ) and
@@ -344,16 +339,16 @@ struct Mado {
             m_board [ south_east ( idx_ ) ].is_not_vacant ( );
     }
 
-    void emplace_back_surrounded ( static_vector<uidx, 6> & s_, uidx && idx_ ) const noexcept {
+    void emplace_back_surrounded ( surrounded_vector & s_, uidx && idx_ ) const noexcept {
         if ( m_board [ idx_ ].occupied ( ) and is_surrounded ( idx_ ) ) {
-            s_.data [ s_.size++ ] = std::move ( idx_ );
+            s_.emplace_back ( std::move ( idx_ ) );
         }
     }
 
     public:
 
     // Return all the surrounded stones in s_ (after a place/slide).
-    void find_surrounded ( static_vector<uidx, 6> & s_, const uidx idx_ ) const noexcept {
+    void find_surrounded ( surrounded_vector & s_, const uidx idx_ ) const noexcept {
         emplace_back_surrounded ( s_, north_west ( idx_ ) );
         emplace_back_surrounded ( s_, north_east ( idx_ ) );
         emplace_back_surrounded ( s_,       east ( idx_ ) );
@@ -380,19 +375,11 @@ struct Mado {
             m_winner = m_player_to_move.opponent ( );
             return;
         }
-        static static_vector<uidx, 6> surrounded;
+        surrounded_vector surrounded;
         find_surrounded ( surrounded, m_last_move.to );
-        if ( surrounded.size ) {
-            while ( surrounded.size-- ) {
-                if ( m_board [ surrounded.data [ surrounded.size ] ] == m_player_to_move ) {
-                    m_winner = m_player_to_move.opponent ( );
-                    return;
-                }
-            }
-            m_winner = m_player_to_move;
-            return;
+        if ( surrounded.size ( ) ) {
+            m_winner = std::end ( surrounded ) == std::find ( std::begin ( surrounded ), std::end ( surrounded ), m_player_to_move ) ? m_player_to_move : m_player_to_move.opponent ( );
         }
-        return;
     }
 
     void move_hash ( const move & move_ ) noexcept {
