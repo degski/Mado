@@ -339,6 +339,7 @@ template<typename State>
 
 template<typename State>
 void PlayArea<State>::init ( const sf::Vector2f & center_ ) noexcept {
+    // Construct vertices.
     m_vertices.setPrimitiveType ( sf::Quads );
     m_vertices.resize ( 4 * State::size ( ) );
     sf::Quad * quads = reinterpret_cast<sf::Quad*> ( & m_vertices [ 0 ] );
@@ -377,47 +378,27 @@ void PlayArea<State>::init ( const sf::Vector2f & center_ ) noexcept {
         return ( a.v0.position.y < b.v0.position.y ) or ( a.v0.position.y == b.v0.position.y and a.v0.position.x < b.v0.position.x );
     };
     std::sort ( quads, quads + m_vertices.getVertexCount ( ) / 4, quads_less );
-    // Create m_vertex_indices.
-    using hcp = typename HexContainer<sidx, State::radius ( )>::pointer;
-    int c = 0;
-    hcp beg = m_vertex_indices.data ( );
-    for ( int s = State::radius ( ); s > 0; --s ) {
-        const int n = State::width ( ) - s;
-        beg += s;
-        const hcp end = beg + n;
-        while ( beg != end ) {
-            *beg++ = c++;
-        }
-    }
-    for ( int s = 0; s <= State::radius ( ); ++s ) {
-        const int n = State::width ( ) - s;
-        const hcp end = beg + n;
-        while ( beg != end ) {
-            *beg++ = c++;
-        }
-        beg += s;
-    }
     // Construct indexes.
-    /*
+    using value_type = typename HexContainer<sidx, State::radius ( )>::value_type;
+    using pointer = typename HexContainer<sidx, State::radius ( )>::pointer;
     value_type index = 0;
-    pointer ptr = &m_index [ 0 ] [ 0 ];
-    for ( int skip = radius ( ); skip > 0; --skip ) {
+    pointer ptr = m_vertex_indices.data ( );
+    for ( int skip = State::radius ( ); skip > 0; --skip ) {
         const pointer skip_end = ptr + skip;
         while ( ptr != skip_end )
             *ptr++ = -1;
-        const pointer end = ptr + width ( ) - skip;
+        const pointer end = ptr + State::width ( ) - skip;
         while ( ptr != end )
             *ptr++ = index++;
     }
-    for ( int skip = 0; skip <= radius ( ); ++skip ) {
-        const pointer end = ptr - skip + width ( );
+    for ( int skip = 0; skip <= State::radius ( ); ++skip ) {
+        const pointer end = ptr - skip + State::width ( );
         while ( ptr != end )
             *ptr++ = index++;
         const pointer skip_end = ptr + skip;
         while ( ptr != skip_end )
             *ptr++ = -1;
     }
-    */
 }
 
 

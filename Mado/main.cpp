@@ -136,7 +136,7 @@ class Vector {
 
     value_type m_data [ I ];
 
-    [[ nodiscard ]] constexpr pointer base ( ) const noexcept {
+    [[ nodiscard ]] constexpr const_pointer base ( ) const noexcept {
         return m_data - BaseI;
     }
 
@@ -161,6 +161,116 @@ class Vector {
     }
 };
 
+namespace fcv {
+
+template<typename T, std::size_t S>
+using vector = std::experimental::fixed_capacity_vector<T, S>;
+}
+
+namespace tcb {
+
+namespace detail {
+
+template <typename T, typename...>
+struct vec_type_helper {
+    using type = T;
+};
+
+template <typename... Args>
+struct vec_type_helper<void, Args...> {
+    using type = typename std::common_type<Args...>::type;
+};
+
+template <typename T, typename... Args>
+using vec_type_helper_t = typename vec_type_helper<T, Args...>::type;
+
+template <typename, typename...>
+struct all_constructible_and_convertible
+    : std::true_type { };
+
+template <typename T, typename First, typename... Rest>
+struct all_constructible_and_convertible<T, First, Rest...>
+    : std::conditional<
+    std::is_constructible<T, First>::value &&
+    std::is_convertible<First, T>::value,
+    all_constructible_and_convertible<T, Rest...>,
+    std::false_type>::type { };
+
+template <std::size_t S, typename T, typename... Args, typename std::enable_if<
+    !std::is_trivially_copyable<T>::value, int>::type = 0>
+    constexpr fcv::vector<T, S> make_vector_impl ( Args&&... args ) {
+    fcv::vector<T, S> vec;
+    using arr_t = int [ ];
+    ( void ) arr_t {
+        0, ( vec.emplace_back ( std::forward<Args> ( args ) ), 0 )...
+    };
+    return vec;
+}
+
+template <std::size_t S, typename T, typename... Args, typename std::enable_if<
+    std::is_trivially_copyable<T>::value, int>::type = 0>
+    constexpr fcv::vector<T, S> make_vector_impl ( Args&&... args ) {
+    return fcv::vector<T, S>{std::forward<Args> ( args )...};
+}
+
+} // namespace detail
+
+
+template <typename T = void, std::size_t S, typename... Args,
+    typename V = detail::vec_type_helper_t<T, Args...>,
+    typename std::enable_if<
+    detail::all_constructible_and_convertible<V, Args...>::value, int>::type = 0>
+    constexpr fcv::vector<T, S> make_vector ( Args&&... args ) {
+    return detail::make_vector_impl<S, V> ( std::forward<Args> ( args )... );
+}
+
+} // namespace tcb
+
+
+template <typename T>
+struct instance_counter {
+
+    instance_counter ( ) noexcept { ++icounter.num_construct; }
+    instance_counter ( const instance_counter& ) noexcept { ++icounter.num_copy; }
+    instance_counter ( instance_counter&& ) noexcept { ++icounter.num_move; }
+    // Simulate both copy-assign and move-assign
+    instance_counter& operator=( instance_counter ) noexcept {
+        return *this;
+    }
+    ~instance_counter ( ) { ++icounter.num_destruct; }
+
+    private:
+    static struct counter {
+        int num_construct = 0;
+        int num_copy = 0;
+        int num_move = 0;
+        int num_destruct = 0;
+
+        ~counter ( ) {
+            std::printf ( "%i direct constructions\n", num_construct );
+            std::printf ( "%i copies\n", num_copy );
+            std::printf ( "%i moves\n", num_move );
+            const int total_construct = num_construct + num_copy + num_move;
+            std::printf ( "%i total constructions\n", total_construct );
+            std::printf ( "%i destructions ", num_destruct );
+            if ( total_construct == num_destruct ) {
+                std::printf ( "(no leaks)\n" );
+            }
+            else {
+                std::printf ( "WARNING: potential leak" );
+            }
+        }
+    } icounter;
+};
+
+template <typename T>
+typename instance_counter<T>::counter instance_counter<T>::icounter {};
+
+template <typename T>
+struct counted : T, private instance_counter<T> {
+    using T::T;
+};
+
 
 template<typename T, std::size_t R, bool zero_base = true, typename SizeType = int, typename = std::enable_if_t<std::is_default_constructible_v<T>, T>>
 struct HexC2 {
@@ -174,7 +284,6 @@ struct HexC2 {
     using neighbors_type = std::experimental::fixed_capacity_vector<T, 6>;
 
     struct element {
-        value_type value;
         neighbors_type neighbors;
     };
 
@@ -223,7 +332,7 @@ struct HexC2 {
 
     public:
 
-    constexpr HexC2 ( ) noexcept {
+    HexC2 ( ) noexcept {
         // Construct indexes.
         value_type index = 0;
         pointer ptr = & m_index [ 0 ] [ 0 ];
@@ -286,10 +395,12 @@ struct HexC2 {
     }
 };
 
+using namespace std::string_view_literals;
 
-int main ( ) {
+#include <experimental/static_cstring.hpp>
+#include <experimental/cstring_view.hpp>
 
-    HexC2<char, 6> hc;
+int main7867867 ( ) {
 
     return EXIT_SUCCESS;
 }
@@ -311,7 +422,7 @@ void handleEptr ( std::exception_ptr eptr ) { // Passing by value is ok.
 }
 
 
-int main897897 ( ) {
+int main ( ) {
     std::exception_ptr eptr;
     try {
         std::unique_ptr<App> app_uptr = std::make_unique<App> ( );
