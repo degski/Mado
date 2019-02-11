@@ -284,7 +284,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
     void reset ( ) noexcept {
         if ( not_set != m_last ) {
             const int l = what ( m_last );
-            if ( 2 < l and l < 6 ) {
+            if ( l - 2 < ( 6 - 2 ) ) { // 2 < l < 6
                 setTexture ( m_last, l % 3 );
             }
             m_last = not_set;
