@@ -398,10 +398,40 @@ struct HexC2 {
 
 using namespace std::string_view_literals;
 
+[[ nodiscard ]] static constexpr std::intptr_t radius ( ) noexcept {
+    return static_cast< std::intptr_t > ( 3 );
+}
+
+[[ nodiscard ]] static constexpr std::size_t size ( ) noexcept {
+    return static_cast< std::size_t > ( 1 + 3 * radius ( ) * ( radius ( ) + 1 ) );
+}
+
+[[ nodiscard ]] static constexpr std::intptr_t width ( ) noexcept {
+    return static_cast< std::intptr_t > ( 2 * radius ( ) + 1 );
+}
+
+[[ nodiscard ]] static constexpr std::intptr_t center ( ) noexcept {
+    return static_cast< std::intptr_t > ( width ( ) * ( radius ( ) + 1 ) );
+}
+
+std::intptr_t hex_to_idx ( const std::intptr_t q_, const std::intptr_t r_ ) noexcept {
+    return center ( ) + ( q_ - radius ( ) ) + width ( ) * ( r_ - radius ( ) );
+}
+
 int main ( ) {
 
 
-    constexpr std::experimental::fixed_capacity_vector<int, 3> vec { 1, 2, 3 };
+
+    std::cout << hex_to_idx ( 3, 0 ) << nl;
+    std::cout << hex_to_idx ( 4, 0 ) << nl;
+    std::cout << hex_to_idx ( 5, 0 ) << nl;
+    std::cout << hex_to_idx ( 6, 0 ) << nl;
+
+    std::cout << hex_to_idx ( 2, 1 ) << nl;
+
+    std::cout << hex_to_idx ( 3, 3 ) << nl;
+
+    std::cout << hex_to_idx ( 3, 6 ) << nl;
 
     return EXIT_SUCCESS;
 }

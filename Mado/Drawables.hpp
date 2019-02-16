@@ -88,7 +88,7 @@ struct HexContainer {
         }
         else {
             // Center at { radius, radius }.
-            return m_data [ r_ ] [ q_ + std::max ( size_type { 0 }, r_ - 2 * radius ( ) ) ];
+            return m_data [ r_ ] [ q_ ];
         }
     }
     [[ nodiscard ]] const_reference at ( const size_type q_, const size_type r_ ) const noexcept {
