@@ -321,7 +321,7 @@ struct HC3 {
         }
     }
 
-    constexpr bool is_invalid ( const value_type q_, const value_type r_ ) noexcept {
+    constexpr bool is_invalid ( const value_type q_, const value_type r_ ) const noexcept {
         if constexpr ( zero_base ) {
             return std::abs ( q_ ) > radius ( ) or std::abs ( r_ ) > radius ( ) or std::abs ( -q_ - r_ ) > radius ( );
         }
@@ -396,12 +396,7 @@ struct HC3 {
         }
     }
     [[ nodiscard ]] const_reference at ( const size_type q_, const size_type r_ ) const noexcept {
-        if constexpr ( zero_base ) { // Center at { 0, 0 }.
-            return m_value [ m_index [ r_ + radius ( ) ] [ q_ + std::max ( radius ( ), r_ ) ] ];
-        }
-        else { // Center at { radius, radius }.
-            return m_value [ m_index [ r_ ] [ q_ ] ];
-        }
+        return at ( q_, r_ );
     }
     [[ nodiscard ]] reference at ( const Hex<R> & h_ ) noexcept {
         return at ( h_.q, h_.r );
