@@ -481,11 +481,43 @@ struct HC3 {
         return width ( ) * height ( );
     }
 
+    [[ nodiscard ]] static constexpr value_type centre ( ) noexcept {
+        if constexpr ( zero_base ) {
+            return static_cast<value_type> ( 0 );
+        }
+        else {
+            return static_cast<value_type> ( R );
+        }
+    }
+
     index_type m_index;
     data_type m_data;
 
+    constexpr void emplace_valid_neighbor ( const value_type i_, const value_type q_, const value_type r_ ) noexcept {
+        if constexpr ( zero_base ) {
+            if ( not ( std::abs ( q_ ) > radius ( ) or std::abs ( r_ ) > radius ( ) or std::abs ( -q_ - r_ ) > radius ( ) ) ) {
+                m_data [ i_ ].neighbors.emplace_back ( at ( q_, r_ ) );
+            }
+        }
+        else {
+            if ( not ( std::abs ( q_ - radius ( ) ) > radius ( ) or std::abs ( r_ - radius ( ) ) > radius ( ) or std::abs ( -q_ - r_ + ( 2 * radius ( ) ) ) > radius ( ) ) ) {
+                m_data [ i_ ].neighbors.emplace_back ( at ( q_, r_ ) );
+            }
+        }
+    }
+    constexpr void emplace_neighbors ( const value_type q_, const value_type r_ ) noexcept {
+        const value_type i = at ( q_, r_ );
+        std::cout << ( int ) i << " -> " << ( int ) q_ << ' ' << ( int ) r_ << nl;
+        emplace_valid_neighbor ( i, q_    , r_ - 1 );
+        emplace_valid_neighbor ( i, q_ + 1, r_ - 1 );
+        emplace_valid_neighbor ( i, q_ - 1, r_     );
+        emplace_valid_neighbor ( i, q_ + 1, r_     );
+        emplace_valid_neighbor ( i, q_ - 1, r_ + 1 );
+        emplace_valid_neighbor ( i, q_    , r_ + 1 );
+    }
+
     HC3 ( ) noexcept {
-        // Construct indexes.
+        // Construct indices.
         value_type index = 0;
         pointer ptr = data ( );
         for ( int skip = radius ( ); skip > 0; --skip ) {
@@ -503,6 +535,24 @@ struct HC3 {
             const pointer skip_end = ptr + skip;
             while ( ptr != skip_end )
                 *ptr++ = -1;
+        }
+        // Construct neighbors.
+        value_type q = centre ( ), r = centre ( );
+        emplace_neighbors ( q, r );
+        for ( int ring = 1; ring <= static_cast< int > ( radius ( ) ); ++ring ) {
+            ++q; // move to next ring, east.
+            for ( int j = 0; j < ring; ++j ) // nw.
+                emplace_neighbors (   q, --r );
+            for ( int j = 0; j < ring; ++j ) // w.
+                emplace_neighbors ( --q,   r );
+            for ( int j = 0; j < ring; ++j ) // sw.
+                emplace_neighbors ( --q, ++r );
+            for ( int j = 0; j < ring; ++j ) // se.
+                emplace_neighbors (   q, ++r );
+            for ( int j = 0; j < ring; ++j ) // e.
+                emplace_neighbors ( ++q,   r );
+            for ( int j = 0; j < ring; ++j ) // ne.
+                emplace_neighbors ( ++q, --r );
         }
     }
 
