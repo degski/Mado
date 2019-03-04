@@ -321,15 +321,21 @@ struct HC3 {
         }
     }
 
-    constexpr void emplace_valid_neighbor ( const value_type i_, const value_type q_, const value_type r_ ) noexcept {
+    constexpr bool is_invalid ( const value_type q_, const value_type r_ ) noexcept {
         if constexpr ( zero_base ) {
-            if ( not ( std::abs ( q_ ) > radius ( ) or std::abs ( r_ ) > radius ( ) or std::abs ( -q_ - r_ ) > radius ( ) ) )
-                m_data [ i_ ].neighbors.emplace_back ( ati ( q_, r_ ) );
+            return std::abs ( q_ ) > radius ( ) or std::abs ( r_ ) > radius ( ) or std::abs ( -q_ - r_ ) > radius ( );
         }
         else {
-            if ( not ( std::abs ( q_ - radius ( ) ) > radius ( ) or std::abs ( r_ - radius ( ) ) > radius ( ) or std::abs ( -q_ - r_ + ( 2 * radius ( ) ) ) > radius ( ) ) )
-                m_data [ i_ ].neighbors.emplace_back ( ati ( q_, r_ ) );
+            return std::abs ( q_ - radius ( ) ) > radius ( ) or std::abs ( r_ - radius ( ) ) > radius ( ) or std::abs ( -q_ - r_ + ( 2 * radius ( ) ) ) > radius ( );
         }
+    }
+    constexpr bool is_valid ( const value_type q_, const value_type r_ ) noexcept {
+        return not ( is_invalid ( q_, r_ ) );
+    }
+
+    constexpr void emplace_valid_neighbor ( const value_type i_, const value_type q_, const value_type r_ ) noexcept {
+        if ( is_valid ( q_, r_ ) )
+            m_data [ i_ ].neighbors.emplace_back ( ati ( q_, r_ ) );
     }
     constexpr void emplace_neighbors ( const value_type q_, const value_type r_ ) noexcept {
         const value_type i = ati ( q_, r_ );
