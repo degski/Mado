@@ -396,7 +396,12 @@ struct HC3 {
         }
     }
     [[ nodiscard ]] const_reference at ( const size_type q_, const size_type r_ ) const noexcept {
-        return at ( q_, r_ );
+        if constexpr ( zero_base ) { // Center at { 0, 0 }.
+            return m_value [ m_index [ r_ + radius ( ) ] [ q_ + std::max ( radius ( ), r_ ) ] ];
+        }
+        else { // Center at { radius, radius }.
+            return m_value [ m_index [ r_ ] [ q_ ] ];
+        }
     }
     [[ nodiscard ]] reference at ( const Hex<R> & h_ ) noexcept {
         return at ( h_.q, h_.r );
