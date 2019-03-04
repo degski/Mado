@@ -329,13 +329,11 @@ struct HC3 {
             return std::abs ( q_ - radius ( ) ) > radius ( ) or std::abs ( r_ - radius ( ) ) > radius ( ) or std::abs ( -q_ - r_ + ( 2 * radius ( ) ) ) > radius ( );
         }
     }
-    constexpr bool is_valid ( const value_type q_, const value_type r_ ) noexcept {
-        return not ( is_invalid ( q_, r_ ) );
-    }
 
     constexpr void emplace_valid_neighbor ( const value_type i_, const value_type q_, const value_type r_ ) noexcept {
-        if ( is_valid ( q_, r_ ) )
-            m_data [ i_ ].neighbors.emplace_back ( ati ( q_, r_ ) );
+        if ( is_invalid ( q_, r_ ) )
+            return;
+        m_data [ i_ ].neighbors.emplace_back ( ati ( q_, r_ ) );
     }
     constexpr void emplace_neighbors ( const value_type q_, const value_type r_ ) noexcept {
         const value_type i = ati ( q_, r_ );
@@ -398,7 +396,12 @@ struct HC3 {
         }
     }
     [[ nodiscard ]] const_reference at ( const size_type q_, const size_type r_ ) const noexcept {
-        return at ( q_, r_ );
+        if constexpr ( zero_base ) { // Center at { 0, 0 }.
+            return m_value [ m_index [ r_ + radius ( ) ] [ q_ + std::max ( radius ( ), r_ ) ] ];
+        }
+        else { // Center at { radius, radius }.
+            return m_value [ m_index [ r_ ] [ q_ ] ];
+        }
     }
     [[ nodiscard ]] reference at ( const Hex<R> & h_ ) noexcept {
         return at ( h_.q, h_.r );
@@ -445,6 +448,10 @@ struct HC3 {
 int main ( ) {
 
     HC3<char, 4, true> hc;
+
+    std::cout << hc << nl;
+
+    hc.at ( 0, 0 ) = 1;
 
     std::cout << hc << nl;
 
