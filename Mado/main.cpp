@@ -282,8 +282,9 @@ struct HC3 {
         neighbors_type neighbors;
     };
 
-    using index_type = value_type [ 2 * R + 1 ] [ 2 * R + 1 ];
+    using indx_type = value_type [ 2 * R + 1 ] [ 2 * R + 1 ];
     using data_type = std::array<element, 1 + 3 * R * ( R + 1 )>;
+    using play_type = std::array<value_type, 1 + 3 * R * ( R + 1 )>;
 
     [[ nodiscard ]] static constexpr size_type radius ( ) noexcept {
         return static_cast< std::size_t > ( R );
@@ -307,23 +308,31 @@ struct HC3 {
         }
     }
 
-    index_type m_index;
+    indx_type m_index;
     data_type m_data;
+    play_type m_value;
+
+    [[ nodiscard ]] reference ati ( const size_type q_, const size_type r_ ) noexcept {
+        if constexpr ( zero_base ) { // Center at { 0, 0 }.
+            return m_index [ r_ + radius ( ) ] [ q_ + std::max ( radius ( ), r_ ) ];
+        }
+        else { // Center at { radius, radius }.
+            return m_index [ r_ ] [ q_ ];
+        }
+    }
 
     constexpr void emplace_valid_neighbor ( const value_type i_, const value_type q_, const value_type r_ ) noexcept {
         if constexpr ( zero_base ) {
-            if ( not ( std::abs ( q_ ) > radius ( ) or std::abs ( r_ ) > radius ( ) or std::abs ( -q_ - r_ ) > radius ( ) ) ) {
-                m_data [ i_ ].neighbors.emplace_back ( at ( q_, r_ ) );
-            }
+            if ( not ( std::abs ( q_ ) > radius ( ) or std::abs ( r_ ) > radius ( ) or std::abs ( -q_ - r_ ) > radius ( ) ) )
+                m_data [ i_ ].neighbors.emplace_back ( ati ( q_, r_ ) );
         }
         else {
-            if ( not ( std::abs ( q_ - radius ( ) ) > radius ( ) or std::abs ( r_ - radius ( ) ) > radius ( ) or std::abs ( -q_ - r_ + ( 2 * radius ( ) ) ) > radius ( ) ) ) {
-                m_data [ i_ ].neighbors.emplace_back ( at ( q_, r_ ) );
-            }
+            if ( not ( std::abs ( q_ - radius ( ) ) > radius ( ) or std::abs ( r_ - radius ( ) ) > radius ( ) or std::abs ( -q_ - r_ + ( 2 * radius ( ) ) ) > radius ( ) ) )
+                m_data [ i_ ].neighbors.emplace_back ( ati ( q_, r_ ) );
         }
     }
     constexpr void emplace_neighbors ( const value_type q_, const value_type r_ ) noexcept {
-        const value_type i = at ( q_, r_ );
+        const value_type i = ati ( q_, r_ );
         emplace_valid_neighbor ( i, q_    , r_ - 1 );
         emplace_valid_neighbor ( i, q_ + 1, r_ - 1 );
         emplace_valid_neighbor ( i, q_ - 1, r_     );
@@ -335,7 +344,7 @@ struct HC3 {
     HC3 ( ) noexcept {
         // Construct indices.
         value_type index = 0;
-        pointer ptr = data ( );
+        pointer ptr = & m_index [ 0 ] [ 0 ];
         for ( int skip = radius ( ); skip > 0; --skip ) {
             const pointer skip_end = ptr + skip;
             while ( ptr != skip_end )
@@ -370,16 +379,16 @@ struct HC3 {
             for ( int j = 0; j < ring; ++j ) // ne.
                 emplace_neighbors ( ++q, --r );
         }
+        // Clear play area.
+        std::fill ( std::begin ( m_value ), std::end ( m_value ), value_type ( 0 ) );
     }
 
     [[ nodiscard ]] reference at ( const size_type q_, const size_type r_ ) noexcept {
-        if constexpr ( zero_base ) {
-            // Center at { 0, 0 }.
-            return m_index [ r_ + radius ( ) ] [ q_ + std::max ( radius ( ), r_ ) ];
+        if constexpr ( zero_base ) { // Center at { 0, 0 }.
+            return m_value [ m_index [ r_ + radius ( ) ] [ q_ + std::max ( radius ( ), r_ ) ] ];
         }
-        else {
-            // Center at { radius, radius }.
-            return m_index [ r_ ] [ q_ ];
+        else { // Center at { radius, radius }.
+            return m_value [ m_index [ r_ ] [ q_ ] ];
         }
     }
     [[ nodiscard ]] const_reference at ( const size_type q_, const size_type r_ ) const noexcept {
@@ -400,10 +409,10 @@ struct HC3 {
     }
 
     [[ nodiscard ]] constexpr pointer data ( ) noexcept {
-        return & m_index [ 0 ] [ 0 ];
+        return & m_value [ 0 ];
     }
     [[ nodiscard ]] constexpr const_pointer data ( ) const noexcept {
-        return & m_index [ 0 ] [ 0 ];
+        return & m_value [ 0 ];
     }
 
     template<typename Stream>
