@@ -267,189 +267,6 @@ struct counted : T, private instance_counter<T> {
 };
 
 
-template<typename T, std::size_t R, bool zero_base = false, typename SizeType = int, typename = std::enable_if_t<std::is_default_constructible_v<T>, T>>
-struct HexC2 {
-
-    using size_type = int;
-    using value_type = T;
-    using pointer = T * ;
-    using const_pointer = const T *;
-    using reference = T & ;
-    using const_reference = const T &;
-    using neighbors_type = std::experimental::fixed_capacity_vector<T, 6>;
-
-    struct element {
-        neighbors_type neighbors;
-    };
-
-    using index_type = value_type [ 2 * R + 1 ] [ 2 * R + 1 ];
-    using data_type = std::array<element, 1 + 3 * R * ( R + 1 )>;
-
-    [[ nodiscard ]] static constexpr size_type radius ( ) noexcept {
-        return static_cast<size_type> ( R );
-    }
-
-    [[ nodiscard ]] static constexpr size_type width ( ) noexcept {
-        return 2 * radius ( ) + 1;
-    }
-    [[ nodiscard ]] static constexpr size_type height ( ) noexcept {
-        return 2 * radius ( ) + 1;
-    }
-
-    [[ nodiscard ]] static constexpr value_type centre ( ) noexcept {
-        if constexpr ( zero_base ) {
-            return static_cast<value_type> ( R );
-        }
-        else {
-            return static_cast<value_type> ( 0 );
-        }
-    }
-
-    [[ nodiscard ]] static constexpr std::size_t data_size ( ) noexcept {
-        return static_cast<std::size_t> ( 1 + 3 * radius ( ) * ( radius ( ) + 1 ) );
-    }
-
-    index_type m_index;
-    data_type m_data;
-
-    private:
-
-    constexpr void emplace_valid_neighbor ( const value_type i_, const value_type q_, const value_type r_ ) noexcept {
-        if constexpr ( zero_base ) {
-            if ( not ( std::abs ( q_ ) > radius ( ) or std::abs ( r_ ) > radius ( ) or std::abs ( -q_ - r_ ) > radius ( ) ) )
-                m_data [ i_ ].neighbors.emplace_back ( at ( q_, r_ ) );
-        }
-        else {
-            if ( not ( std::abs ( q_ - radius ( ) ) > radius ( ) or std::abs ( r_ - radius ( ) ) > radius ( ) or std::abs ( -q_ - r_ + ( 2 * radius ( ) ) ) > radius ( ) ) ) {
-
-                m_data [ i_ ].neighbors.emplace_back ( at ( q_, r_ ) );
-            }
-        }
-    }
-    constexpr void emplace_neighbors ( const value_type q_, const value_type r_ ) noexcept {
-        const value_type i = at ( q_, r_ );
-        //if ( i < 0 )
-           // return;
-        std::cout << ( int ) i << " -> " << ( int ) q_ << ' ' << ( int ) r_ << nl;
-        emplace_valid_neighbor ( i, q_    , r_ - 1 );
-        emplace_valid_neighbor ( i, q_ + 1, r_ - 1 );
-        emplace_valid_neighbor ( i, q_ - 1, r_     );
-        emplace_valid_neighbor ( i, q_ + 1, r_     );
-        emplace_valid_neighbor ( i, q_ - 1, r_ + 1 );
-        emplace_valid_neighbor ( i, q_    , r_ + 1 );
-    }
-
-    public:
-
-    HexC2 ( ) noexcept {
-        // Construct indexes.
-        value_type index = 0;
-        pointer ptr = & m_index [ 0 ] [ 0 ];
-        for ( int skip = radius ( ); skip > 0; --skip ) {
-            const pointer skip_end = ptr + skip;
-            while ( ptr != skip_end )
-                *ptr++ = -1;
-            const pointer end = ptr + width ( ) - skip;
-            while ( ptr != end )
-                *ptr++ = index++;
-        }
-        for ( int skip = 0; skip <= radius ( ); ++skip ) {
-            const pointer end = ptr - skip + width ( );
-            while ( ptr != end )
-                *ptr++ = index++;
-            const pointer skip_end = ptr + skip;
-            while ( ptr != skip_end )
-                *ptr++ = -1;
-        }
-
-        for ( int q = 0; q < width ( ); ++q ) {
-            for ( int r = 0; r < height ( ); ++r ) {
-                std::cout << std::setw ( 3 ) << ( int ) m_index [ q ] [ r ];
-            }
-            std::cout << nl;
-        }
-
-
-
-        // Construct neighbors.
-        value_type q = centre ( ), r = centre ( );
-        emplace_neighbors ( q, r );
-        for ( int ring = 1; ring <= static_cast<int> ( radius ( ) ); ++ring ) {
-            ++q; // move to next ring, east.
-            for ( int j = 0; j < ring; ++j ) // nw.
-                emplace_neighbors (   q, --r );
-            for ( int j = 0; j < ring; ++j ) // w.
-                emplace_neighbors ( --q,   r );
-            for ( int j = 0; j < ring; ++j ) // sw.
-                emplace_neighbors ( --q, ++r );
-            for ( int j = 0; j < ring; ++j ) // se.
-                emplace_neighbors (   q, ++r );
-            for ( int j = 0; j < ring; ++j ) // e.
-                emplace_neighbors ( ++q,   r );
-            for ( int j = 0; j < ring; ++j ) // ne.
-                emplace_neighbors ( ++q, --r );
-        }
-
-        // Print the shit.
-        for ( auto & vec : m_data ) {
-            for ( auto v : vec.neighbors ) {
-                std::cout << ( int ) v << ' ';
-            }
-            std::cout << nl;
-        }
-        std::cout << nl;
-        std::cout << sizeof ( m_data ) << ' ' << ( 1 + 3 * R * ( R + 1 ) ) << nl;
-    }
-
-    public:
-
-    [[ nodiscard ]] reference at ( const size_type q_, const size_type r_ ) noexcept {
-        if constexpr ( zero_base ) {
-            // Center at { 0, 0 }.
-            return m_index [ q_ + std::max ( radius ( ), r_ ) ] [ r_ + radius ( ) ];
-        }
-        else {
-            // Center at { radius, radius }.
-            return m_index [ q_ ] [ r_ ];
-        }
-    }
-    [[ nodiscard ]] const_reference at ( const size_type q_, const size_type r_ ) const noexcept {
-        return at ( q_, r_ );
-    }
-    [[ nodiscard ]] reference at ( const Hex<R> & h_ ) noexcept {
-        return at ( h_.q, h_.r );
-    }
-    [[ nodiscard ]] const_reference at ( const Hex<R> & h_ ) const noexcept {
-        return at ( h_.q, h_.r );
-    }
-};
-
-using namespace std::string_view_literals;
-
-[[ nodiscard ]] static constexpr std::intptr_t radius ( ) noexcept {
-    return static_cast< std::intptr_t > ( 3 );
-}
-
-[[ nodiscard ]] static constexpr std::size_t size ( ) noexcept {
-    return static_cast< std::size_t > ( 1 + 3 * radius ( ) * ( radius ( ) + 1 ) );
-}
-
-[[ nodiscard ]] static constexpr std::intptr_t width ( ) noexcept {
-    return static_cast< std::intptr_t > ( 2 * radius ( ) + 1 );
-}
-
-[[ nodiscard ]] static constexpr std::intptr_t center ( ) noexcept {
-    return static_cast< std::intptr_t > ( width ( ) * ( radius ( ) + 1 ) );
-}
-
-std::intptr_t hex_to_idx ( const std::intptr_t q_, const std::intptr_t r_ ) noexcept {
-    return center ( ) + ( q_ - radius ( ) ) + width ( ) * ( r_ - radius ( ) );
-}
-
-
-
-
-
 template<typename T, std::size_t R, bool zero_base = true, typename SizeType = int, typename = std::enable_if_t<std::is_default_constructible_v<T>, T>>
 struct HC3 {
 
@@ -507,7 +324,6 @@ struct HC3 {
     }
     constexpr void emplace_neighbors ( const value_type q_, const value_type r_ ) noexcept {
         const value_type i = at ( q_, r_ );
-        std::cout << ( int ) i << " -> " << ( int ) q_ << ' ' << ( int ) r_ << nl;
         emplace_valid_neighbor ( i, q_    , r_ - 1 );
         emplace_valid_neighbor ( i, q_ + 1, r_ - 1 );
         emplace_valid_neighbor ( i, q_ - 1, r_     );
@@ -598,6 +414,14 @@ struct HC3 {
             }
             out_ << nl;
         }
+        std::cout << nl;
+        for ( auto & vec : h_.m_data ) {
+            for ( auto v : vec.neighbors ) {
+                std::cout << std::setw ( 3 ) << static_cast<int> ( v );
+            }
+            std::cout << nl;
+        }
+        std::cout << nl;
         return out_;
     }
 };
@@ -605,7 +429,7 @@ struct HC3 {
 
 int main ( ) {
 
-    HC3<char, 3, true> hc;
+    HC3<char, 4, true> hc;
 
     std::cout << hc << nl;
 
