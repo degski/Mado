@@ -312,15 +312,6 @@ struct HC3 {
     data_type m_data;
     play_type m_value;
 
-    [[ nodiscard ]] reference ati ( const size_type q_, const size_type r_ ) noexcept {
-        if constexpr ( zero_base ) { // Center at { 0, 0 }.
-            return m_index [ r_ + radius ( ) ] [ q_ + std::max ( radius ( ), r_ ) ];
-        }
-        else { // Center at { radius, radius }.
-            return m_index [ r_ ] [ q_ ];
-        }
-    }
-
     constexpr bool is_invalid ( const value_type q_, const value_type r_ ) const noexcept {
         if constexpr ( zero_base ) {
             return std::abs ( q_ ) > radius ( ) or std::abs ( r_ ) > radius ( ) or std::abs ( -q_ - r_ ) > radius ( );
@@ -387,21 +378,28 @@ struct HC3 {
         std::fill ( std::begin ( m_value ), std::end ( m_value ), value_type ( 0 ) );
     }
 
-    [[ nodiscard ]] reference at ( const size_type q_, const size_type r_ ) noexcept {
+    [[ nodiscard ]] reference ati ( const size_type q_, const size_type r_ ) noexcept {
         if constexpr ( zero_base ) { // Center at { 0, 0 }.
-            return m_value [ m_index [ r_ + radius ( ) ] [ q_ + std::max ( radius ( ), r_ ) ] ];
+            return m_index [ r_ + radius ( ) ] [ q_ + std::max ( radius ( ), r_ ) ];
         }
         else { // Center at { radius, radius }.
-            return m_value [ m_index [ r_ ] [ q_ ] ];
+            return m_index [ r_ ] [ q_ ];
         }
     }
-    [[ nodiscard ]] const_reference at ( const size_type q_, const size_type r_ ) const noexcept {
+    [[ nodiscard ]] const_reference ati ( const size_type q_, const size_type r_ ) const noexcept {
         if constexpr ( zero_base ) { // Center at { 0, 0 }.
-            return m_value [ m_index [ r_ + radius ( ) ] [ q_ + std::max ( radius ( ), r_ ) ] ];
+            return m_index [ r_ + radius ( ) ] [ q_ + std::max ( radius ( ), r_ ) ];
         }
         else { // Center at { radius, radius }.
-            return m_value [ m_index [ r_ ] [ q_ ] ];
+            return m_index [ r_ ] [ q_ ];
         }
+    }
+
+    [[ nodiscard ]] reference at ( const size_type q_, const size_type r_ ) noexcept {
+        return m_value [ ati ( q_, r_ ) ];
+    }
+    [[ nodiscard ]] const_reference at ( const size_type q_, const size_type r_ ) const noexcept {
+        return m_value [ ati ( q_, r_ ) ];
     }
     [[ nodiscard ]] reference at ( const Hex<R> & h_ ) noexcept {
         return at ( h_.q, h_.r );
@@ -440,6 +438,9 @@ struct HC3 {
             std::cout << nl;
         }
         std::cout << nl;
+        for ( const auto & v : h_.m_value )
+            std::cout << std::setw ( 3 ) << static_cast< int > ( v );
+        std::cout << nl;
         return out_;
     }
 };
@@ -447,13 +448,30 @@ struct HC3 {
 
 int main ( ) {
 
-    HC3<char, 4, true> hc;
+    HC3<char, 3, true> hc1;
 
-    std::cout << hc << nl;
+    // std::cout << hc1 << nl;
 
-    hc.at ( 0, 0 ) = 1;
+    std::cout << ( int ) hc1.ati ( 0, -3 ) << nl;
+    std::cout << ( int ) hc1.ati ( 1, -3 ) << nl;
 
-    std::cout << hc << nl;
+    //hc1.at ( 0, -3 ) = 1;
+    //hc1.at ( 1, -3 ) = 2;
+
+    //std::cout << hc1 << nl;
+
+    HC3<char, 3, false> hc2;
+
+    // std::cout << hc2 << nl;
+
+    std::cout << ( int ) hc2.ati ( 3, 0 ) << nl;
+    std::cout << ( int ) hc2.ati ( 4, 0 ) << nl;
+
+    // hc2.at ( 3, 0 ) = 1;
+    // hc2.at ( 4, 0 ) = 2;
+    // hc2.at ( 3, 3 ) = 18;
+
+    // std::cout << hc2 << nl;
 
     return EXIT_SUCCESS;
 }
