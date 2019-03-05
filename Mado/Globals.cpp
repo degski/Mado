@@ -26,27 +26,10 @@
 #include <cstdlib>
 
 #include <filesystem>
-#include <random>
-
-#include <SFML/System.hpp>
-#include <SFML/Graphics.hpp>
-#include <SFML/Extensions.hpp>
+#include <string>
 
 
-sf::Clock g_clock;
-
-using rng_t = sf::SplitMix64;
-
-
-rng_t g_rng ( 1234567890 );
-
-
-std::bernoulli_distribution g_bernoulli_distribution;
-
-
-[[ nodiscard ]] bool bernoulli ( ) noexcept {
-	return g_bernoulli_distribution ( g_rng );
-}
+namespace fs = std::filesystem;
 
 
 [[ nodiscard ]] fs::path appDataPath ( std::string && name_ ) {
@@ -69,7 +52,6 @@ fs::path & g_app_data_path = const_cast<fs::path &> ( app_data_path_ );
 }
 
 const fs::path app_path_ = getExePath ( );
-
 fs::path & g_app_path = const_cast<fs::path &> ( app_path_ );
 
 

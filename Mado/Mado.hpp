@@ -31,7 +31,7 @@
 
 #include <algorithm>
 #include <array>
-#include <iostream>
+#include <sax/iostream.hpp>
 #include <optional>
 #include <random>
 #include <type_traits>
@@ -44,10 +44,6 @@
 
 #include "../../KD-Tree/KD-Tree/sorted_vector_set.hpp"
 #include "../../MCTSSearchTree/include/flat_search_tree.hpp"
-
-#ifndef nl
-#define nl '\n'
-#endif
 
 #include "Types.hpp"
 #include "Player.hpp"

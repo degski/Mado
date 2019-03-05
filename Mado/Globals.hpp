@@ -23,23 +23,12 @@
 
 #pragma once
 
-#include <chrono>
 #include <filesystem>
-#include <fstream>
-#include <string>
-#include <thread>
-
-#include <cereal/cereal.hpp>
-#include <cereal/archives/binary.hpp>
-#include <cereal/archives/portable_binary.hpp>
-
-#include <lz4stream.hpp>
+#include <random>
 
 #include <SFML/System.hpp>
-#include <SFML/Graphics.hpp>
-#include <SFML/Extensions.hpp>
 
-#define NO_DEFAULT_CASE default: abort ( )
+#include <sax/prng.hpp>
 
 
 // C++ global constants have static linkage. This is different from C. If you try to use a global
@@ -50,16 +39,37 @@
 // non-constant and use a constant reference when assessing it.
 
 
-extern fs::path & g_app_data_path; // This needs to be in header file.
-extern fs::path & g_app_path;
-
 extern sf::Clock g_clock;
 
-using rng_t = sf::SplitMix64;
 
-extern rng_t g_rng;
+#if defined ( _DEBUG )
+#define RANDOM 0
+#else
+#define RANDOM 1
+#endif
 
-[[ nodiscard ]] bool bernoulli ( ) noexcept;
+struct Rng {
 
+    static thread_local sax::Rng gen;
+
+    static void seed ( const std::uint64_t s_ = 0u ) noexcept {
+        Rng::gen.seed ( s_ ? s_ : sax::os_seed ( ) );
+    }
+
+    [[ nodiscard ]] static bool bernoulli ( ) noexcept {
+        static std::bernoulli_distribution g_bernoulli_distribution;
+        return g_bernoulli_distribution ( Rng::gen );
+    }
+};
+
+thread_local sax::Rng Rng::gen ( RANDOM ? sax::os_seed ( ) : sax::fixed_seed ( ) );
+
+#undef RANDOM
+
+
+namespace fs = std::filesystem;
+
+extern fs::path & g_app_data_path;
+extern fs::path & g_app_path;
 
 [[ nodiscard ]] std::int32_t getNumberOfProcessors ( ) noexcept;

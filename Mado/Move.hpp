@@ -28,15 +28,11 @@
 #include <cstdint>
 #include <cstdlib>
 
-#include <iostream>
+#include <sax/iostream.hpp>
 #include <limits>
 
 #include <cereal/cereal.hpp>
 #include <cereal/archives/binary.hpp>
-
-#ifndef nl
-#define nl '\n'
-#endif
 
 #include "Types.hpp"
 

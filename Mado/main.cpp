@@ -267,7 +267,7 @@ struct counted : T, private instance_counter<T> {
 };
 
 
-template<typename T, std::size_t R, bool zero_base = true, typename SizeType = int, typename = std::enable_if_t<std::is_default_constructible_v<T>, T>>
+template<typename T, std::size_t R, bool zero_base = false, typename SizeType = int, typename = std::enable_if_t<std::is_default_constructible_v<T>, T>>
 struct HC3 {
 
     using size_type = SizeType;
@@ -359,7 +359,7 @@ struct HC3 {
         // Construct neighbors.
         value_type q = centre ( ), r = centre ( );
         emplace_neighbors ( q, r );
-        for ( int ring = 1; ring <= static_cast< int > ( radius ( ) ); ++ring ) {
+        for ( int ring = 1; ring <= static_cast<int> ( radius ( ) ); ++ring ) {
             ++q; // move to next ring, east.
             for ( int j = 0; j < ring; ++j ) // nw.
                 emplace_neighbors (   q, --r );
@@ -423,7 +423,7 @@ struct HC3 {
     }
 
     template<typename Stream>
-    [ [ maybe_unused ] ] friend Stream & operator << ( Stream & out_, const HC3 & h_ ) noexcept {
+    [[ maybe_unused ]] friend Stream & operator << ( Stream & out_, const HC3 & h_ ) noexcept {
         for ( int r = 0; r < height ( ); ++r ) {
             for ( int q = 0; q < width ( ); ++q ) {
                 out_ << std::setw ( 3 ) << static_cast<int> ( h_.m_index [ r ] [ q ] );
@@ -439,14 +439,14 @@ struct HC3 {
         }
         std::cout << nl;
         for ( const auto & v : h_.m_value )
-            std::cout << std::setw ( 3 ) << static_cast< int > ( v );
+            std::cout << std::setw ( 3 ) << static_cast<int> ( v );
         std::cout << nl;
         return out_;
     }
 };
 
 
-int main ( ) {
+int main778 ( ) {
 
     HC3<char, 3, true> hc1;
 
@@ -493,7 +493,7 @@ void handleEptr ( std::exception_ptr eptr ) { // Passing by value is ok.
 }
 
 
-int main8667878 ( ) {
+int main ( ) {
     std::exception_ptr eptr;
     try {
         std::unique_ptr<App> app_uptr = std::make_unique<App> ( );
@@ -545,7 +545,7 @@ int main8667878 ( ) {
 
 
 int main97979 ( ) {
-
+    /*
     using board = Mado<9>;
     using move = typename board::move;
 
@@ -559,7 +559,7 @@ int main97979 ( ) {
     b.move_hash ( move { 28 } );
     b.move_hash ( move { 106, 104 } );
     b.move_hash ( move { 28, 26 } );
-
+    */
     return EXIT_SUCCESS;
 }
 
