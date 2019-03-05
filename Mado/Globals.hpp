@@ -26,8 +26,6 @@
 #include <filesystem>
 #include <random>
 
-#include <SFML/System.hpp>
-
 #include <sax/prng.hpp>
 
 
@@ -37,9 +35,6 @@
 // is to include the const initializations in a header file and include that header in your CPP files
 // when necessary, just as if it was function prototype. Another possibility is to make the variable
 // non-constant and use a constant reference when assessing it.
-
-
-extern sf::Clock g_clock;
 
 
 #if defined ( _DEBUG )
@@ -69,7 +64,7 @@ thread_local sax::Rng Rng::gen ( RANDOM ? sax::os_seed ( ) : sax::fixed_seed ( )
 
 namespace fs = std::filesystem;
 
-extern fs::path & g_app_data_path;
-extern fs::path & g_app_path;
+extern fs::path const & g_app_data_path;
+extern fs::path const & g_app_path;
 
 [[ nodiscard ]] std::int32_t getNumberOfProcessors ( ) noexcept;

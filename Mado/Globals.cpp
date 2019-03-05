@@ -41,8 +41,8 @@ namespace fs = std::filesystem;
 	return return_value;
 }
 
-const fs::path app_data_path_ = appDataPath ( "Mado" );
-fs::path & g_app_data_path = const_cast<fs::path &> ( app_data_path_ );
+fs::path app_data_path_ = appDataPath ( "Mado" );
+fs::path const & g_app_data_path = app_data_path_;
 
 
 [[ nodiscard ]] fs::path getExePath ( ) noexcept {
@@ -51,8 +51,8 @@ fs::path & g_app_data_path = const_cast<fs::path &> ( app_data_path_ );
 	return fs::path ( exename ).parent_path ( );
 }
 
-const fs::path app_path_ = getExePath ( );
-fs::path & g_app_path = const_cast<fs::path &> ( app_path_ );
+fs::path app_path_ = getExePath ( );
+fs::path const & g_app_path = app_path_;
 
 
 [[ nodiscard ]] std::int32_t getNumberOfProcessors ( ) noexcept {
