@@ -382,7 +382,7 @@ struct Mado {
         m_last_move = move_;
         move_hash_impl ( move_ );
         m_player_to_move.next ( );
-        std::cout << *this << nl;
+        std::cout << * this << nl;
     }
 
     void move_winner ( const move & move_ ) noexcept {

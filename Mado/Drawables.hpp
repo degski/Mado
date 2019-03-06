@@ -81,7 +81,7 @@ struct HexContainer {
 
     HexContainer ( ) noexcept : m_data { { T ( ) } } { }
 
-    [[ nodiscard ]] reference at ( const size_type q_, const size_type r_ ) noexcept {
+    [[ nodiscard ]] const_reference at ( const size_type q_, const size_type r_ ) const noexcept {
         if constexpr ( zero_base ) {
             // Center at { 0, 0 }.
             return m_data [ r_ + radius ( ) ] [ q_ + std::max ( radius ( ), r_ ) ];
@@ -91,29 +91,31 @@ struct HexContainer {
             return m_data [ r_ ] [ q_ ];
         }
     }
-    [[ nodiscard ]] const_reference at ( const size_type q_, const size_type r_ ) const noexcept {
-        return at ( q_, r_ );
+    [[ nodiscard ]] reference at ( const size_type q_, const size_type r_ ) noexcept {
+        return const_cast<reference> ( std::as_const ( * this ).at ( q_, r_ ) );
     }
-    [[ nodiscard ]] reference at ( const Hex<R> & h_ ) noexcept {
-        return at ( h_.q, h_.r );
-    }
+
     [[ nodiscard ]] const_reference at ( const Hex<R> & h_ ) const noexcept {
         return at ( h_.q, h_.r );
     }
-
-    [[ nodiscard ]] reference operator [ ] ( const Hex<R> & h_ ) noexcept {
-        return at ( h_ );
+    [[ nodiscard ]] reference at ( const Hex<R> & h_ ) noexcept {
+        return const_cast<reference> ( std::as_const ( * this ).at ( h_.q, h_.r ) );
     }
+
     [[ nodiscard ]] const_reference operator [ ] ( const Hex<R> & h_ ) const noexcept {
         return at ( h_ );
     }
+    [[ nodiscard ]] reference operator [ ] ( const Hex<R> & h_ ) noexcept {
+        return const_cast<reference> ( std::as_const ( * this ).operator [ ] ( h_ ) );
+    }
 
-    [[ nodiscard ]] pointer data ( ) noexcept {
+    [[ nodiscard ]] constexpr const_pointer data ( ) const noexcept {
         return & m_data [ 0 ] [ 0 ];
     }
-    [[ nodiscard ]] const_pointer data ( ) const noexcept {
-        return & m_data [ 0 ] [ 0 ];
+    [[ nodiscard ]] constexpr pointer data ( ) noexcept {
+        return const_cast< pointer > ( std::as_const ( * this ).data ( ) );
     }
+
 
     template<typename Stream>
     [[ maybe_unused ]] friend Stream & operator << ( Stream & out_, const HexContainer & h_ ) noexcept {

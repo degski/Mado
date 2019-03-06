@@ -230,7 +230,7 @@ struct instance_counter {
     instance_counter ( instance_counter&& ) noexcept { ++icounter.num_move; }
     // Simulate both copy-assign and move-assign
     instance_counter& operator=( instance_counter ) noexcept {
-        return *this;
+        return * this;
     }
     ~instance_counter ( ) { ++icounter.num_destruct; }
 
@@ -378,14 +378,7 @@ struct HC3 {
         std::fill ( std::begin ( m_value ), std::end ( m_value ), value_type ( 0 ) );
     }
 
-    [[ nodiscard ]] reference ati ( const size_type q_, const size_type r_ ) noexcept {
-        if constexpr ( zero_base ) { // Center at { 0, 0 }.
-            return m_index [ r_ + radius ( ) ] [ q_ + std::max ( radius ( ), r_ ) ];
-        }
-        else { // Center at { radius, radius }.
-            return m_index [ r_ ] [ q_ ];
-        }
-    }
+
     [[ nodiscard ]] const_reference ati ( const size_type q_, const size_type r_ ) const noexcept {
         if constexpr ( zero_base ) { // Center at { 0, 0 }.
             return m_index [ r_ + radius ( ) ] [ q_ + std::max ( radius ( ), r_ ) ];
@@ -394,32 +387,36 @@ struct HC3 {
             return m_index [ r_ ] [ q_ ];
         }
     }
-
-    [[ nodiscard ]] reference at ( const size_type q_, const size_type r_ ) noexcept {
-        return m_value [ ati ( q_, r_ ) ];
+    [[ nodiscard ]] reference ati ( const size_type q_, const size_type r_ ) noexcept {
+        return const_cast<reference> ( std::as_const ( * this ).ati ( q_, r_ ) );
     }
+
     [[ nodiscard ]] const_reference at ( const size_type q_, const size_type r_ ) const noexcept {
         return m_value [ ati ( q_, r_ ) ];
     }
-    [[ nodiscard ]] reference at ( const Hex<R> & h_ ) noexcept {
-        return at ( h_.q, h_.r );
+    [[ nodiscard ]] reference at ( const size_type q_, const size_type r_ ) noexcept {
+        return const_cast<reference> ( std::as_const ( * this ).at ( q_, r_ ) );
     }
+
     [[ nodiscard ]] const_reference at ( const Hex<R> & h_ ) const noexcept {
         return at ( h_.q, h_.r );
     }
-
-    [[ nodiscard ]] reference operator [ ] ( const Hex<R> & h_ ) noexcept {
-        return at ( h_ );
+    [[ nodiscard ]] reference at ( const Hex<R> & h_ ) noexcept {
+        return const_cast<reference> ( std::as_const ( * this ).at ( h_.q, h_.r ) );
     }
+
     [[ nodiscard ]] const_reference operator [ ] ( const Hex<R> & h_ ) const noexcept {
         return at ( h_ );
     }
-
-    [[ nodiscard ]] constexpr pointer data ( ) noexcept {
-        return & m_value [ 0 ];
+    [[ nodiscard ]] reference operator [ ] ( const Hex<R> & h_ ) noexcept {
+        return const_cast<reference> ( std::as_const ( * this ).operator [ ] ( h_ ) );
     }
+
     [[ nodiscard ]] constexpr const_pointer data ( ) const noexcept {
         return & m_value [ 0 ];
+    }
+    [[ nodiscard ]] constexpr pointer data ( ) noexcept {
+        return const_cast<pointer> ( std::as_const ( * this ).data ( ) );
     }
 
     template<typename Stream>
