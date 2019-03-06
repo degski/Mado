@@ -43,21 +43,18 @@
 #define RANDOM 1
 #endif
 
+
 struct Rng {
 
-    static thread_local sax::Rng gen;
-
     static void seed ( const std::uint64_t s_ = 0u ) noexcept {
-        Rng::gen.seed ( s_ ? s_ : sax::os_seed ( ) );
+        Rng::gen ( ).seed ( s_ ? s_ : sax::os_seed ( ) );
     }
 
-    [[ nodiscard ]] static bool bernoulli ( ) noexcept {
-        static std::bernoulli_distribution g_bernoulli_distribution;
-        return g_bernoulli_distribution ( Rng::gen );
+    [[ nodiscard ]] static sax::Rng & gen ( ) noexcept {
+        static thread_local sax::Rng generator ( RANDOM ? sax::os_seed ( ) : sax::fixed_seed ( ) );
+        return generator;
     }
 };
-
-thread_local sax::Rng Rng::gen ( RANDOM ? sax::os_seed ( ) : sax::fixed_seed ( ) );
 
 #undef RANDOM
 
