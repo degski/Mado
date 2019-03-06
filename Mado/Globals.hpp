@@ -29,11 +29,13 @@
 #include <sax/prng.hpp>
 
 
-// C++ global constants have static linkage. This is different from C. If you try to use a global
-// constant in C++ in multiple files you get an unresolved external error. The compiler optimizes
-// global constants out, leaving no space reserved for the variable. One way to resolve this error
-// is to include the const initializations in a header file and include that header in your CPP files
-// when necessary, just as if it was function prototype. Another possibility is to make the variable
+// C++ global constants have static linkage. This is different from C.
+// If you try to use a global constant in C++ in multiple files you get
+// an unresolved external error. The compiler optimizes global constants
+// out, leaving no space reserved for the variable. One way to resolve
+// this error is to include the const initializations in a header file
+// and include that header in your CPP files when necessary, just as if
+// it was function prototype. Another possibility is to make the variable
 // non-constant and use a constant reference when assessing it.
 
 
