@@ -30,6 +30,7 @@
 #include <cstdlib>
 
 #include <filesystem>
+#include <limits>
 #include <random>
 
 #include <sax/prng.hpp>
@@ -64,7 +65,7 @@ struct Rng final {
     // A pareto-variate, the defaults give the 'famous' 80/20 distribution.
     template<typename T = float>
     [[ nodiscard ]] static T pareto_variate ( const T min_ = T { 1 }, const T alpha_ = { std::log ( T { 5 } ) / std::log ( T { 4 } ) } ) noexcept {
-        assert ( min_ ); assert ( alpha_ );
+        assert ( min_ > T { 0 } ); assert ( alpha_ > T { 0 } );
         static std::uniform_real_distribution<T> dis ( std::numeric_limits<T>::min ( ), T { 1 } );
         return min_ / std::pow ( dis ( Rng::gen ( ) ), T { 1 } / alpha_ );
     }
