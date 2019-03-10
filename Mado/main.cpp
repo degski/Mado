@@ -63,6 +63,58 @@
 template<typename T, std::size_t R, bool zero_base = true>
 class hb { };
 
+
+template<typename T, bool zero_base>
+class hb<T, 3, zero_base> {
+
+    static constexpr int radius ( ) noexcept {
+        return 3;
+    }
+
+    T r0 [ 4 ] { 0 };
+    T r1 [ 5 ] { 0 };
+    T r2 [ 6 ] { 0 };
+    T r3 [ 7 ] { 0 };
+    T r4 [ 6 ] { 0 };
+    T r5 [ 5 ] { 0 };
+    T r6 [ 4 ] { 0 };
+
+    public:
+
+    constexpr hb ( ) noexcept { }
+
+    constexpr T const & at ( int q_, int r_ ) const noexcept {
+        if constexpr ( zero_base ) {
+            q_ += radius ( ); r_ += radius ( );
+        }
+        assert ( not ( is_invalid ( q_, r_ ) ) );
+        switch ( r_ ) {
+        case 0: return r0 [ q_ ];
+        case 1: return r1 [ q_ ];
+        case 2: return r2 [ q_ ];
+        case 3: return r3 [ q_ ];
+        case 4: return r4 [ q_ ];
+        case 5: return r5 [ q_ ];
+        case 6: [[ fallthrough ]];
+        default: return r6 [ q_ ];
+        }
+    }
+
+    constexpr T & at ( int q_, int r_ ) noexcept {
+        return const_cast< T& > ( std::as_const ( *this ).at ( q_, r_ ) );
+    }
+
+    constexpr bool is_invalid ( const int q_, const int r_ ) const noexcept {
+        if constexpr ( zero_base ) {
+            return std::abs ( q_ ) > radius ( ) or std::abs ( r_ ) > radius ( ) or std::abs ( -q_ - r_ ) > radius ( );
+        }
+        else {
+            return std::abs ( q_ - radius ( ) ) > radius ( ) or std::abs ( r_ - radius ( ) ) > radius ( ) or std::abs ( -q_ - r_ + ( 2 * radius ( ) ) ) > radius ( );
+        }
+    }
+};
+
+
 template<typename T, bool zero_base>
 class hb<T, 4, zero_base> {
 
