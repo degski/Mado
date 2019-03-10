@@ -101,7 +101,7 @@ class hb<T, 3, zero_base> {
     }
 
     constexpr T & at ( int q_, int r_ ) noexcept {
-        return const_cast< T& > ( std::as_const ( *this ).at ( q_, r_ ) );
+        return const_cast<T&> ( std::as_const ( *this ).at ( q_, r_ ) );
     }
 
     static constexpr bool is_invalid ( const int q_, const int r_ ) noexcept {
@@ -215,7 +215,7 @@ class hb<T, 5, zero_base> {
     }
 
     constexpr T & at ( int q_, int r_ ) noexcept {
-        return const_cast< T& > ( std::as_const ( *this ).at ( q_, r_ ) );
+        return const_cast<T&> ( std::as_const ( *this ).at ( q_, r_ ) );
     }
 
     static constexpr bool is_invalid ( const int q_, const int r_ ) noexcept {
@@ -279,7 +279,7 @@ class hb<T, 6, zero_base> {
     }
 
     constexpr T & at ( int q_, int r_ ) noexcept {
-        return const_cast< T& > ( std::as_const ( *this ).at ( q_, r_ ) );
+        return const_cast<T&> ( std::as_const ( *this ).at ( q_, r_ ) );
     }
 
     static constexpr bool is_invalid ( const int q_, const int r_ ) noexcept {
@@ -346,7 +346,7 @@ class hb<T, 7, zero_base> {
     }
 
     constexpr T & at ( int q_, int r_ ) noexcept {
-        return const_cast< T& > ( std::as_const ( *this ).at ( q_, r_ ) );
+        return const_cast<T&> ( std::as_const ( *this ).at ( q_, r_ ) );
     }
 
     static constexpr bool is_invalid ( const int q_, const int r_ ) noexcept {
