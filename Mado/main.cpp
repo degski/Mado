@@ -443,7 +443,7 @@ struct HC3 {
 };
 
 
-int main778 ( ) {
+int main7686786 ( ) {
 
     HC3<char, 3, true> hc1;
 

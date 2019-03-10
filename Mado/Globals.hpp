@@ -23,6 +23,12 @@
 
 #pragma once
 
+#include <cassert>
+#include <cmath>
+#include <cstddef>
+#include <cstdint>
+#include <cstdlib>
+
 #include <filesystem>
 #include <random>
 
@@ -53,6 +59,15 @@ struct Rng final {
 
     Rng & operator = ( Rng && ) = delete;
     Rng & operator = ( const Rng & ) = delete;
+
+
+    // A pareto-variate, the defaults give the 'famous' 80/20 distribution.
+    template<typename T = float>
+    [[ nodiscard ]] static T pareto_variate ( const T min_ = T { 1 }, const T alpha_ = { std::log ( T { 5 } ) / std::log ( T { 4 } ) } ) noexcept {
+        assert ( min_ ); assert ( alpha_ );
+        static std::uniform_real_distribution<T> dis ( std::numeric_limits<T>::min ( ), T { 1 } );
+        return min_ / std::pow ( dis ( Rng::gen ( ) ), T { 1 } / alpha_ );
+    }
 
     static void seed ( const std::uint64_t s_ = 0u ) noexcept {
         Rng::gen ( ).seed ( s_ ? s_ : sax::os_seed ( ) );
