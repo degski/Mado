@@ -78,7 +78,7 @@ class hb {
     }
 
     template<int Start>
-    [ [ nodiscard ] ] static constexpr const_index_array make_index_array ( ) noexcept {
+    [[ nodiscard ]] static constexpr const_index_array make_index_array ( ) noexcept {
         index_array a ( 1, static_cast< std::uint8_t > ( Start ) );
         int i = R + 1;
         for ( ; i < ( 1 + 2 * R ); ++i )
@@ -104,7 +104,7 @@ class hb {
     using iterator = typename data_array::iterator;
     using const_iterator = typename data_array::const_iterator;
 
-    data_array m_data { 0 };
+    data_array m_data = { }; // value initialized, i.e. to zero, default is indeterminate.
 
     public:
 
