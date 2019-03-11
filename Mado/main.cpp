@@ -63,7 +63,7 @@
 #include <experimental/fixed_capacity_vector>
 
 
-template<typename T, std::size_t R, bool zero_base = true>
+template<typename Type, std::size_t R, bool zero_base = true>
 class hb {
 
     using index_array = std::experimental::fixed_capacity_vector<std::uint8_t, ( 1 + 2 * R )>;
@@ -78,17 +78,33 @@ class hb {
     }
 
     template<int Start>
-    [[ nodiscard ]] static constexpr const_index_array make_index_array ( ) noexcept {
-        index_array a ( 1, static_cast<std::uint8_t> ( Start ) );
+    [ [ nodiscard ] ] static constexpr const_index_array make_index_array ( ) noexcept {
+        index_array a ( 1, static_cast< std::uint8_t > ( Start ) );
         int i = R + 1;
         for ( ; i < ( 1 + 2 * R ); ++i )
-            a.push_back ( static_cast<std::uint8_t> ( a.back ( ) + i ) );
+            a.push_back ( static_cast< std::uint8_t > ( a.back ( ) + i ) );
         for ( ; i > ( R + 1 ); --i )
-            a.push_back ( static_cast<std::uint8_t> ( a.back ( ) + i ) );
+            a.push_back ( static_cast< std::uint8_t > ( a.back ( ) + i ) );
         return a;
     }
 
-    T data [ size ( ) ] { 0 };
+    using value_type = Type;
+    using pointer = value_type * ;
+    using const_pointer = const value_type*;
+
+    using reference = value_type & ;
+    using const_reference = const value_type &;
+    using rv_reference = value_type && ;
+
+    using size_type = int;
+    using difference_type = size_type;
+
+    using data_array = std::array<value_type, size ( )>;
+
+    using iterator = typename data_array::iterator;
+    using const_iterator = typename data_array::const_iterator;
+
+    data_array m_data { 0 };
 
     public:
 
@@ -106,12 +122,12 @@ class hb {
         }
     }
 
-    [[ nodiscard ]] constexpr T const & at ( int q_, int r_ ) const noexcept {
-       return ( reinterpret_cast<T const*> ( this ) ) [ index ( q_, r_ ) ];
+    [[ nodiscard ]] constexpr const_reference at ( int q_, int r_ ) const noexcept {
+       return ( reinterpret_cast<const_pointer> ( this ) ) [ index ( q_, r_ ) ];
     }
 
-    [[ nodiscard ]] constexpr T & at ( int q_, int r_ ) noexcept {
-        return const_cast< T& > ( std::as_const ( *this ).at ( q_, r_ ) );
+    [[ nodiscard ]] constexpr reference at ( int q_, int r_ ) noexcept {
+        return const_cast<reference> ( std::as_const ( *this ).at ( q_, r_ ) );
     }
 
     [[ nodiscard ]] constexpr bool is_invalid ( const int q_, const int r_ ) const noexcept {
@@ -122,6 +138,21 @@ class hb {
             return std::abs ( q_ - radius( ) ) > radius( ) or std::abs ( r_ - radius( ) ) > radius( ) or std::abs ( -q_ - r_ + ( 2 * radius( ) ) ) > radius( );
         }
     }
+
+    [[ nodiscard ]] pointer data ( ) noexcept {
+        return m_data;
+    }
+    [[ nodiscard ]] const_pointer data ( ) const noexcept {
+        return m_data;
+    }
+
+    [[ nodiscard ]] iterator begin ( ) noexcept { return std::begin ( m_data ); }
+    [[ nodiscard ]] const_iterator begin ( ) const noexcept { return std::cbegin ( m_data ); }
+    [[ nodiscard ]] const_iterator cbegin ( ) const noexcept { return std::cbegin ( m_data ); }
+
+    [[ nodiscard ]] iterator end ( ) noexcept { return std::end ( m_data ); }
+    [[ nodiscard ]] const_iterator end ( ) const noexcept { return std::cend ( m_data ); }
+    [[ nodiscard ]] const_iterator cend ( ) const noexcept { return std::cend ( m_data ); }
 };
 
 
