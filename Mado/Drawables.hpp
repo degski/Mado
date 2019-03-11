@@ -77,7 +77,7 @@ struct HexContainer {
         return width ( ) * height ( );
     }
 
-    T m_data [ 2 * R + 1 ] [ 2 * R + 1 ];
+    T m_data [ 2 * R + 1 ] [ 2 * R + 1 ] = { };
 
     HexContainer ( ) noexcept : m_data { { T ( ) } } { }
 
