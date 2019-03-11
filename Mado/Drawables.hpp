@@ -65,7 +65,7 @@ struct HexContainer {
     using const_reference = const T &;
 
     [[ nodiscard ]] static constexpr size_type radius ( ) noexcept {
-        return static_cast< std::size_t > ( R );
+        return static_cast<std::size_t> ( R );
     }
     [[ nodiscard ]] static constexpr size_type width ( ) noexcept {
         return 2 * radius ( ) + 1;

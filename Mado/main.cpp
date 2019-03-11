@@ -74,17 +74,17 @@ class hb {
     }
 
     [[ nodiscard ]] static constexpr std::size_t size ( ) noexcept {
-        return static_cast< std::size_t > ( 1 + 3 * radius ( ) * ( radius ( ) + 1 ) );
+        return static_cast<std::size_t> ( 1 + 3 * radius ( ) * ( radius ( ) + 1 ) );
     }
 
     template<int Start>
     [[ nodiscard ]] static constexpr const_index_array make_index_array ( ) noexcept {
-        index_array a ( 1, static_cast< std::uint8_t > ( Start ) );
+        index_array a ( 1, static_cast<std::uint8_t> ( Start ) );
         int i = R + 1;
         for ( ; i < ( 1 + 2 * R ); ++i )
-            a.push_back ( static_cast< std::uint8_t > ( a.back ( ) + i ) );
+            a.push_back ( static_cast<std::uint8_t> ( a.back ( ) + i ) );
         for ( ; i > ( R + 1 ); --i )
-            a.push_back ( static_cast< std::uint8_t > ( a.back ( ) + i ) );
+            a.push_back ( static_cast<std::uint8_t> ( a.back ( ) + i ) );
         return a;
     }
 
@@ -404,7 +404,7 @@ struct HC3 {
     using play_type = std::array<value_type, 1 + 3 * R * ( R + 1 )>;
 
     [[ nodiscard ]] static constexpr size_type radius ( ) noexcept {
-        return static_cast< std::size_t > ( R );
+        return static_cast<std::size_t> ( R );
     }
     [[ nodiscard ]] static constexpr size_type width ( ) noexcept {
         return 2 * radius ( ) + 1;
