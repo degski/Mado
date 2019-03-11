@@ -64,11 +64,26 @@ template<typename T, std::size_t R, bool zero_base = true>
 class hb { };
 
 
+template<typename T, T R, bool zero_base = true>
+[[ nodiscard ]] constexpr bool is_invalid ( const T q_, const T r_ ) noexcept {
+    if constexpr ( zero_base ) {
+        return std::abs ( q_ ) > R or std::abs ( r_ ) > R or std::abs ( -q_ - r_ ) > R;
+    }
+    else {
+        return std::abs ( q_ - R ) > R or std::abs ( r_ - R ) > R or std::abs ( -q_ - r_ + ( 2 * R ) ) > R;
+    }
+}
+
+
 template<typename T, bool zero_base>
 class hb<T, 3, zero_base> {
 
-    static constexpr int radius ( ) noexcept {
+    [[ nodiscard ]] static constexpr int radius ( ) noexcept {
         return 3;
+    }
+
+    [[ nodiscard ]] static constexpr std::size_t size ( ) noexcept {
+        return static_cast< std::size_t > ( 1 + 3 * radius ( ) * ( radius ( ) + 1 ) );
     }
 
     T r0 [ 4 ] { 0 };
@@ -83,11 +98,11 @@ class hb<T, 3, zero_base> {
 
     constexpr hb ( ) noexcept { }
 
-    constexpr T const & at ( int q_, int r_ ) const noexcept {
+    [[ nodiscard ]] constexpr T const & at ( int q_, int r_ ) const noexcept {
         if constexpr ( zero_base ) {
             q_ += radius ( ); r_ += radius ( );
         }
-        assert ( not ( hb::is_invalid ( q_, r_ ) ) );
+        assert ( not ( is_invalid<int, radius ( ), zero_base> ( q_, r_ ) ) );
         switch ( r_ ) {
         case 0: return r0 [ q_ ];
         case 1: return r1 [ q_ ];
@@ -100,17 +115,15 @@ class hb<T, 3, zero_base> {
         }
     }
 
-    constexpr T & at ( int q_, int r_ ) noexcept {
-        return const_cast<T&> ( std::as_const ( *this ).at ( q_, r_ ) );
+    [[ nodiscard ]] constexpr T & at ( int q_, int r_ ) noexcept {
+        return const_cast< T& > ( std::as_const ( *this ).at ( q_, r_ ) );
     }
 
-    static constexpr bool is_invalid ( const int q_, const int r_ ) noexcept {
-        if constexpr ( zero_base ) {
-            return std::abs ( q_ ) > radius ( ) or std::abs ( r_ ) > radius ( ) or std::abs ( -q_ - r_ ) > radius ( );
-        }
-        else {
-            return std::abs ( q_ - radius ( ) ) > radius ( ) or std::abs ( r_ - radius ( ) ) > radius ( ) or std::abs ( -q_ - r_ + ( 2 * radius ( ) ) ) > radius ( );
-        }
+    [[ nodiscard ]] constexpr std::array<T, hb::size ( )> const & as_array ( ) const noexcept {
+        return *reinterpret_cast< std::array<T, hb::size ( )>const* > ( this );
+    }
+    [[ nodiscard ]] constexpr std::array<T, hb::size ( )> & as_array ( ) noexcept {
+        return const_cast< std::array<T, hb::size ( )>& > ( std::as_const ( *this ).as_array ( ) );
     }
 };
 
@@ -118,8 +131,12 @@ class hb<T, 3, zero_base> {
 template<typename T, bool zero_base>
 class hb<T, 4, zero_base> {
 
-    static constexpr int radius ( ) noexcept {
+    [[ nodiscard ]] static constexpr int radius ( ) noexcept {
         return 4;
+    }
+
+    [[ nodiscard ]] static constexpr std::size_t size ( ) noexcept {
+        return static_cast< std::size_t > ( 1 + 3 * radius ( ) * ( radius ( ) + 1 ) );
     }
 
     T r0 [ 5 ] { 0 };
@@ -136,11 +153,11 @@ class hb<T, 4, zero_base> {
 
     constexpr hb ( ) noexcept { }
 
-    constexpr T const & at ( int q_, int r_ ) const noexcept {
+    [[ nodiscard ]] constexpr T const & at ( int q_, int r_ ) const noexcept {
         if constexpr ( zero_base ) {
             q_ += radius ( ); r_ += radius ( );
         }
-        assert ( not ( hb::is_invalid ( q_, r_ ) ) );
+        assert ( not ( is_invalid<int, radius ( ), zero_base> ( q_, r_ ) ) );
         switch ( r_ ) {
         case 0: return r0 [ q_ ];
         case 1: return r1 [ q_ ];
@@ -155,17 +172,15 @@ class hb<T, 4, zero_base> {
         }
     }
 
-    constexpr T & at ( int q_, int r_ ) noexcept {
-        return const_cast<T&> ( std::as_const ( *this ).at ( q_, r_ ) );
+    [[ nodiscard ]] constexpr T & at ( int q_, int r_ ) noexcept {
+        return const_cast< T& > ( std::as_const ( *this ).at ( q_, r_ ) );
     }
 
-    static constexpr bool is_invalid ( const int q_, const int r_ ) noexcept {
-        if constexpr ( zero_base ) {
-            return std::abs ( q_ ) > radius ( ) or std::abs ( r_ ) > radius ( ) or std::abs ( -q_ - r_ ) > radius ( );
-        }
-        else {
-            return std::abs ( q_ - radius ( ) ) > radius ( ) or std::abs ( r_ - radius ( ) ) > radius ( ) or std::abs ( -q_ - r_ + ( 2 * radius ( ) ) ) > radius ( );
-        }
+    [[ nodiscard ]] constexpr std::array<T, hb::size ( )> const & as_array ( ) const noexcept {
+        return *reinterpret_cast<std::array<T, hb::size ( )>const*> ( this );
+    }
+    [[ nodiscard ]] constexpr std::array<T, hb::size ( )> & as_array ( ) noexcept {
+        return const_cast<std::array<T, hb::size ( )>&> ( std::as_const ( *this ).as_array ( ) );
     }
 };
 
@@ -173,8 +188,12 @@ class hb<T, 4, zero_base> {
 template<typename T, bool zero_base>
 class hb<T, 5, zero_base> {
 
-    static constexpr int radius ( ) noexcept {
+    [[ nodiscard ]] static constexpr int radius ( ) noexcept {
         return 5;
+    }
+
+    [[ nodiscard ]] static constexpr std::size_t size ( ) noexcept {
+        return static_cast< std::size_t > ( 1 + 3 * radius ( ) * ( radius ( ) + 1 ) );
     }
 
     T  r0 [  6 ] { 0 };
@@ -193,11 +212,11 @@ class hb<T, 5, zero_base> {
 
     constexpr hb ( ) noexcept { }
 
-    constexpr T const & at ( int q_, int r_ ) const noexcept {
+    [[ nodiscard ]] constexpr T const & at ( int q_, int r_ ) const noexcept {
         if constexpr ( zero_base ) {
             q_ += radius ( ); r_ += radius ( );
         }
-        assert ( not ( hb::is_invalid ( q_, r_ ) ) );
+        assert ( not ( is_invalid<int, radius ( ), zero_base> ( q_, r_ ) ) );
         switch ( r_ ) {
         case 0: return r0 [ q_ ];
         case 1: return r1 [ q_ ];
@@ -214,17 +233,15 @@ class hb<T, 5, zero_base> {
         }
     }
 
-    constexpr T & at ( int q_, int r_ ) noexcept {
+    [[ nodiscard ]] constexpr T & at ( int q_, int r_ ) noexcept {
         return const_cast<T&> ( std::as_const ( *this ).at ( q_, r_ ) );
     }
 
-    static constexpr bool is_invalid ( const int q_, const int r_ ) noexcept {
-        if constexpr ( zero_base ) {
-            return std::abs ( q_ ) > radius ( ) or std::abs ( r_ ) > radius ( ) or std::abs ( -q_ - r_ ) > radius ( );
-        }
-        else {
-            return std::abs ( q_ - radius ( ) ) > radius ( ) or std::abs ( r_ - radius ( ) ) > radius ( ) or std::abs ( -q_ - r_ + ( 2 * radius ( ) ) ) > radius ( );
-        }
+    [[ nodiscard ]] constexpr std::array<T, hb::size ( )> const & as_array ( ) const noexcept {
+        return *reinterpret_cast< std::array<T, hb::size ( )>const* > ( this );
+    }
+    [[ nodiscard ]] constexpr std::array<T, hb::size ( )> & as_array ( ) noexcept {
+        return const_cast< std::array<T, hb::size ( )>& > ( std::as_const ( *this ).as_array ( ) );
     }
 };
 
@@ -233,8 +250,12 @@ class hb<T, 5, zero_base> {
 template<typename T, bool zero_base>
 class hb<T, 6, zero_base> {
 
-    static constexpr int radius ( ) noexcept {
+    [[ nodiscard ]] static constexpr int radius ( ) noexcept {
         return 6;
+    }
+
+    [[ nodiscard ]] static constexpr std::size_t size ( ) noexcept {
+        return static_cast< std::size_t > ( 1 + 3 * radius ( ) * ( radius ( ) + 1 ) );
     }
 
     T  r0 [  7 ] { 0 };
@@ -255,11 +276,11 @@ class hb<T, 6, zero_base> {
 
     constexpr hb ( ) noexcept { }
 
-    constexpr T const & at ( int q_, int r_ ) const noexcept {
+    [[ nodiscard ]] constexpr T const & at ( int q_, int r_ ) const noexcept {
         if constexpr ( zero_base ) {
             q_ += radius ( ); r_ += radius ( );
         }
-        assert ( not ( hb::is_invalid ( q_, r_ ) ) );
+        assert ( not ( is_invalid<int, radius ( ), zero_base> ( q_, r_ ) ) );
         switch ( r_ ) {
         case  0: return  r0 [ q_ ];
         case  1: return  r1 [ q_ ];
@@ -278,17 +299,15 @@ class hb<T, 6, zero_base> {
         }
     }
 
-    constexpr T & at ( int q_, int r_ ) noexcept {
-        return const_cast<T&> ( std::as_const ( *this ).at ( q_, r_ ) );
+    [[ nodiscard ]] constexpr T & at ( int q_, int r_ ) noexcept {
+        return const_cast< T& > ( std::as_const ( *this ).at ( q_, r_ ) );
     }
 
-    static constexpr bool is_invalid ( const int q_, const int r_ ) noexcept {
-        if constexpr ( zero_base ) {
-            return std::abs ( q_ ) > radius ( ) or std::abs ( r_ ) > radius ( ) or std::abs ( -q_ - r_ ) > radius ( );
-        }
-        else {
-            return std::abs ( q_ - radius ( ) ) > radius ( ) or std::abs ( r_ - radius ( ) ) > radius ( ) or std::abs ( -q_ - r_ + ( 2 * radius ( ) ) ) > radius ( );
-        }
+    [[ nodiscard ]] constexpr std::array<T, hb::size ( )> const & as_array ( ) const noexcept {
+        return *reinterpret_cast< std::array<T, hb::size ( )>const* > ( this );
+    }
+    [[ nodiscard ]] constexpr std::array<T, hb::size ( )> & as_array ( ) noexcept {
+        return const_cast< std::array<T, hb::size ( )>& > ( std::as_const ( *this ).as_array ( ) );
     }
 };
 
@@ -296,8 +315,12 @@ class hb<T, 6, zero_base> {
 template<typename T, bool zero_base>
 class hb<T, 7, zero_base> {
 
-    static constexpr int radius ( ) noexcept {
+    [[ nodiscard ]] static constexpr int radius ( ) noexcept {
         return 7;
+    }
+
+    [[ nodiscard ]] static constexpr std::size_t size ( ) noexcept {
+        return static_cast< std::size_t > ( 1 + 3 * radius ( ) * ( radius ( ) + 1 ) );
     }
 
     T  r0 [  8 ] { 0 };
@@ -320,11 +343,11 @@ class hb<T, 7, zero_base> {
 
     constexpr hb ( ) noexcept { }
 
-    constexpr T const & at ( int q_, int r_ ) const noexcept {
+    [[ nodiscard ]] constexpr T const & at ( int q_, int r_ ) const noexcept {
         if constexpr ( zero_base ) {
             q_ += radius ( ); r_ += radius ( );
         }
-        assert ( not ( hb::is_invalid ( q_, r_ ) ) );
+        assert ( not ( is_invalid<int, radius ( ), zero_base> ( q_, r_ ) ) );
         switch ( r_ ) {
         case  0: return  r0 [ q_ ];
         case  1: return  r1 [ q_ ];
@@ -345,17 +368,15 @@ class hb<T, 7, zero_base> {
         }
     }
 
-    constexpr T & at ( int q_, int r_ ) noexcept {
-        return const_cast<T&> ( std::as_const ( *this ).at ( q_, r_ ) );
+    [[ nodiscard ]] constexpr T & at ( int q_, int r_ ) noexcept {
+        return const_cast< T& > ( std::as_const ( *this ).at ( q_, r_ ) );
     }
 
-    static constexpr bool is_invalid ( const int q_, const int r_ ) noexcept {
-        if constexpr ( zero_base ) {
-            return std::abs ( q_ ) > radius ( ) or std::abs ( r_ ) > radius ( ) or std::abs ( -q_ - r_ ) > radius ( );
-        }
-        else {
-            return std::abs ( q_ - radius ( ) ) > radius ( ) or std::abs ( r_ - radius ( ) ) > radius ( ) or std::abs ( -q_ - r_ + ( 2 * radius ( ) ) ) > radius ( );
-        }
+    [[ nodiscard ]] constexpr std::array<T, hb::size ( )> const & as_array ( ) const noexcept {
+        return *reinterpret_cast< std::array<T, hb::size ( )>const* > ( this );
+    }
+    [[ nodiscard ]] constexpr std::array<T, hb::size ( )> & as_array ( ) noexcept {
+        return const_cast< std::array<T, hb::size ( )>& > ( std::as_const ( *this ).as_array ( ) );
     }
 };
 
@@ -364,6 +385,11 @@ int main ( ) {
     hb<char, 4, false> h;
 
     h.at ( 0, 4 ) = char { 1 };
+
+    auto a = h.as_array ( );
+
+    for ( auto v : a )
+        std::cout << ( int ) v << nl;
 
     std::cout << sizeof ( h ) << nl;
 
