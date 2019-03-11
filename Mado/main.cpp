@@ -63,18 +63,23 @@
 #include <experimental/fixed_capacity_vector>
 
 
-template<typename Type, std::size_t R, bool zero_base = true>
+template<typename Type, int R, bool zero_base = true>
 class hb {
+
+    static_assert ( R > 1 and R < 9, "radius (R) must be on interval [ 2, 8 ]" );
 
     using index_array = std::experimental::fixed_capacity_vector<std::uint8_t, ( 1 + 2 * R )>;
     using const_index_array = index_array const;
 
-    [[ nodiscard ]] static constexpr int radius ( ) noexcept {
+    using size_type = int;
+    using difference_type = size_type;
+
+    [[ nodiscard ]] static constexpr size_type radius ( ) noexcept {
         return R;
     }
 
-    [[ nodiscard ]] static constexpr std::size_t size ( ) noexcept {
-        return static_cast<std::size_t> ( 1 + 3 * radius ( ) * ( radius ( ) + 1 ) );
+    [[ nodiscard ]] static constexpr size_type size ( ) noexcept {
+        return static_cast<size_type> ( 1 + 3 * radius ( ) * ( radius ( ) + 1 ) );
     }
 
     template<int Start>
@@ -96,9 +101,6 @@ class hb {
     using const_reference = const value_type &;
     using rv_reference = value_type && ;
 
-    using size_type = int;
-    using difference_type = size_type;
-
     using data_array = std::array<value_type, size ( )>;
 
     using iterator = typename data_array::iterator;
@@ -110,7 +112,7 @@ class hb {
 
     constexpr hb ( ) noexcept { }
 
-    [[ nodiscard ]] constexpr int index ( int q_, int r_ ) const noexcept {
+    [[ nodiscard ]] constexpr size_type index ( const size_type q_, const size_type r_ ) const noexcept {
         assert ( not ( is_invalid ( q_, r_ ) ) );
         if constexpr ( zero_base ) {
             constexpr const_index_array idx = make_index_array<R> ( );
@@ -122,19 +124,19 @@ class hb {
         }
     }
 
-    [[ nodiscard ]] constexpr const_reference at ( int q_, int r_ ) const noexcept {
-       return ( reinterpret_cast<const_pointer> ( this ) ) [ index ( q_, r_ ) ];
+    [[ nodiscard ]] constexpr const_reference at ( const size_type q_, const size_type r_ ) const noexcept {
+       return m_data [ index ( q_, r_ ) ];
     }
-    [[ nodiscard ]] constexpr reference at ( int q_, int r_ ) noexcept {
-        return const_cast<reference> ( std::as_const ( *this ).at ( q_, r_ ) );
+    [[ nodiscard ]] constexpr reference at ( const size_type q_, const size_type r_ ) noexcept {
+        return const_cast<reference> ( std::as_const ( * this ).at ( q_, r_ ) );
     }
 
-    [[ nodiscard ]] constexpr bool is_invalid ( const int q_, const int r_ ) const noexcept {
+    [[ nodiscard ]] constexpr bool is_invalid ( const size_type q_, const size_type r_ ) const noexcept {
         if constexpr ( zero_base ) {
-            return std::abs ( q_ ) > radius( ) or std::abs ( r_ ) > radius( ) or std::abs ( -q_ - r_ ) > radius( );
+            return std::abs ( q_ ) > radius ( ) or std::abs ( r_ ) > radius ( ) or std::abs ( -q_ - r_ ) > radius ( );
         }
         else {
-            return std::abs ( q_ - radius( ) ) > radius( ) or std::abs ( r_ - radius( ) ) > radius( ) or std::abs ( -q_ - r_ + ( 2 * radius( ) ) ) > radius( );
+            return std::abs ( q_ - radius ( ) ) > radius ( ) or std::abs ( r_ - radius ( ) ) > radius ( ) or std::abs ( -q_ - r_ + ( 2 * radius ( ) ) ) > radius ( );
         }
     }
 
@@ -169,9 +171,9 @@ class hb {
 
 int main ( ) {
 
-    hb<char, 4, false> h;
+    hb<char, 8, true> h;
 
-    h.at ( 0, 4 ) = char { 1 };
+    h.at ( 0, 0 ) = char { 1 };
 
     std::cout << sizeof ( h ) << nl;
 
