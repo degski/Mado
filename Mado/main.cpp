@@ -82,6 +82,7 @@ class hb {
         return static_cast<size_type> ( 1 + 3 * radius ( ) * ( radius ( ) + 1 ) );
     }
 
+    // Compile-time function.
     template<int Start>
     [[ nodiscard ]] static constexpr const_index_array make_index_array ( ) noexcept {
         index_array a ( 1, static_cast<std::uint8_t> ( Start ) );
@@ -116,11 +117,11 @@ class hb {
         assert ( not ( is_invalid ( q_, r_ ) ) );
         if constexpr ( zero_base ) {
             constexpr const_index_array idx = make_index_array<R> ( );
-            return ( idx.data ( ) + radius ( ) ) [ r_ ] + q_;
+            return ( idx.data ( ) + R ) [ r_ ] + q_;
         }
         else {
             constexpr const_index_array idx = make_index_array<0> ( );
-            return idx [ r_ ] + q_;
+            return ( idx.data ( ) + 0 ) [ r_ ] + q_;
         }
     }
 
