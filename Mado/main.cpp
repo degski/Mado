@@ -60,94 +60,48 @@
 #include "App.hpp"
 
 
-void print_indx ( int r ) noexcept {
-    const int s = 1 + 3 * r * ( r + 1 );
-    const int w = 1 + 2 * r;
-    {
-        int c = 0;
-        int i = r + 1;
+#include <experimental/fixed_capacity_vector>
 
-        for ( i = r + 1; i < w; ++i ) {
-            std::cout << c << ", ";
-            c += i;
-        }
-        for ( ; i > r; --i ) {
-            std::cout << c << ", ";
-            c += i;
-        }
-        std::cout << "\n";
-    }
-    {
-        int c = r;
-        int i = r + 1;
-
-        for ( i = r + 1; i < w; ++i ) {
-            std::cout << c << ", ";
-            c += i;
-        }
-        for ( ; i > r; --i ) {
-            std::cout << c << ", ";
-            c += i;
-        }
-        std::cout << "\n";
-    }
-}
-
-int main ( ) {
-
-    for ( int r = 3; r < 8; ++r ) {
-        print_indx ( r );
-    }
-
-    return EXIT_SUCCESS;
-}
 
 template<typename T, std::size_t R, bool zero_base = true>
-class hb { };
+class hb {
 
-
-template<typename T, T R, bool zero_base>
-[[ nodiscard ]] constexpr bool is_invalid ( const T q_, const T r_ ) noexcept {
-    if constexpr ( zero_base ) {
-        return std::abs ( q_ ) > R or std::abs ( r_ ) > R or std::abs ( -q_ - r_ ) > R;
-    }
-    else {
-        return std::abs ( q_ - R ) > R or std::abs ( r_ - R ) > R or std::abs ( -q_ - r_ + ( 2 * R ) ) > R;
-    }
-}
-
-
-template<typename T, bool zero_base>
-class hb<T, 3, zero_base> {
+    using index_array = std::experimental::fixed_capacity_vector<std::uint8_t, ( 1 + 2 * R )>;
+    using const_index_array = index_array const;
 
     [[ nodiscard ]] static constexpr int radius ( ) noexcept {
-        return 3;
+        return R;
     }
 
     [[ nodiscard ]] static constexpr std::size_t size ( ) noexcept {
         return static_cast< std::size_t > ( 1 + 3 * radius ( ) * ( radius ( ) + 1 ) );
     }
 
-    T r0 [ 4 ] { 0 };
-    T r1 [ 5 ] { 0 };
-    T r2 [ 6 ] { 0 };
-    T r3 [ 7 ] { 0 };
-    T r4 [ 6 ] { 0 };
-    T r5 [ 5 ] { 0 };
-    T r6 [ 4 ] { 0 };
+    template<int Start>
+    [[ nodiscard ]] static constexpr const_index_array make_index_array ( ) noexcept {
+        index_array a ( 1, static_cast<std::uint8_t> ( Start ) );
+        int i = R + 1;
+        for ( ; i < ( 1 + 2 * R ); ++i )
+            a.push_back ( static_cast<std::uint8_t> ( a.back ( ) + i ) );
+        for ( ; i > ( R + 1 ); --i )
+            a.push_back ( static_cast<std::uint8_t> ( a.back ( ) + i ) );
+        return a;
+    }
+
+    T data [ size ( ) ] { 0 };
 
     public:
 
     constexpr hb ( ) noexcept { }
 
     [[ nodiscard ]] constexpr int index ( int q_, int r_ ) const noexcept {
-        assert ( not ( is_invalid<int, radius ( ), zero_base> ( q_, r_ ) ) );
+        assert ( not ( is_invalid ( q_, r_ ) ) );
         if constexpr ( zero_base ) {
-            constexpr char i [ 7 ] { 3, 7, 12, 18, 25, 31, 36 };
+            constexpr const_index_array i = make_index_array<R> ( );
             return ( i + radius ( ) ) [ r_ ] + q_;
         }
         else {
-            constexpr char i [ 7 ] { 0, 4, 9, 15, 22, 28, 33 };
+            constexpr const_index_array i = make_index_array<0> ( );
             return i [ r_ ] + q_;
         }
     }
@@ -160,253 +114,22 @@ class hb<T, 3, zero_base> {
         return const_cast< T& > ( std::as_const ( *this ).at ( q_, r_ ) );
     }
 
-    [[ nodiscard ]] constexpr std::array<T, hb::size ( )> const & as_array ( ) const noexcept {
-        return *reinterpret_cast< std::array<T, hb::size ( )>const* > ( this );
-    }
-    [[ nodiscard ]] constexpr std::array<T, hb::size ( )> & as_array ( ) noexcept {
-        return const_cast< std::array<T, hb::size ( )>& > ( std::as_const ( *this ).as_array ( ) );
-    }
-};
-
-
-template<typename T, bool zero_base>
-class hb<T, 4, zero_base> {
-
-    [[ nodiscard ]] static constexpr int radius ( ) noexcept {
-        return 4;
-    }
-
-    [[ nodiscard ]] static constexpr std::size_t size ( ) noexcept {
-        return static_cast< std::size_t > ( 1 + 3 * radius ( ) * ( radius ( ) + 1 ) );
-    }
-
-    T r0 [ 5 ] { 0 };
-    T r1 [ 6 ] { 0 };
-    T r2 [ 7 ] { 0 };
-    T r3 [ 8 ] { 0 };
-    T r4 [ 9 ] { 0 };
-    T r5 [ 8 ] { 0 };
-    T r6 [ 7 ] { 0 };
-    T r7 [ 6 ] { 0 };
-    T r8 [ 5 ] { 0 };
-
-    public:
-
-    constexpr hb ( ) noexcept { }
-
-    [[ nodiscard ]] constexpr int index ( int q_, int r_ ) const noexcept {
-        assert ( not ( is_invalid<int, radius ( ), zero_base> ( q_, r_ ) ) );
+    [[ nodiscard ]] constexpr bool is_invalid ( const int q_, const int r_ ) const noexcept {
         if constexpr ( zero_base ) {
-            constexpr char i [ 9 ] { 4, 9, 15, 22, 30, 39, 47, 54, 60 };
-            return ( i + radius ( ) ) [ r_ ] + q_;
+            return std::abs ( q_ ) > radius( ) or std::abs ( r_ ) > radius( ) or std::abs ( -q_ - r_ ) > radius( );
         }
         else {
-            constexpr char i [ 9 ] { 0, 5, 11, 18, 26, 35, 43, 50, 56 };
-            return i [ r_ ] + q_;
+            return std::abs ( q_ - radius( ) ) > radius( ) or std::abs ( r_ - radius( ) ) > radius( ) or std::abs ( -q_ - r_ + ( 2 * radius( ) ) ) > radius( );
         }
-    }
-
-    [[ nodiscard ]] constexpr T const & at ( int q_, int r_ ) const noexcept {
-        return ( reinterpret_cast< T const* > ( this ) ) [ index ( q_, r_ ) ];
-    }
-
-    [[ nodiscard ]] constexpr T & at ( int q_, int r_ ) noexcept {
-        return const_cast< T& > ( std::as_const ( *this ).at ( q_, r_ ) );
-    }
-
-    [[ nodiscard ]] constexpr std::array<T, hb::size ( )> const & as_array ( ) const noexcept {
-        return *reinterpret_cast<std::array<T, hb::size ( )>const*> ( this );
-    }
-    [[ nodiscard ]] constexpr std::array<T, hb::size ( )> & as_array ( ) noexcept {
-        return const_cast<std::array<T, hb::size ( )>&> ( std::as_const ( *this ).as_array ( ) );
     }
 };
 
 
-template<typename T, bool zero_base>
-class hb<T, 5, zero_base> {
-
-    [[ nodiscard ]] static constexpr int radius ( ) noexcept {
-        return 5;
-    }
-
-    [[ nodiscard ]] static constexpr std::size_t size ( ) noexcept {
-        return static_cast< std::size_t > ( 1 + 3 * radius ( ) * ( radius ( ) + 1 ) );
-    }
-
-    T  r0 [  6 ] { 0 };
-    T  r1 [  7 ] { 0 };
-    T  r2 [  8 ] { 0 };
-    T  r3 [  9 ] { 0 };
-    T  r4 [ 10 ] { 0 };
-    T  r5 [ 11 ] { 0 };
-    T  r6 [ 10 ] { 0 };
-    T  r7 [  9 ] { 0 };
-    T  r8 [  8 ] { 0 };
-    T  r9 [  7 ] { 0 };
-    T r10 [  6 ] { 0 };
-
-    public:
-
-    constexpr hb ( ) noexcept { }
-
-    [[ nodiscard ]] constexpr int index ( int q_, int r_ ) const noexcept {
-        assert ( not ( is_invalid<int, radius ( ), zero_base> ( q_, r_ ) ) );
-        if constexpr ( zero_base ) {
-            constexpr char i [ 11 ] { 5, 11, 18, 26, 35, 45, 56, 66, 75, 83, 90 };
-            return ( i + radius ( ) ) [ r_ ] + q_;
-        }
-        else {
-            constexpr char i [ 11 ] { 0, 6, 13, 21, 30, 40, 51, 61, 70, 78, 85 };
-            return i [ r_ ] + q_;
-        }
-    }
-
-    [[ nodiscard ]] constexpr T const & at ( int q_, int r_ ) const noexcept {
-        return ( reinterpret_cast< T const* > ( this ) ) [ index ( q_, r_ ) ];
-    }
-
-    [[ nodiscard ]] constexpr T & at ( int q_, int r_ ) noexcept {
-        return const_cast<T&> ( std::as_const ( *this ).at ( q_, r_ ) );
-    }
-
-    [[ nodiscard ]] constexpr std::array<T, hb::size ( )> const & as_array ( ) const noexcept {
-        return *reinterpret_cast< std::array<T, hb::size ( )>const* > ( this );
-    }
-    [[ nodiscard ]] constexpr std::array<T, hb::size ( )> & as_array ( ) noexcept {
-        return const_cast< std::array<T, hb::size ( )>& > ( std::as_const ( *this ).as_array ( ) );
-    }
-};
-
-
-
-template<typename T, bool zero_base>
-class hb<T, 6, zero_base> {
-
-    [[ nodiscard ]] static constexpr int radius ( ) noexcept {
-        return 6;
-    }
-
-    [[ nodiscard ]] static constexpr std::size_t size ( ) noexcept {
-        return static_cast< std::size_t > ( 1 + 3 * radius ( ) * ( radius ( ) + 1 ) );
-    }
-
-    T  r0 [  7 ] { 0 };
-    T  r1 [  8 ] { 0 };
-    T  r2 [  9 ] { 0 };
-    T  r3 [ 10 ] { 0 };
-    T  r4 [ 11 ] { 0 };
-    T  r5 [ 12 ] { 0 };
-    T  r6 [ 13 ] { 0 };
-    T  r7 [ 12 ] { 0 };
-    T  r8 [ 11 ] { 0 };
-    T  r9 [ 10 ] { 0 };
-    T r10 [  9 ] { 0 };
-    T r11 [  8 ] { 0 };
-    T r12 [  7 ] { 0 };
-
-    public:
-
-    constexpr hb ( ) noexcept { }
-
-    [[ nodiscard ]] constexpr int index ( int q_, int r_ ) const noexcept {
-        assert ( not ( is_invalid<int, radius ( ), zero_base> ( q_, r_ ) ) );
-        if constexpr ( zero_base ) {
-            constexpr char i [ 13 ] { 6, 13, 21, 30, 40, 51, 63, 76, 88, 99, 109, 118, 126 };
-            return ( i + radius ( ) ) [ r_ ] + q_;
-        }
-        else {
-            constexpr char i [ 13 ] { 0, 7, 15, 24, 34, 45, 57, 70, 82, 93, 103, 112, 120 };
-            return i [ r_ ] + q_;
-        }
-    }
-
-    [[ nodiscard ]] constexpr T const & at ( int q_, int r_ ) const noexcept {
-        return ( reinterpret_cast< T const* > ( this ) ) [ index ( q_, r_ ) ];
-    }
-
-    [[ nodiscard ]] constexpr T & at ( int q_, int r_ ) noexcept {
-        return const_cast< T& > ( std::as_const ( *this ).at ( q_, r_ ) );
-    }
-
-    [[ nodiscard ]] constexpr std::array<T, hb::size ( )> const & as_array ( ) const noexcept {
-        return *reinterpret_cast< std::array<T, hb::size ( )>const* > ( this );
-    }
-    [[ nodiscard ]] constexpr std::array<T, hb::size ( )> & as_array ( ) noexcept {
-        return const_cast< std::array<T, hb::size ( )>& > ( std::as_const ( *this ).as_array ( ) );
-    }
-};
-
-
-template<typename T, bool zero_base>
-class hb<T, 7, zero_base> {
-
-    [[ nodiscard ]] static constexpr int radius ( ) noexcept {
-        return 7;
-    }
-
-    [[ nodiscard ]] static constexpr std::size_t size ( ) noexcept {
-        return static_cast< std::size_t > ( 1 + 3 * radius ( ) * ( radius ( ) + 1 ) );
-    }
-
-    T  r0 [  8 ] { 0 };
-    T  r1 [  9 ] { 0 };
-    T  r2 [ 10 ] { 0 };
-    T  r3 [ 11 ] { 0 };
-    T  r4 [ 12 ] { 0 };
-    T  r5 [ 13 ] { 0 };
-    T  r6 [ 14 ] { 0 };
-    T  r7 [ 15 ] { 0 };
-    T  r8 [ 14 ] { 0 };
-    T  r9 [ 13 ] { 0 };
-    T r10 [ 12 ] { 0 };
-    T r11 [ 11 ] { 0 };
-    T r12 [ 10 ] { 0 };
-    T r13 [  9 ] { 0 };
-    T r14 [  8 ] { 0 };
-
-    public:
-
-    constexpr hb ( ) noexcept { }
-
-    [[ nodiscard ]] constexpr int index ( int q_, int r_ ) const noexcept {
-        assert ( not ( is_invalid<int, radius ( ), zero_base> ( q_, r_ ) ) );
-        if constexpr ( zero_base ) {
-            constexpr unsigned char i [ 15 ] { 7, 15, 24, 34, 45, 57, 70, 84, 99, 113, 126, 138, 149, 159, 168 };
-            return ( i + radius ( ) ) [ r_ ] + q_;
-        }
-        else {
-            constexpr unsigned char i [ 15 ] { 0, 8, 17, 27, 38, 50, 63, 77, 92, 106, 119, 131, 142, 152, 161 };
-            return i [ r_ ] + q_;
-        }
-    }
-
-    [[ nodiscard ]] constexpr T const & at ( int q_, int r_ ) const noexcept {
-        return ( reinterpret_cast< T const* > ( this ) ) [ index ( q_, r_ ) ];
-    }
-
-    [[ nodiscard ]] constexpr T & at ( int q_, int r_ ) noexcept {
-        return const_cast< T& > ( std::as_const ( *this ).at ( q_, r_ ) );
-    }
-
-    [[ nodiscard ]] constexpr std::array<T, hb::size ( )> const & as_array ( ) const noexcept {
-        return *reinterpret_cast< std::array<T, hb::size ( )>const* > ( this );
-    }
-    [[ nodiscard ]] constexpr std::array<T, hb::size ( )> & as_array ( ) noexcept {
-        return const_cast< std::array<T, hb::size ( )>& > ( std::as_const ( *this ).as_array ( ) );
-    }
-};
-
-int main6788787 ( ) {
+int main ( ) {
 
     hb<char, 4, false> h;
 
     h.at ( 0, 4 ) = char { 1 };
-
-    auto a = h.as_array ( );
-
-    for ( auto v : a )
-        std::cout << ( int ) v << nl;
 
     std::cout << sizeof ( h ) << nl;
 
