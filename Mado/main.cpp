@@ -112,7 +112,7 @@ class hb {
 
     constexpr hb ( ) noexcept { }
 
-    [[ nodiscard ]] constexpr size_type index ( const size_type q_, const size_type r_ ) const noexcept {
+    [[ nodiscard ]] static constexpr size_type index ( const size_type q_, const size_type r_ ) noexcept {
         assert ( not ( is_invalid ( q_, r_ ) ) );
         if constexpr ( zero_base ) {
             constexpr const_index_array idx = make_index_array<R> ( );
@@ -131,7 +131,7 @@ class hb {
         return const_cast<reference> ( std::as_const ( * this ).at ( q_, r_ ) );
     }
 
-    [[ nodiscard ]] constexpr bool is_invalid ( const size_type q_, const size_type r_ ) const noexcept {
+    [[ nodiscard ]] static constexpr bool is_invalid ( const size_type q_, const size_type r_ ) noexcept {
         if constexpr ( zero_base ) {
             return std::abs ( q_ ) > radius ( ) or std::abs ( r_ ) > radius ( ) or std::abs ( -q_ - r_ ) > radius ( );
         }
