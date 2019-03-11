@@ -97,12 +97,12 @@ class hb {
     [[ nodiscard ]] constexpr int index ( int q_, int r_ ) const noexcept {
         assert ( not ( is_invalid ( q_, r_ ) ) );
         if constexpr ( zero_base ) {
-            constexpr const_index_array i = make_index_array<R> ( );
-            return ( i + radius ( ) ) [ r_ ] + q_;
+            constexpr const_index_array idx = make_index_array<R> ( );
+            return ( idx.data ( ) + radius ( ) ) [ r_ ] + q_;
         }
         else {
-            constexpr const_index_array i = make_index_array<0> ( );
-            return i [ r_ ] + q_;
+            constexpr const_index_array idx = make_index_array<0> ( );
+            return idx [ r_ ] + q_;
         }
     }
 
