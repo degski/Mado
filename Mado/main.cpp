@@ -60,11 +60,53 @@
 #include "App.hpp"
 
 
+void print_indx ( int r ) noexcept {
+    const int s = 1 + 3 * r * ( r + 1 );
+    const int w = 1 + 2 * r;
+    {
+        int c = 0;
+        int i = r + 1;
+
+        for ( i = r + 1; i < w; ++i ) {
+            std::cout << c << ", ";
+            c += i;
+        }
+        for ( ; i > r; --i ) {
+            std::cout << c << ", ";
+            c += i;
+        }
+        std::cout << "\n";
+    }
+    {
+        int c = r;
+        int i = r + 1;
+
+        for ( i = r + 1; i < w; ++i ) {
+            std::cout << c << ", ";
+            c += i;
+        }
+        for ( ; i > r; --i ) {
+            std::cout << c << ", ";
+            c += i;
+        }
+        std::cout << "\n";
+    }
+}
+
+int main ( ) {
+
+    for ( int r = 3; r < 8; ++r ) {
+        print_indx ( r );
+    }
+
+    return EXIT_SUCCESS;
+}
+
 template<typename T, std::size_t R, bool zero_base = true>
 class hb { };
 
 
-template<typename T, T R, bool zero_base = true>
+template<typename T, T R, bool zero_base>
 [[ nodiscard ]] constexpr bool is_invalid ( const T q_, const T r_ ) noexcept {
     if constexpr ( zero_base ) {
         return std::abs ( q_ ) > R or std::abs ( r_ ) > R or std::abs ( -q_ - r_ ) > R;
@@ -98,21 +140,20 @@ class hb<T, 3, zero_base> {
 
     constexpr hb ( ) noexcept { }
 
-    [[ nodiscard ]] constexpr T const & at ( int q_, int r_ ) const noexcept {
-        if constexpr ( zero_base ) {
-            q_ += radius ( ); r_ += radius ( );
-        }
+    [[ nodiscard ]] constexpr int index ( int q_, int r_ ) const noexcept {
         assert ( not ( is_invalid<int, radius ( ), zero_base> ( q_, r_ ) ) );
-        switch ( r_ ) {
-        case 0: return r0 [ q_ ];
-        case 1: return r1 [ q_ ];
-        case 2: return r2 [ q_ ];
-        case 3: return r3 [ q_ ];
-        case 4: return r4 [ q_ ];
-        case 5: return r5 [ q_ ];
-        case 6: [[ fallthrough ]];
-        default: return r6 [ q_ ];
+        if constexpr ( zero_base ) {
+            constexpr char i [ 7 ] { 3, 7, 12, 18, 25, 31, 36 };
+            return ( i + radius ( ) ) [ r_ ] + q_;
         }
+        else {
+            constexpr char i [ 7 ] { 0, 4, 9, 15, 22, 28, 33 };
+            return i [ r_ ] + q_;
+        }
+    }
+
+    [[ nodiscard ]] constexpr T const & at ( int q_, int r_ ) const noexcept {
+       return ( reinterpret_cast<T const*> ( this ) ) [ index ( q_, r_ ) ];
     }
 
     [[ nodiscard ]] constexpr T & at ( int q_, int r_ ) noexcept {
@@ -153,23 +194,20 @@ class hb<T, 4, zero_base> {
 
     constexpr hb ( ) noexcept { }
 
-    [[ nodiscard ]] constexpr T const & at ( int q_, int r_ ) const noexcept {
-        if constexpr ( zero_base ) {
-            q_ += radius ( ); r_ += radius ( );
-        }
+    [[ nodiscard ]] constexpr int index ( int q_, int r_ ) const noexcept {
         assert ( not ( is_invalid<int, radius ( ), zero_base> ( q_, r_ ) ) );
-        switch ( r_ ) {
-        case 0: return r0 [ q_ ];
-        case 1: return r1 [ q_ ];
-        case 2: return r2 [ q_ ];
-        case 3: return r3 [ q_ ];
-        case 4: return r4 [ q_ ];
-        case 5: return r5 [ q_ ];
-        case 6: return r6 [ q_ ];
-        case 7: return r7 [ q_ ];
-        case 8: [[ fallthrough ]];
-        default: return r8 [ q_ ];
+        if constexpr ( zero_base ) {
+            constexpr char i [ 9 ] { 4, 9, 15, 22, 30, 39, 47, 54, 60 };
+            return ( i + radius ( ) ) [ r_ ] + q_;
         }
+        else {
+            constexpr char i [ 9 ] { 0, 5, 11, 18, 26, 35, 43, 50, 56 };
+            return i [ r_ ] + q_;
+        }
+    }
+
+    [[ nodiscard ]] constexpr T const & at ( int q_, int r_ ) const noexcept {
+        return ( reinterpret_cast< T const* > ( this ) ) [ index ( q_, r_ ) ];
     }
 
     [[ nodiscard ]] constexpr T & at ( int q_, int r_ ) noexcept {
@@ -212,25 +250,20 @@ class hb<T, 5, zero_base> {
 
     constexpr hb ( ) noexcept { }
 
-    [[ nodiscard ]] constexpr T const & at ( int q_, int r_ ) const noexcept {
-        if constexpr ( zero_base ) {
-            q_ += radius ( ); r_ += radius ( );
-        }
+    [[ nodiscard ]] constexpr int index ( int q_, int r_ ) const noexcept {
         assert ( not ( is_invalid<int, radius ( ), zero_base> ( q_, r_ ) ) );
-        switch ( r_ ) {
-        case 0: return r0 [ q_ ];
-        case 1: return r1 [ q_ ];
-        case 2: return r2 [ q_ ];
-        case 3: return r3 [ q_ ];
-        case 4: return r4 [ q_ ];
-        case 5: return r5 [ q_ ];
-        case 6: return r6 [ q_ ];
-        case 7: return r7 [ q_ ];
-        case 8: return r8 [ q_ ];
-        case 9: return r9 [ q_ ];
-        case 10: [[ fallthrough ]];
-        default: return r10 [ q_ ];
+        if constexpr ( zero_base ) {
+            constexpr char i [ 11 ] { 5, 11, 18, 26, 35, 45, 56, 66, 75, 83, 90 };
+            return ( i + radius ( ) ) [ r_ ] + q_;
         }
+        else {
+            constexpr char i [ 11 ] { 0, 6, 13, 21, 30, 40, 51, 61, 70, 78, 85 };
+            return i [ r_ ] + q_;
+        }
+    }
+
+    [[ nodiscard ]] constexpr T const & at ( int q_, int r_ ) const noexcept {
+        return ( reinterpret_cast< T const* > ( this ) ) [ index ( q_, r_ ) ];
     }
 
     [[ nodiscard ]] constexpr T & at ( int q_, int r_ ) noexcept {
@@ -276,27 +309,20 @@ class hb<T, 6, zero_base> {
 
     constexpr hb ( ) noexcept { }
 
-    [[ nodiscard ]] constexpr T const & at ( int q_, int r_ ) const noexcept {
-        if constexpr ( zero_base ) {
-            q_ += radius ( ); r_ += radius ( );
-        }
+    [[ nodiscard ]] constexpr int index ( int q_, int r_ ) const noexcept {
         assert ( not ( is_invalid<int, radius ( ), zero_base> ( q_, r_ ) ) );
-        switch ( r_ ) {
-        case  0: return  r0 [ q_ ];
-        case  1: return  r1 [ q_ ];
-        case  2: return  r2 [ q_ ];
-        case  3: return  r3 [ q_ ];
-        case  4: return  r4 [ q_ ];
-        case  5: return  r5 [ q_ ];
-        case  6: return  r6 [ q_ ];
-        case  7: return  r7 [ q_ ];
-        case  8: return  r8 [ q_ ];
-        case  9: return  r9 [ q_ ];
-        case 10: return r10 [ q_ ];
-        case 11: return r11 [ q_ ];
-        case 12: [[ fallthrough ]];
-        default: return r12 [ q_ ];
+        if constexpr ( zero_base ) {
+            constexpr char i [ 13 ] { 6, 13, 21, 30, 40, 51, 63, 76, 88, 99, 109, 118, 126 };
+            return ( i + radius ( ) ) [ r_ ] + q_;
         }
+        else {
+            constexpr char i [ 13 ] { 0, 7, 15, 24, 34, 45, 57, 70, 82, 93, 103, 112, 120 };
+            return i [ r_ ] + q_;
+        }
+    }
+
+    [[ nodiscard ]] constexpr T const & at ( int q_, int r_ ) const noexcept {
+        return ( reinterpret_cast< T const* > ( this ) ) [ index ( q_, r_ ) ];
     }
 
     [[ nodiscard ]] constexpr T & at ( int q_, int r_ ) noexcept {
@@ -343,29 +369,20 @@ class hb<T, 7, zero_base> {
 
     constexpr hb ( ) noexcept { }
 
-    [[ nodiscard ]] constexpr T const & at ( int q_, int r_ ) const noexcept {
-        if constexpr ( zero_base ) {
-            q_ += radius ( ); r_ += radius ( );
-        }
+    [[ nodiscard ]] constexpr int index ( int q_, int r_ ) const noexcept {
         assert ( not ( is_invalid<int, radius ( ), zero_base> ( q_, r_ ) ) );
-        switch ( r_ ) {
-        case  0: return  r0 [ q_ ];
-        case  1: return  r1 [ q_ ];
-        case  2: return  r2 [ q_ ];
-        case  3: return  r3 [ q_ ];
-        case  4: return  r4 [ q_ ];
-        case  5: return  r5 [ q_ ];
-        case  6: return  r6 [ q_ ];
-        case  7: return  r7 [ q_ ];
-        case  8: return  r8 [ q_ ];
-        case  9: return  r9 [ q_ ];
-        case 10: return r10 [ q_ ];
-        case 11: return r11 [ q_ ];
-        case 12: return r12 [ q_ ];
-        case 13: return r13 [ q_ ];
-        case 14: [[ fallthrough ]];
-        default: return r14 [ q_ ];
+        if constexpr ( zero_base ) {
+            constexpr unsigned char i [ 15 ] { 7, 15, 24, 34, 45, 57, 70, 84, 99, 113, 126, 138, 149, 159, 168 };
+            return ( i + radius ( ) ) [ r_ ] + q_;
         }
+        else {
+            constexpr unsigned char i [ 15 ] { 0, 8, 17, 27, 38, 50, 63, 77, 92, 106, 119, 131, 142, 152, 161 };
+            return i [ r_ ] + q_;
+        }
+    }
+
+    [[ nodiscard ]] constexpr T const & at ( int q_, int r_ ) const noexcept {
+        return ( reinterpret_cast< T const* > ( this ) ) [ index ( q_, r_ ) ];
     }
 
     [[ nodiscard ]] constexpr T & at ( int q_, int r_ ) noexcept {
@@ -380,7 +397,7 @@ class hb<T, 7, zero_base> {
     }
 };
 
-int main ( ) {
+int main6788787 ( ) {
 
     hb<char, 4, false> h;
 
@@ -825,7 +842,7 @@ void handleEptr ( std::exception_ptr eptr ) { // Passing by value is ok.
 }
 
 
-int main8078078 ( ) {
+int main08070 ( ) {
     std::exception_ptr eptr;
     try {
         std::unique_ptr<App> app_uptr = std::make_unique<App> ( );
