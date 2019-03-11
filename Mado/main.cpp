@@ -125,7 +125,6 @@ class hb {
     [[ nodiscard ]] constexpr const_reference at ( int q_, int r_ ) const noexcept {
        return ( reinterpret_cast<const_pointer> ( this ) ) [ index ( q_, r_ ) ];
     }
-
     [[ nodiscard ]] constexpr reference at ( int q_, int r_ ) noexcept {
         return const_cast<reference> ( std::as_const ( *this ).at ( q_, r_ ) );
     }
@@ -140,19 +139,31 @@ class hb {
     }
 
     [[ nodiscard ]] pointer data ( ) noexcept {
-        return m_data;
+        return m_data.data ( );
     }
     [[ nodiscard ]] const_pointer data ( ) const noexcept {
-        return m_data;
+        return m_data.data ( );
     }
 
-    [[ nodiscard ]] iterator begin ( ) noexcept { return std::begin ( m_data ); }
-    [[ nodiscard ]] const_iterator begin ( ) const noexcept { return std::cbegin ( m_data ); }
-    [[ nodiscard ]] const_iterator cbegin ( ) const noexcept { return std::cbegin ( m_data ); }
+    [[ nodiscard ]] iterator begin ( ) noexcept {
+        return std::begin ( m_data );
+    }
+    [[ nodiscard ]] const_iterator begin ( ) const noexcept {
+        return std::cbegin ( m_data );
+    }
+    [[ nodiscard ]] const_iterator cbegin ( ) const noexcept {
+        return std::cbegin ( m_data );
+    }
 
-    [[ nodiscard ]] iterator end ( ) noexcept { return std::end ( m_data ); }
-    [[ nodiscard ]] const_iterator end ( ) const noexcept { return std::cend ( m_data ); }
-    [[ nodiscard ]] const_iterator cend ( ) const noexcept { return std::cend ( m_data ); }
+    [[ nodiscard ]] iterator end ( ) noexcept {
+        return std::end ( m_data );
+    }
+    [[ nodiscard ]] const_iterator end ( ) const noexcept {
+        return std::cend ( m_data );
+    }
+    [[ nodiscard ]] const_iterator cend ( ) const noexcept {
+        return std::cend ( m_data );
+    }
 };
 
 
