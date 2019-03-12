@@ -204,13 +204,71 @@ class hb : public RadBase {
 };
 
 
+#include <lemon/smart_graph.h>
+
+template<typename RadBase>
+struct HexGrid : public RadBase {
+
+    using radius_base = RadBase;
+    using size_type = typename radius_base::size_type;
+
+    lemon::SmartDigraph m_grid;
+
+    void add_valid_neighbor_arc ( const size_type i_, const size_type q_, const size_type r_ ) noexcept {
+        if ( radius_base::is_invalid ( q_, r_ ) )
+            return;
+        m_grid.addArc ( m_grid.nodeFromId ( i_ ), m_grid.nodeFromId ( radius_base::index ( q_, r_ ) ) );
+    }
+    void add_neighbor_arcs ( const size_type q_, const size_type r_ ) noexcept {
+        const size_type i = radius_base::index ( q_, r_ );
+        add_valid_neighbor_arc ( i, q_, r_ - 1 );
+        add_valid_neighbor_arc ( i, q_ + 1, r_ - 1 );
+        add_valid_neighbor_arc ( i, q_ - 1, r_ );
+        add_valid_neighbor_arc ( i, q_ + 1, r_ );
+        add_valid_neighbor_arc ( i, q_ - 1, r_ + 1 );
+        add_valid_neighbor_arc ( i, q_, r_ + 1 );
+    }
+
+    HexGrid ( ) : RadBase { } {
+
+        // Add nodes.
+        for ( size_type i = 0; i < radius_base::size ( ); ++i )
+            m_grid.addNode ( );
+        // Add arcs.
+        size_type q = radius_base::centre_idx ( ), r = radius_base::centre_idx ( );
+        add_neighbor_arcs ( q, r );
+        for ( size_type ring = 1; ring <= radius_base::radius ( ); ++ring ) {
+            ++q; // move to next ring, east.
+            for ( size_type j = 0; j < ring; ++j ) // nw.
+                add_neighbor_arcs ( q, --r );
+            for ( size_type j = 0; j < ring; ++j ) // w.
+                add_neighbor_arcs ( --q, r );
+            for ( size_type j = 0; j < ring; ++j ) // sw.
+                add_neighbor_arcs ( --q, ++r );
+            for ( size_type j = 0; j < ring; ++j ) // se.
+                add_neighbor_arcs ( q, ++r );
+            for ( size_type j = 0; j < ring; ++j ) // e.
+                add_neighbor_arcs ( ++q, r );
+            for ( size_type j = 0; j < ring; ++j ) // ne.
+                add_neighbor_arcs ( ++q, --r );
+        }
+    }
+
+    [[ nodiscard ]] lemon::SmartDigraph & grid ( ) noexcept {
+        return m_grid;
+    }
+
+};
+
+
 int main ( ) {
 
-    hb<char, RadiusBase<8, true>> h;
+    HexGrid<RadiusBase<4, false>> grid;
 
-    h.at ( 0, 0 ) = char { 1 };
+    std::cout << grid.grid ( ).nodeNum ( ) << nl;
+    std::cout << grid.grid ( ).arcNum ( ) << nl;
 
-    std::cout << sizeof ( h ) << nl;
+
 
     return EXIT_SUCCESS;
 }
