@@ -215,211 +215,6 @@ int main ( ) {
     return EXIT_SUCCESS;
 }
 
-namespace exp = std::experimental;
-
-
-
-template<typename T, typename = std::enable_if_t<std::conjunction_v<std::is_integral<T>, std::is_unsigned<T>>>>
-void print_bits ( const T n ) noexcept {
-    int c = 0;
-    T i = T ( 1 ) << ( sizeof ( T ) * 8 - 1 );
-    while ( i ) {
-        putchar ( int ( ( n & i ) > 0 ) + int ( 48 ) );
-        if ( 0 == c or 8 == c ) {
-            putchar ( 32 );
-        }
-        i >>= 1;
-        ++c;
-    }
-}
-
-
-struct float_as_bits {
-
-    float_as_bits ( const float & v_ ) : value { v_ } { };
-    float_as_bits ( float && v_ ) : value { std::move ( v_ ) } { };
-
-    template<typename Stream>
-    [[ maybe_unused ]] friend Stream & operator << ( Stream & out_, const float_as_bits & v_ ) noexcept {
-        std::uint32_t v;
-        std::memcpy ( &v, &v_.value, 4 );
-        int c = 0;
-        std::uint32_t i = std::uint32_t { 1 } << 31;
-        while ( i ) {
-            putchar ( int ( ( v & i ) > 0 ) + int ( 48 ) );
-            if ( 0 == c or 8 == c ) {
-                putchar ( 32 );
-            }
-            i >>= 1;
-            ++c;
-        }
-        return out_;
-    }
-
-    float value;
-};
-
-
-struct State {
-
-    enum DisplayValue : int { in_active_vacant = 0, in_active_red, in_active_green, active_vacant, active_red, active_green, selected_vacant, selected_red, selected_green };
-
-
-    float state = 0.0f;
-};
-
-
-template<typename T, std::intptr_t I, std::intptr_t BaseI = 0, typename = std::enable_if_t<std::is_default_constructible<T>::value, T>>
-class Vector {
-
-    public:
-
-    using size_type = std::intptr_t;
-    using value_type = T;
-    using pointer = T * ;
-    using const_pointer = const T *;
-    using reference = T & ;
-    using const_reference = const T &;
-
-    private:
-
-    value_type m_data [ I ];
-
-    [[ nodiscard ]] constexpr const_pointer base ( ) const noexcept {
-        return m_data - BaseI;
-    }
-
-    public:
-
-    constexpr Vector ( ) : m_data { T ( ) } { }
-
-    [[ nodiscard ]] reference at ( const std::intptr_t i_ ) noexcept {
-        assert ( i_ >= BaseI && i_ < I + BaseI );
-        return base ( ) [ i_ ];
-    }
-    [[ nodiscard ]] const_reference at ( const std::intptr_t i_ ) const noexcept {
-        assert ( i_ >= BaseI && i_ < I + BaseI );
-        return base ( ) [ i_ ];
-    }
-
-    [[ nodiscard ]] pointer data ( ) noexcept {
-        return m_data;
-    }
-    [[ nodiscard ]] const_pointer data ( ) const noexcept {
-        return m_data;
-    }
-};
-
-namespace fcv {
-
-template<typename T, std::size_t S>
-using vector = std::experimental::fixed_capacity_vector<T, S>;
-}
-
-namespace tcb {
-
-namespace detail {
-
-template <typename T, typename...>
-struct vec_type_helper {
-    using type = T;
-};
-
-template <typename... Args>
-struct vec_type_helper<void, Args...> {
-    using type = typename std::common_type<Args...>::type;
-};
-
-template <typename T, typename... Args>
-using vec_type_helper_t = typename vec_type_helper<T, Args...>::type;
-
-template <typename, typename...>
-struct all_constructible_and_convertible
-    : std::true_type { };
-
-template <typename T, typename First, typename... Rest>
-struct all_constructible_and_convertible<T, First, Rest...>
-    : std::conditional<
-    std::is_constructible<T, First>::value &&
-    std::is_convertible<First, T>::value,
-    all_constructible_and_convertible<T, Rest...>,
-    std::false_type>::type { };
-
-template <std::size_t S, typename T, typename... Args, typename std::enable_if<
-    !std::is_trivially_copyable<T>::value, int>::type = 0>
-    constexpr fcv::vector<T, S> make_vector_impl ( Args&&... args ) {
-    fcv::vector<T, S> vec;
-    using arr_t = int [ ];
-    ( void ) arr_t {
-        0, ( vec.emplace_back ( std::forward<Args> ( args ) ), 0 )...
-    };
-    return vec;
-}
-
-template <std::size_t S, typename T, typename... Args, typename std::enable_if<
-    std::is_trivially_copyable<T>::value, int>::type = 0>
-    constexpr fcv::vector<T, S> make_vector_impl ( Args&&... args ) {
-    return fcv::vector<T, S>{std::forward<Args> ( args )...};
-}
-
-} // namespace detail
-
-
-template <typename T = void, std::size_t S, typename... Args,
-    typename V = detail::vec_type_helper_t<T, Args...>,
-    typename std::enable_if<
-    detail::all_constructible_and_convertible<V, Args...>::value, int>::type = 0>
-    constexpr fcv::vector<T, S> make_vector ( Args&&... args ) {
-    return detail::make_vector_impl<S, V> ( std::forward<Args> ( args )... );
-}
-
-} // namespace tcb
-
-
-template <typename T>
-struct instance_counter {
-
-    instance_counter ( ) noexcept { ++icounter.num_construct; }
-    instance_counter ( const instance_counter& ) noexcept { ++icounter.num_copy; }
-    instance_counter ( instance_counter&& ) noexcept { ++icounter.num_move; }
-    // Simulate both copy-assign and move-assign
-    instance_counter& operator=( instance_counter ) noexcept {
-        return * this;
-    }
-    ~instance_counter ( ) { ++icounter.num_destruct; }
-
-    private:
-    static struct counter {
-        int num_construct = 0;
-        int num_copy = 0;
-        int num_move = 0;
-        int num_destruct = 0;
-
-        ~counter ( ) {
-            std::printf ( "%i direct constructions\n", num_construct );
-            std::printf ( "%i copies\n", num_copy );
-            std::printf ( "%i moves\n", num_move );
-            const int total_construct = num_construct + num_copy + num_move;
-            std::printf ( "%i total constructions\n", total_construct );
-            std::printf ( "%i destructions ", num_destruct );
-            if ( total_construct == num_destruct ) {
-                std::printf ( "(no leaks)\n" );
-            }
-            else {
-                std::printf ( "WARNING: potential leak" );
-            }
-        }
-    } icounter;
-};
-
-template <typename T>
-typename instance_counter<T>::counter instance_counter<T>::icounter {};
-
-template <typename T>
-struct counted : T, private instance_counter<T> {
-    using T::T;
-};
-
 
 template<typename T, std::size_t R, bool zero_base = false, typename SizeType = int, typename = std::enable_if_t<std::is_default_constructible_v<T>, T>>
 struct HC3 {
@@ -1195,103 +990,207 @@ int main7687867 ( int argc, char* argv[] ) {
 
 
 
-#include <fsmlite/fsm.hpp>
+namespace exp = std::experimental;
 
 
-class player : public fsmlite::fsm<player> {
-    friend class fsm;  // base class needs access to transition_table
-    public:
-    enum states { Stopped, Open, Empty, Playing, Paused };
 
-    player ( state_type init_state = Empty ) : fsm ( init_state ) { }
+template<typename T, typename = std::enable_if_t<std::conjunction_v<std::is_integral<T>, std::is_unsigned<T>>>>
+void print_bits ( const T n ) noexcept {
+    int c = 0;
+    T i = T ( 1 ) << ( sizeof ( T ) * 8 - 1 );
+    while ( i ) {
+        putchar ( int ( ( n & i ) > 0 ) + int ( 48 ) );
+        if ( 0 == c or 8 == c ) {
+            putchar ( 32 );
+        }
+        i >>= 1;
+        ++c;
+    }
+}
 
-    struct play { };
-    struct open_close { };
-    struct cd_detected {
-        cd_detected ( const char* s = "" ) : title ( s ) { }
-        std::string title;
-    };
-    struct stop { };
-    struct pause { };
 
-    private:
-    void start_playback ( const play& );
-    void open_drawer ( const open_close& );
-    void close_drawer ( const open_close& );
-    void store_cd_info ( const cd_detected& cd );
-    void stop_playback ( const stop& );
-    void pause_playback ( const pause& );
-    void stop_and_open ( const open_close& );
-    void resume_playback ( const play& );
+struct float_as_bits {
 
-    private:
-    using transition_table = table<
-    //              Start    Event        Target   Action
-    //  -----------+--------+------------+--------+------------------------+-
-    mem_fn_row< Stopped, play, Playing, &player::start_playback  >,
-    mem_fn_row< Stopped, open_close, Open, &player::open_drawer     >,
-    mem_fn_row< Open, open_close, Empty, &player::close_drawer    >,
-    mem_fn_row< Empty, open_close, Open, &player::open_drawer     >,
-    mem_fn_row< Empty, cd_detected, Stopped, &player::store_cd_info   >,
-    mem_fn_row< Playing, stop, Stopped, &player::stop_playback   >,
-    mem_fn_row< Playing, pause, Paused, &player::pause_playback  >,
-    mem_fn_row< Playing, open_close, Open, &player::stop_and_open   >,
-    mem_fn_row< Paused, play, Playing, &player::resume_playback >,
-    mem_fn_row< Paused, stop, Stopped, &player::stop_playback   >,
-    mem_fn_row< Paused, open_close, Open, &player::stop_and_open   >
-    //  -----------+--------+------------+--------+------------------------+-
-    >;
+    float_as_bits ( const float & v_ ) : value { v_ } { };
+    float_as_bits ( float && v_ ) : value { std::move ( v_ ) } { };
+
+    template<typename Stream>
+    [ [ maybe_unused ] ] friend Stream & operator << ( Stream & out_, const float_as_bits & v_ ) noexcept {
+        std::uint32_t v;
+        std::memcpy ( &v, &v_.value, 4 );
+        int c = 0;
+        std::uint32_t i = std::uint32_t { 1 } << 31;
+        while ( i ) {
+            putchar ( int ( ( v & i ) > 0 ) + int ( 48 ) );
+            if ( 0 == c or 8 == c ) {
+                putchar ( 32 );
+            }
+            i >>= 1;
+            ++c;
+        }
+        return out_;
+    }
+
+    float value;
 };
 
-void player::start_playback ( const play& ) {
-    std::cout << "Starting playback\n";
+
+struct State {
+
+    enum DisplayValue : int { in_active_vacant = 0, in_active_red, in_active_green, active_vacant, active_red, active_green, selected_vacant, selected_red, selected_green };
+
+
+    float state = 0.0f;
+};
+
+
+template<typename T, std::intptr_t I, std::intptr_t BaseI = 0, typename = std::enable_if_t<std::is_default_constructible<T>::value, T>>
+class Vector {
+
+    public:
+
+    using size_type = std::intptr_t;
+    using value_type = T;
+    using pointer = T * ;
+    using const_pointer = const T *;
+    using reference = T & ;
+    using const_reference = const T &;
+
+    private:
+
+    value_type m_data [ I ];
+
+    [[ nodiscard ]] constexpr const_pointer base ( ) const noexcept {
+        return m_data - BaseI;
+    }
+
+    public:
+
+    constexpr Vector ( ) : m_data { T ( ) } { }
+
+    [[ nodiscard ]] reference at ( const std::intptr_t i_ ) noexcept {
+        assert ( i_ >= BaseI && i_ < I + BaseI );
+        return base ( ) [ i_ ];
+    }
+    [[ nodiscard ]] const_reference at ( const std::intptr_t i_ ) const noexcept {
+        assert ( i_ >= BaseI && i_ < I + BaseI );
+        return base ( ) [ i_ ];
+    }
+
+    [[ nodiscard ]] pointer data ( ) noexcept {
+        return m_data;
+    }
+    [[ nodiscard ]] const_pointer data ( ) const noexcept {
+        return m_data;
+    }
+};
+
+namespace fcv {
+
+template<typename T, std::size_t S>
+using vector = std::experimental::fixed_capacity_vector<T, S>;
 }
 
-void player::open_drawer ( const open_close& ) {
-    std::cout << "Opening drawer\n";
+namespace tcb {
+
+namespace detail {
+
+template <typename T, typename...>
+struct vec_type_helper {
+    using type = T;
+};
+
+template <typename... Args>
+struct vec_type_helper<void, Args...> {
+    using type = typename std::common_type<Args...>::type;
+};
+
+template <typename T, typename... Args>
+using vec_type_helper_t = typename vec_type_helper<T, Args...>::type;
+
+template <typename, typename...>
+struct all_constructible_and_convertible
+    : std::true_type { };
+
+template <typename T, typename First, typename... Rest>
+struct all_constructible_and_convertible<T, First, Rest...>
+    : std::conditional<
+    std::is_constructible<T, First>::value &&
+    std::is_convertible<First, T>::value,
+    all_constructible_and_convertible<T, Rest...>,
+    std::false_type>::type { };
+
+template <std::size_t S, typename T, typename... Args, typename std::enable_if<
+    !std::is_trivially_copyable<T>::value, int>::type = 0>
+    constexpr fcv::vector<T, S> make_vector_impl ( Args&&... args ) {
+    fcv::vector<T, S> vec;
+    using arr_t = int [ ];
+    ( void ) arr_t {
+        0, ( vec.emplace_back ( std::forward<Args> ( args ) ), 0 )...
+    };
+    return vec;
 }
 
-void player::close_drawer ( const open_close& ) {
-    std::cout << "Closing drawer\n";
+template <std::size_t S, typename T, typename... Args, typename std::enable_if<
+    std::is_trivially_copyable<T>::value, int>::type = 0>
+    constexpr fcv::vector<T, S> make_vector_impl ( Args&&... args ) {
+    return fcv::vector<T, S>{std::forward<Args> ( args )...};
 }
 
-void player::store_cd_info ( const cd_detected& cd ) {
-    std::cout << "Detected CD '" << cd.title << "'\n";
+} // namespace detail
+
+
+template <typename T = void, std::size_t S, typename... Args,
+    typename V = detail::vec_type_helper_t<T, Args...>,
+    typename std::enable_if<
+    detail::all_constructible_and_convertible<V, Args...>::value, int>::type = 0>
+    constexpr fcv::vector<T, S> make_vector ( Args&&... args ) {
+    return detail::make_vector_impl<S, V> ( std::forward<Args> ( args )... );
 }
 
-void player::stop_playback ( const stop& ) {
-    std::cout << "Stopping playback\n";
-}
+} // namespace tcb
 
-void player::pause_playback ( const pause& ) {
-    std::cout << "Pausing playback\n";
-}
 
-void player::stop_and_open ( const open_close& ) {
-    std::cout << "Stopping and opening drawer\n";
-}
+template <typename T>
+struct instance_counter {
 
-void player::resume_playback ( const play& ) {
-    std::cout << "Resuming playback\n";
-}
+    instance_counter ( ) noexcept { ++icounter.num_construct; }
+    instance_counter ( const instance_counter& ) noexcept { ++icounter.num_copy; }
+    instance_counter ( instance_counter&& ) noexcept { ++icounter.num_move; }
+    // Simulate both copy-assign and move-assign
+    instance_counter& operator=( instance_counter ) noexcept {
+        return *this;
+    }
+    ~instance_counter ( ) { ++icounter.num_destruct; }
 
-int main6786556 ( ) {
-    player p;
+    private:
+    static struct counter {
+        int num_construct = 0;
+        int num_copy = 0;
+        int num_move = 0;
+        int num_destruct = 0;
 
-    p.process_event ( player::open_close ( ) );
-    assert ( p.current_state ( ) == player::Open );
-    p.process_event ( player::open_close ( ) );
-    assert ( p.current_state ( ) == player::Empty );
-    p.process_event ( player::cd_detected ( "Rubber Soul" ) );
-    assert ( p.current_state ( ) == player::Stopped );
-    p.process_event ( player::play ( ) );
-    assert ( p.current_state ( ) == player::Playing );
-    p.process_event ( player::pause ( ) );
-    assert ( p.current_state ( ) == player::Paused );
-    p.process_event ( player::open_close ( ) );
-    assert ( p.current_state ( ) == player::Open );
-    p.process_event ( player::open_close ( ) );
-    assert ( p.current_state ( ) == player::Empty );
+        ~counter ( ) {
+            std::printf ( "%i direct constructions\n", num_construct );
+            std::printf ( "%i copies\n", num_copy );
+            std::printf ( "%i moves\n", num_move );
+            const int total_construct = num_construct + num_copy + num_move;
+            std::printf ( "%i total constructions\n", total_construct );
+            std::printf ( "%i destructions ", num_destruct );
+            if ( total_construct == num_destruct ) {
+                std::printf ( "(no leaks)\n" );
+            }
+            else {
+                std::printf ( "WARNING: potential leak" );
+            }
+        }
+    } icounter;
+};
 
-    return EXIT_SUCCESS;
-}
+template <typename T>
+typename instance_counter<T>::counter instance_counter<T>::icounter {};
+
+template <typename T>
+struct counted : T, private instance_counter<T> {
+    using T::T;
+};
