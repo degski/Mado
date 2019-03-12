@@ -98,12 +98,7 @@ struct RadiusBase {
     }
 
     [[ nodiscard ]] static constexpr size_type centre_idx ( ) noexcept {
-        if constexpr ( zero_base ) {
-            return static_cast<size_type> ( 0 );
-        }
-        else {
-            return static_cast<size_type> ( radius ( ) );
-        }
+        return static_cast<size_type> ( zero_base ? 0 : radius ( ) );
     }
 
     // Compile-time function.
@@ -124,23 +119,12 @@ struct RadiusBase {
 
     [[ nodiscard ]] static constexpr size_type index ( const size_type q_, const size_type r_ ) noexcept {
         assert ( not ( is_invalid ( q_, r_ ) ) );
-        if constexpr ( zero_base ) {
-            constexpr const_index_array idx = make_index_array<R> ( );
-            return ( idx.data ( ) + R ) [ r_ ] + q_;
-        }
-        else {
-            constexpr const_index_array idx = make_index_array<0> ( );
-            return ( idx.data ( ) + 0 ) [ r_ ] + q_;
-        }
+        constexpr const_index_array idx = make_index_array<zero_base ? R : 0> ( );
+        return ( idx.data ( ) + ( zero_base ? R : 0 ) ) [ r_ ] + q_;
     }
 
     [[ nodiscard ]] static constexpr bool is_invalid ( const size_type q_, const size_type r_ ) noexcept {
-        if constexpr ( zero_base ) {
-            return std::abs ( q_ ) > radius ( ) or std::abs ( r_ ) > radius ( ) or std::abs ( -q_ - r_ ) > radius ( );
-        }
-        else {
-            return std::abs ( q_ - radius ( ) ) > radius ( ) or std::abs ( r_ - radius ( ) ) > radius ( ) or std::abs ( -q_ - r_ + ( 2 * radius ( ) ) ) > radius ( );
-        }
+        return std::abs ( q_ - ( zero_base ? 0 : radius ( ) ) ) > radius ( ) or std::abs ( r_ - ( zero_base ? 0 : radius ( ) ) ) > radius ( ) or std::abs ( -q_ - r_ + ( 2 * ( zero_base ? 0 : radius ( ) ) ) ) > radius ( );
     }
 };
 
