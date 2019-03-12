@@ -67,7 +67,7 @@ struct RadiusBase {
 
     static_assert ( R > 1 and R < 9, "radius (R) must be on interval [ 2, 8 ]" );
 
-    using index_array = std::experimental::fixed_capacity_vector<std::uint8_t, ( 1 + 2 * R )>;
+    using index_array = std::experimental::fixed_capacity_vector<std::int8_t, ( 1 + 2 * R )>;
     using const_index_array = index_array const;
 
     using size_type = int;
@@ -78,41 +78,41 @@ struct RadiusBase {
     }
 
     [[ nodiscard ]] static constexpr size_type size ( ) noexcept {
-        return static_cast<size_type> ( 1 + 3 * radius ( ) * ( radius ( ) + 1 ) );
+        return static_cast< size_type > ( 1 + 3 * radius ( ) * ( radius ( ) + 1 ) );
     }
 
     [[ nodiscard ]] static constexpr size_type width ( ) noexcept {
-        return static_cast<size_type> ( 2 * radius ( ) + 1 );
+        return static_cast< size_type > ( 2 * radius ( ) + 1 );
     }
     [[ nodiscard ]] static constexpr size_type height ( ) noexcept {
-        return static_cast<size_type> ( 2 * radius ( ) + 1 );
+        return static_cast< size_type > ( 2 * radius ( ) + 1 );
     }
 
     [[ nodiscard ]] static constexpr size_type dw_cols ( ) noexcept {
-        return static_cast<size_type> ( 2 * width ( ) + 1 );
+        return static_cast< size_type > ( 2 * width ( ) + 1 );
     }
     [[ nodiscard ]] static constexpr size_type dw_rows ( ) noexcept {
-        return static_cast<size_type> ( height ( ) + 2 );
+        return static_cast< size_type > ( height ( ) + 2 );
     }
 
     [[ nodiscard ]] static constexpr size_type centre_idx ( ) noexcept {
         if constexpr ( zero_base ) {
-            return static_cast<size_type> ( 0 );
+            return static_cast< size_type > ( 0 );
         }
         else {
-            return static_cast<size_type> ( radius ( ) );
+            return static_cast< size_type > ( radius ( ) );
         }
     }
 
     // Compile-time function.
     template<int Start>
     [ [ nodiscard ] ] static constexpr const_index_array make_index_array ( ) noexcept {
-        index_array a ( 1, static_cast< std::uint8_t > ( Start ) );
-        int i = R + 1;
-        for ( ; i < ( 1 + 2 * R ); ++i )
-            a.push_back ( static_cast< std::uint8_t > ( a.back ( ) + i ) );
-        for ( ; i > ( R + 1 ); --i )
-            a.push_back ( static_cast< std::uint8_t > ( a.back ( ) + i ) );
+        index_array a ( 1, static_cast< std::int8_t > ( Start ) - radius ( ) );
+        int i = radius ( ) + 1;
+        for ( ; i < ( 1 + 2 * radius ( ) ); ++i )
+            a.push_back ( static_cast< std::int8_t > ( a.back ( ) + i + 1 ) );
+        for ( ; i > ( 1 + radius ( ) ); --i )
+            a.push_back ( static_cast< std::int8_t > ( a.back ( ) + i ) );
         return a;
     }
 
@@ -140,8 +140,51 @@ struct RadiusBase {
             return std::abs ( q_ - radius ( ) ) > radius ( ) or std::abs ( r_ - radius ( ) ) > radius ( ) or std::abs ( -q_ - r_ + ( 2 * radius ( ) ) ) > radius ( );
         }
     }
+
+    static void print_idx ( const size_type q_, const size_type r_ ) noexcept {
+        std::cout << '<' << q_ << ' ' << r_ << ' ' << index ( q_, r_ ) << '>' << nl;
+    }
+
+    static void test ( ) noexcept {
+
+        size_type q = centre_idx ( ), r = centre_idx ( );
+        print_idx ( q, r );
+        for ( size_type ring = 1; ring <= radius ( ); ++ring ) {
+            ++q; // move to next ring, east.
+            for ( size_type j = 0; j < ring; ++j ) // nw.
+                print_idx  ( q, --r );
+            for ( size_type j = 0; j < ring; ++j ) // w.
+                print_idx  ( --q, r );
+            for ( size_type j = 0; j < ring; ++j ) // sw.
+                print_idx  ( --q, ++r );
+            for ( size_type j = 0; j < ring; ++j ) // se.
+                print_idx  ( q, ++r );
+            for ( size_type j = 0; j < ring; ++j ) // e.
+                print_idx  ( ++q, r );
+            for ( size_type j = 0; j < ring; ++j ) // ne.
+                print_idx  ( ++q, --r );
+        }
+
+    }
 };
 
+
+
+
+int main ( ) {
+
+    RadiusBase<3, false> r;
+
+    auto a = r.make_index_array<0> ( );
+
+    for ( auto v : a )
+        std::cout << ( int ) v << ' ';
+    std::cout << nl << nl;
+
+    r.test ( );
+
+    return EXIT_SUCCESS;
+}
 
 
 template<typename Type, typename RadBase>
@@ -203,7 +246,7 @@ class hb : public RadBase {
     }
 };
 
-
+/*
 #include <lemon/smart_graph.h>
 
 template<typename RadBase>
@@ -212,21 +255,21 @@ struct HexGrid : public RadBase {
     using radius_base = RadBase;
     using size_type = typename radius_base::size_type;
 
-    lemon::SmartDigraph m_grid;
+    lemon::SmartGraph m_grid;
 
     void add_valid_neighbor_arc ( const size_type i_, const size_type q_, const size_type r_ ) noexcept {
         if ( radius_base::is_invalid ( q_, r_ ) )
             return;
-        m_grid.addArc ( m_grid.nodeFromId ( i_ ), m_grid.nodeFromId ( radius_base::index ( q_, r_ ) ) );
+        m_grid.addEdge ( m_grid.nodeFromId ( radius_base::index ( q_, r_ ) ), m_grid.nodeFromId ( i_ ) );
     }
     void add_neighbor_arcs ( const size_type q_, const size_type r_ ) noexcept {
         const size_type i = radius_base::index ( q_, r_ );
-        add_valid_neighbor_arc ( i, q_, r_ - 1 );
+        add_valid_neighbor_arc ( i, q_    , r_ - 1 );
         add_valid_neighbor_arc ( i, q_ + 1, r_ - 1 );
-        add_valid_neighbor_arc ( i, q_ - 1, r_ );
-        add_valid_neighbor_arc ( i, q_ + 1, r_ );
+        add_valid_neighbor_arc ( i, q_ - 1, r_     );
+        add_valid_neighbor_arc ( i, q_ + 1, r_     );
         add_valid_neighbor_arc ( i, q_ - 1, r_ + 1 );
-        add_valid_neighbor_arc ( i, q_, r_ + 1 );
+        add_valid_neighbor_arc ( i, q_    , r_ + 1 );
     }
 
     HexGrid ( ) : RadBase { } {
@@ -254,25 +297,26 @@ struct HexGrid : public RadBase {
         }
     }
 
-    [[ nodiscard ]] lemon::SmartDigraph & grid ( ) noexcept {
+    [[ nodiscard ]] lemon::SmartGraph & grid ( ) noexcept {
         return m_grid;
     }
 
 };
 
 
-int main ( ) {
+int main786786 ( ) {
 
     HexGrid<RadiusBase<4, false>> grid;
 
-    std::cout << grid.grid ( ).nodeNum ( ) << nl;
-    std::cout << grid.grid ( ).arcNum ( ) << nl;
+    lemon::SmartGraph & hg = grid.grid ( );
 
+    for ( lemon::SmartGraph::OutArcIt a ( hg, hg.nodeFromId ( 8 ) ); a != lemon::INVALID; ++a )
+        std::cout << hg.id ( a ) << nl;
 
 
     return EXIT_SUCCESS;
 }
-
+*/
 
 template<typename T, std::size_t R, bool zero_base = false, typename SizeType = int, typename = std::enable_if_t<std::is_default_constructible_v<T>, T>>
 struct HC3 {
