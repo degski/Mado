@@ -62,9 +62,8 @@
 
 #include <experimental/fixed_capacity_vector>
 
-
-template<typename Type, int R, bool zero_base = true>
-class hb {
+template<int R, bool zero_base = true>
+struct RadiusBase {
 
     static_assert ( R > 1 and R < 9, "radius (R) must be on interval [ 2, 8 ]" );
 
@@ -82,36 +81,44 @@ class hb {
         return static_cast<size_type> ( 1 + 3 * radius ( ) * ( radius ( ) + 1 ) );
     }
 
+    [[ nodiscard ]] static constexpr size_type width ( ) noexcept {
+        return static_cast<size_type> ( 2 * radius ( ) + 1 );
+    }
+    [[ nodiscard ]] static constexpr size_type height ( ) noexcept {
+        return static_cast<size_type> ( 2 * radius ( ) + 1 );
+    }
+
+    [[ nodiscard ]] static constexpr size_type dw_cols ( ) noexcept {
+        return static_cast<size_type> ( 2 * width ( ) + 1 );
+    }
+    [[ nodiscard ]] static constexpr size_type dw_rows ( ) noexcept {
+        return static_cast<size_type> ( height ( ) + 2 );
+    }
+
+    [[ nodiscard ]] static constexpr size_type centre_idx ( ) noexcept {
+        if constexpr ( zero_base ) {
+            return static_cast<size_type> ( 0 );
+        }
+        else {
+            return static_cast<size_type> ( radius ( ) );
+        }
+    }
+
     // Compile-time function.
     template<int Start>
-    [[ nodiscard ]] static constexpr const_index_array make_index_array ( ) noexcept {
-        index_array a ( 1, static_cast<std::uint8_t> ( Start ) );
+    [ [ nodiscard ] ] static constexpr const_index_array make_index_array ( ) noexcept {
+        index_array a ( 1, static_cast< std::uint8_t > ( Start ) );
         int i = R + 1;
         for ( ; i < ( 1 + 2 * R ); ++i )
-            a.push_back ( static_cast<std::uint8_t> ( a.back ( ) + i ) );
+            a.push_back ( static_cast< std::uint8_t > ( a.back ( ) + i ) );
         for ( ; i > ( R + 1 ); --i )
-            a.push_back ( static_cast<std::uint8_t> ( a.back ( ) + i ) );
+            a.push_back ( static_cast< std::uint8_t > ( a.back ( ) + i ) );
         return a;
     }
 
-    using value_type = Type;
-    using pointer = value_type * ;
-    using const_pointer = const value_type*;
-
-    using reference = value_type & ;
-    using const_reference = const value_type &;
-    using rv_reference = value_type && ;
-
-    using data_array = std::array<value_type, size ( )>;
-
-    using iterator = typename data_array::iterator;
-    using const_iterator = typename data_array::const_iterator;
-
-    data_array m_data = { }; // value initialized, i.e. to zero, default is indeterminate.
-
     public:
 
-    constexpr hb ( ) noexcept { }
+    constexpr RadiusBase ( ) noexcept { }
 
     [[ nodiscard ]] static constexpr size_type index ( const size_type q_, const size_type r_ ) noexcept {
         assert ( not ( is_invalid ( q_, r_ ) ) );
@@ -125,13 +132,6 @@ class hb {
         }
     }
 
-    [[ nodiscard ]] constexpr const_reference at ( const size_type q_, const size_type r_ ) const noexcept {
-       return m_data [ index ( q_, r_ ) ];
-    }
-    [[ nodiscard ]] constexpr reference at ( const size_type q_, const size_type r_ ) noexcept {
-        return const_cast<reference> ( std::as_const ( * this ).at ( q_, r_ ) );
-    }
-
     [[ nodiscard ]] static constexpr bool is_invalid ( const size_type q_, const size_type r_ ) noexcept {
         if constexpr ( zero_base ) {
             return std::abs ( q_ ) > radius ( ) or std::abs ( r_ ) > radius ( ) or std::abs ( -q_ - r_ ) > radius ( );
@@ -139,6 +139,40 @@ class hb {
         else {
             return std::abs ( q_ - radius ( ) ) > radius ( ) or std::abs ( r_ - radius ( ) ) > radius ( ) or std::abs ( -q_ - r_ + ( 2 * radius ( ) ) ) > radius ( );
         }
+    }
+};
+
+
+
+template<typename Type, typename RadBase>
+class hb : public RadBase {
+
+    using radius_base = RadBase;
+    using size_type = typename radius_base::size_type;
+    using value_type = Type;
+    using pointer = value_type * ;
+    using const_pointer = const value_type*;
+
+    using reference = value_type & ;
+    using const_reference = const value_type &;
+    using rv_reference = value_type && ;
+
+    using data_array = std::array<value_type, radius_base::size ( )>;
+
+    using iterator = typename data_array::iterator;
+    using const_iterator = typename data_array::const_iterator;
+
+    data_array m_data = { }; // value initialized, i.e. to zero, default is indeterminate.
+
+    public:
+
+    constexpr hb ( ) noexcept : RadBase { } { }
+
+    [[ nodiscard ]] constexpr const_reference at ( const size_type q_, const size_type r_ ) const noexcept {
+       return m_data [ radius_base::index ( q_, r_ ) ];
+    }
+    [[ nodiscard ]] constexpr reference at ( const size_type q_, const size_type r_ ) noexcept {
+        return const_cast<reference> ( std::as_const ( * this ).at ( q_, r_ ) );
     }
 
     [[ nodiscard ]] pointer data ( ) noexcept {
@@ -172,7 +206,7 @@ class hb {
 
 int main ( ) {
 
-    hb<char, 8, true> h;
+    hb<char, RadiusBase<8, true>> h;
 
     h.at ( 0, 0 ) = char { 1 };
 
