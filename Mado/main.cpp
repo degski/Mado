@@ -173,9 +173,9 @@ struct RadiusBase {
 
 int main ( ) {
 
-    RadiusBase<3, false> r;
+    RadiusBase<3, true> r;
 
-    auto a = r.make_index_array<0> ( );
+    auto a = r.make_index_array<3> ( );
 
     for ( auto v : a )
         std::cout << ( int ) v << ' ';
