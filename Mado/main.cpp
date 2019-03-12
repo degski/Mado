@@ -112,9 +112,9 @@ struct RadiusBase {
         index_array a ( 1, static_cast<sidx> ( Start - radius ( ) ) );
         size_type i = radius ( ) + 1;
         for ( ; i < ( 1 + 2 * radius ( ) ); ++i )
-            a.push_back ( static_cast<sidx> ( a.back ( ) + i + 1 ) );
+            a.emplace_back ( static_cast<sidx> ( a.back ( ) + i + 1 ) );
         for ( ; i > ( 1 + radius ( ) ); --i )
-            a.push_back ( static_cast<sidx> ( a.back ( ) + i ) );
+            a.emplace_back ( static_cast<sidx> ( a.back ( ) + i ) );
         return a;
     }
 
