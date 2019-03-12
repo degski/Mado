@@ -107,10 +107,10 @@ struct RadiusBase {
     }
 
     // Compile-time function.
-    template<int Start>
+    template<size_type Start>
     [[ nodiscard ]] static constexpr const_index_array make_index_array ( ) noexcept {
         index_array a ( 1, static_cast<sidx> ( Start - radius ( ) ) );
-        int i = radius ( ) + 1;
+        size_type i = radius ( ) + 1;
         for ( ; i < ( 1 + 2 * radius ( ) ); ++i )
             a.push_back ( static_cast<sidx> ( a.back ( ) + i + 1 ) );
         for ( ; i > ( 1 + radius ( ) ); --i )
