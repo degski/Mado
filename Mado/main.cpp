@@ -67,9 +67,9 @@ struct RadiusBase {
 
     static_assert ( R > 1 and R < 105, "radius (R) must be on interval [ 2, 104 ]" );
 
-    using sidx = std::conditional_t<( 1 + 3 * R * ( R + 1 ) ) < std::numeric_limits<std::int8_t>::max ( ), std::int8_t, std::int16_t>;
+    using idx_type = std::conditional_t<( 1 + 3 * R * ( R + 1 ) ) < std::numeric_limits<std::int8_t>::max ( ), std::int8_t, std::int16_t>;
 
-    using index_array = std::experimental::fixed_capacity_vector<sidx, ( 1 + 2 * R )>;
+    using index_array = std::experimental::fixed_capacity_vector<idx_type, ( 1 + 2 * R )>;
     using const_index_array = index_array const;
 
     using size_type = int;
@@ -104,12 +104,12 @@ struct RadiusBase {
     // Compile-time function.
     template<size_type Start>
     [[ nodiscard ]] static constexpr const_index_array make_index_array ( ) noexcept {
-        index_array a ( 1, static_cast<sidx> ( Start - radius ( ) ) );
+        index_array a ( 1, static_cast<idx_type> ( Start - radius ( ) ) );
         size_type i = radius ( ) + 1;
         for ( ; i < ( 1 + 2 * radius ( ) ); ++i )
-            a.emplace_back ( static_cast<sidx> ( a.back ( ) + i + 1 ) );
+            a.emplace_back ( static_cast<idx_type> ( a.back ( ) + i + 1 ) );
         for ( ; i > ( 1 + radius ( ) ); --i )
-            a.emplace_back ( static_cast<sidx> ( a.back ( ) + i ) );
+            a.emplace_back ( static_cast<idx_type> ( a.back ( ) + i ) );
         return a;
     }
 
@@ -130,10 +130,11 @@ struct RadiusBase {
 
 
 template<typename Type, typename RadBase>
-class hb : public RadBase {
+struct HexBase : RadBase {
 
-    using radius_base = RadBase;
-    using size_type = typename radius_base::size_type;
+    using rad = RadBase;
+    using idx_type = typename rad::idx_type;
+    using size_type = typename rad::size_type;
     using value_type = Type;
     using pointer = value_type * ;
     using const_pointer = const value_type*;
@@ -142,7 +143,77 @@ class hb : public RadBase {
     using const_reference = const value_type &;
     using rv_reference = value_type && ;
 
-    using data_array = std::array<value_type, radius_base::size ( )>;
+    using data_array = std::array<value_type, rad::size ( )>;
+
+    using iterator = typename data_array::iterator;
+    using const_iterator = typename data_array::const_iterator;
+
+    using neighbors_type = std::experimental::fixed_capacity_vector<idx_type, 6>;
+    using neighbors_type_array = std::array<neighbors_type, rad::size ( )>;
+
+    private:
+
+    static constexpr void emplace_valid_neighbor ( neighbors_type & n_, const size_type q_, const size_type r_ ) noexcept {
+        if ( rad::is_invalid ( q_, r_ ) )
+            return;
+        n_.emplace_back ( rad::index ( q_, r_ ) );
+    }
+
+    static constexpr void emplace_neighbors ( neighbors_type_array & na_, const size_type q_, const size_type r_ ) noexcept {
+        neighbors_type & n = na_ [ rad::index ( q_, r_ ) ];
+        emplace_valid_neighbor ( n, q_    , r_ - 1 );
+        emplace_valid_neighbor ( n, q_ + 1, r_ - 1 );
+        emplace_valid_neighbor ( n, q_ - 1, r_     );
+        emplace_valid_neighbor ( n, q_ + 1, r_     );
+        emplace_valid_neighbor ( n, q_ - 1, r_ + 1 );
+        emplace_valid_neighbor ( n, q_    , r_ + 1 );
+        std::sort ( std::begin ( n ), std::end ( n ) );
+    }
+
+    static constexpr neighbors_type_array const make_neighbors_array ( ) noexcept {
+        neighbors_type_array neighbors;
+        size_type q = rad::centre_idx ( ), r = rad::centre_idx ( );
+        emplace_neighbors ( q, r );
+        for ( size_type ring = 1; ring <= rad::radius ( ); ++ring ) {
+            ++q; // move to next ring, east.
+            for ( size_type j = 0; j < ring; ++j ) // nw.
+                emplace_neighbors ( q, --r );
+            for ( size_type j = 0; j < ring; ++j ) // w.
+                emplace_neighbors ( --q, r );
+            for ( size_type j = 0; j < ring; ++j ) // sw.
+                emplace_neighbors ( --q, ++r );
+            for ( size_type j = 0; j < ring; ++j ) // se.
+                emplace_neighbors ( q, ++r );
+            for ( size_type j = 0; j < ring; ++j ) // e.
+                emplace_neighbors ( ++q, r );
+            for ( size_type j = 0; j < ring; ++j ) // ne.
+                emplace_neighbors ( ++q, --r );
+        }
+        return neighbors;
+    }
+
+    static constexpr neighbors_type_array m_neighbors = make_neighbors_array ( );
+
+    public:
+
+    constexpr HexBase ( ) noexcept : RadBase { } { }
+};
+
+
+template<typename Type, typename RadBase>
+class HexCont : public HexBase<Type, RadBase> {
+
+    using rad = RadBase;
+    using size_type = typename rad::size_type;
+    using value_type = Type;
+    using pointer = value_type * ;
+    using const_pointer = const value_type*;
+
+    using reference = value_type & ;
+    using const_reference = const value_type &;
+    using rv_reference = value_type && ;
+
+    using data_array = std::array<value_type, rad::size ( )>;
 
     using iterator = typename data_array::iterator;
     using const_iterator = typename data_array::const_iterator;
@@ -151,10 +222,10 @@ class hb : public RadBase {
 
     public:
 
-    constexpr hb ( ) noexcept : RadBase { } { }
+    HexCont ( ) noexcept : HexBase<Type, RadBase> { } { }
 
     [[ nodiscard ]] constexpr const_reference at ( const size_type q_, const size_type r_ ) const noexcept {
-       return m_data [ radius_base::index ( q_, r_ ) ];
+       return m_data [ rad::index ( q_, r_ ) ];
     }
     [[ nodiscard ]] constexpr reference at ( const size_type q_, const size_type r_ ) noexcept {
         return const_cast<reference> ( std::as_const ( * this ).at ( q_, r_ ) );
@@ -186,7 +257,25 @@ class hb : public RadBase {
     [[ nodiscard ]] const_iterator cend ( ) const noexcept {
         return std::cend ( m_data );
     }
+
+    [[ nodiscard ]] const_reference operator [ ] ( const Hex<rad::radius( )> & h_ ) const noexcept {
+        return at ( h_ );
+    }
+    [[ nodiscard ]] reference operator [ ] ( const Hex<rad::radius ( )> & h_ ) noexcept {
+        return const_cast<reference> ( std::as_const ( *this ).operator [ ] ( h_ ) );
+    }
 };
+
+
+int main ( ) {
+
+    HexCont<int, RadiusBase<4, false>> hc;
+
+
+
+    return EXIT_SUCCESS;
+}
+
 
 
 #include <lemon/smart_graph.h>
@@ -194,18 +283,18 @@ class hb : public RadBase {
 template<typename RadBase>
 struct HexGrid : public RadBase {
 
-    using radius_base = RadBase;
-    using size_type = typename radius_base::size_type;
+    using rad = RadBase;
+    using size_type = typename rad::size_type;
 
     lemon::SmartDigraph m_grid;
 
     void add_valid_neighbor_arc ( const size_type i_, const size_type q_, const size_type r_ ) noexcept {
-        if ( radius_base::is_invalid ( q_, r_ ) )
+        if ( rad::is_invalid ( q_, r_ ) )
             return;
-        m_grid.addArc ( m_grid.nodeFromId ( radius_base::index ( q_, r_ ) ), m_grid.nodeFromId ( i_ ) );
+        m_grid.addArc ( m_grid.nodeFromId ( rad::index ( q_, r_ ) ), m_grid.nodeFromId ( i_ ) );
     }
     void add_neighbor_arcs ( const size_type q_, const size_type r_ ) noexcept {
-        const size_type i = radius_base::index ( q_, r_ );
+        const size_type i = rad::index ( q_, r_ );
         add_valid_neighbor_arc ( i, q_    , r_ - 1 );
         add_valid_neighbor_arc ( i, q_ + 1, r_ - 1 );
         add_valid_neighbor_arc ( i, q_ - 1, r_     );
@@ -217,12 +306,12 @@ struct HexGrid : public RadBase {
     HexGrid ( ) : RadBase { } {
 
         // Add nodes.
-        for ( size_type i = 0; i < radius_base::size ( ); ++i )
+        for ( size_type i = 0; i < rad::size ( ); ++i )
             m_grid.addNode ( );
         // Add arcs.
-        size_type q = radius_base::centre_idx ( ), r = radius_base::centre_idx ( );
+        size_type q = rad::centre_idx ( ), r = rad::centre_idx ( );
         add_neighbor_arcs ( q, r );
-        for ( size_type ring = 1; ring <= radius_base::radius ( ); ++ring ) {
+        for ( size_type ring = 1; ring <= rad::radius ( ); ++ring ) {
             ++q; // move to next ring, east.
             for ( size_type j = 0; j < ring; ++j ) // nw.
                 add_neighbor_arcs ( q, --r );
@@ -246,13 +335,13 @@ struct HexGrid : public RadBase {
 };
 
 
-int main ( ) {
+int main989709 ( ) {
 
     HexGrid<RadiusBase<4, false>> grid;
 
     lemon::SmartDigraph & hg = grid.grid ( );
 
-    for ( lemon::SmartDigraph::OutArcIt a ( hg, hg.nodeFromId ( 1 ) ); a != lemon::INVALID; ++a )
+    for ( lemon::SmartDigraph::OutArcIt a ( hg, hg.nodeFromId ( 59 ) ); a != lemon::INVALID; ++a )
         std::cout << hg.id ( a ) << nl;
 
 
