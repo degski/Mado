@@ -129,27 +129,19 @@ struct RadiusBase {
 };
 
 
-template<typename Type, int R, bool zero_base>
+template<int R, bool zero_base>
 struct HexBase : RadiusBase<R, zero_base> {
 
     using rad = RadiusBase<R, zero_base>;
     using idx_type = typename rad::idx_type;
     using size_type = typename rad::size_type;
-    using value_type = Type;
-    using pointer = value_type * ;
-    using const_pointer = const value_type*;
-
-    using reference = value_type & ;
-    using const_reference = const value_type &;
-    using rv_reference = value_type && ;
-
-    using data_array = std::array<value_type, rad::size ( )>;
-
-    using iterator = typename data_array::iterator;
-    using const_iterator = typename data_array::const_iterator;
+    using const_pointer = idx_type const *;
+    using const_reference = idx_type const &;
 
     using neighbors_type = std::experimental::fixed_capacity_vector<idx_type, 6>;
     using neighbors_type_array = std::array<neighbors_type, rad::size ( )>;
+
+    using const_iterator = typename neighbors_type::const_iterator;
 
     private:
 
@@ -192,16 +184,16 @@ struct HexBase : RadiusBase<R, zero_base> {
         return neighbors;
     }
 
-    static constexpr neighbors_type_array const m_neighbors = make_neighbors_array ( );
-
     public:
 
     constexpr HexBase ( ) noexcept { }
+
+    static constexpr neighbors_type_array const m_neighbors = make_neighbors_array ( );
 };
 
 
 template<typename Type, int R, bool zero_base>
-class HexCont : public HexBase<Type, R, zero_base> {
+class HexCont : public HexBase<R, zero_base> {
 
     using rad = RadiusBase<R, zero_base>;
     using size_type = typename rad::size_type;
