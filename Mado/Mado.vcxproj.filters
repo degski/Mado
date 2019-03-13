@@ -48,6 +48,9 @@
     <ClInclude Include="Drawables.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Hexcontainer.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Mado.rc">
