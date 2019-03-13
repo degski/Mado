@@ -129,10 +129,10 @@ struct RadiusBase {
 };
 
 
-template<typename Type, typename RadBase>
-struct HexBase : RadBase {
+template<typename Type, int R, bool zero_base>
+struct HexBase : RadiusBase<R, zero_base> {
 
-    using rad = RadBase;
+    using rad = RadiusBase<R, zero_base>;
     using idx_type = typename rad::idx_type;
     using size_type = typename rad::size_type;
     using value_type = Type;
@@ -170,7 +170,7 @@ struct HexBase : RadBase {
         std::sort ( std::begin ( n ), std::end ( n ) );
     }
 
-    static constexpr neighbors_type_array const make_neighbors_array ( ) noexcept {
+    [[ nodiscard ]] static constexpr neighbors_type_array const make_neighbors_array ( ) noexcept {
         neighbors_type_array neighbors;
         size_type q = rad::centre_idx ( ), r = rad::centre_idx ( );
         emplace_neighbors ( q, r );
@@ -192,18 +192,18 @@ struct HexBase : RadBase {
         return neighbors;
     }
 
-    static constexpr neighbors_type_array m_neighbors = make_neighbors_array ( );
+    static constexpr neighbors_type_array const m_neighbors = make_neighbors_array ( );
 
     public:
 
-    constexpr HexBase ( ) noexcept : RadBase { } { }
+    constexpr HexBase ( ) noexcept { }
 };
 
 
-template<typename Type, typename RadBase>
-class HexCont : public HexBase<Type, RadBase> {
+template<typename Type, int R, bool zero_base>
+class HexCont : public HexBase<Type, R, zero_base> {
 
-    using rad = RadBase;
+    using rad = RadiusBase<R, zero_base>;
     using size_type = typename rad::size_type;
     using value_type = Type;
     using pointer = value_type * ;
@@ -222,7 +222,7 @@ class HexCont : public HexBase<Type, RadBase> {
 
     public:
 
-    HexCont ( ) noexcept : HexBase<Type, RadBase> { } { }
+    HexCont ( ) noexcept { }
 
     [[ nodiscard ]] constexpr const_reference at ( const size_type q_, const size_type r_ ) const noexcept {
        return m_data [ rad::index ( q_, r_ ) ];
@@ -269,7 +269,7 @@ class HexCont : public HexBase<Type, RadBase> {
 
 int main ( ) {
 
-    HexCont<int, RadiusBase<4, false>> hc;
+    HexCont<int, 4, false> hc;
 
 
 
