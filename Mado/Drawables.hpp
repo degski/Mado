@@ -246,6 +246,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
         const int i = m_vertex_indices [ i_ ], w = what_type ( i );
         if ( display_type ( d_ ) == w ) {
             setTexture ( i, w + 6 );
+            m_last = i;
             return true;
         }
         return false;
@@ -283,13 +284,21 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
         }
     }
 
+    void unselect ( ) noexcept {
+        if ( not_set != m_last ) {
+            std::cout << "unselect called" << nl;
+            setTexture ( m_last, what_type ( m_last ) );
+            m_last = not_set;
+        }
+    }
+
     void reset ( ) noexcept {
         if ( not_set != m_last ) {
             const int l = what ( m_last );
             if ( l - 2 < ( 6 - 2 ) ) { // 2 < l < 6
                 setTexture ( m_last, l % 3 );
+                m_last = not_set;
             }
-            m_last = not_set;
         }
     }
 

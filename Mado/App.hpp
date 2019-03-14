@@ -328,6 +328,7 @@ void App::mouseEvents ( const sf::Event & event_ ) {
                 switch ( m_human_move.state ( ) ) {
                 case NextMove::State::none:
                     if ( ( no_reset = m_play_area.equal ( hex_position, PlayArea::DisplayValue::active_red ) ) ) {
+                        std::cout << "set from" << nl;
                         m_human_move.from ( hex_position );
                     }
                     break;
@@ -362,9 +363,17 @@ void App::mouseEvents ( const sf::Event & event_ ) {
                         std::cout << "clock clicked\n";
                     }
                     else {
-                    // Requested placement.
-                        std::cout << "place requested" << nl;
-                        m_human_move.state ( NextMove::State::place );
+                        // Clicked the new area, after selecting where to move from.
+                        if ( NextMove::State::move == m_human_move.state ( ) ) {
+                            std::cout << "cancelled move from" << nl;
+                            m_human_move.reset ( );
+                            m_play_area.unselect ( );
+                        }
+                        // Requested placement.
+                        else {
+                            std::cout << "place requested" << nl;
+                            m_human_move.state ( NextMove::State::place );
+                        }
                     }
                 }
                 m_play_area.reset ( );
