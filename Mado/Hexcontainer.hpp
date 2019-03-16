@@ -220,7 +220,7 @@ struct HexBase : public RadiusBase<R, zero_base> {
 
 
 template<typename Type, int R, bool zero_base>
-struct HexCont : public HexBase<R, zero_base> {
+struct HexContainer : public HexBase<R, zero_base> {
 
     using rad = RadiusBase<R, zero_base>;
     using hex = Hex<R, zero_base>;
@@ -257,7 +257,7 @@ struct HexCont : public HexBase<R, zero_base> {
 
     data_array m_data = { }; // value initialized, default is indeterminate.
 
-    HexCont ( ) noexcept : hex_base { } { }
+    HexContainer ( ) noexcept : hex_base { } { }
 
     // Data access.
 

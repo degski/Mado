@@ -63,7 +63,7 @@ struct Mado {
     using pointer = Player<R> * ;
     using const_pointer = Player<R> const *;
 
-    using board = HexCont<Player<R>, R, true>;
+    using board = HexContainer<Player<R>, R, true>;
 
     using zobrist_hash = std::uint64_t;
 
