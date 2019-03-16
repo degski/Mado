@@ -2,6 +2,10 @@
 # Mado
 
 
+## Objectives
+
+This project is a means-to-an-end, the end being learning modern C++(17). There's no better way than doing something concrete. So this prject is going forward slowly, taking many dead-ends and possibly passing stages of utter-madness. It is probably also over-engineered (I hate that), but serves the ultimate goal as stated in the above.
+
 An implementation of the game of Susan, invented by Stephen Linhart in 1994.
 
 
