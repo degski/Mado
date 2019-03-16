@@ -42,208 +42,34 @@
 #include <cereal/cereal.hpp>
 #include <cereal/archives/binary.hpp>
 
-#include "../../KD-Tree/KD-Tree/sorted_vector_set.hpp"
-#include "../../MCTSSearchTree/include/flat_search_tree.hpp"
-
 #include "Types.hpp"
 #include "Player.hpp"
+#include "Hexcontainer.hpp"
 #include "Move.hpp"
 
 
-template<std::intptr_t R, bool zero_base = true>
-struct Hex {
-
-    static_assert ( R > 0, "the radius should be larger than 0" );
-
-    using value_type = sidx<R>;
-
-    [[ nodiscard ]] static constexpr value_type radius ( ) noexcept {
-        return R;
-    }
-
-    value_type q = value_type { -Hex::radius ( ) - 1 }, r = value_type { -Hex::radius ( ) - 1 };
-
-    void nil ( ) noexcept {
-        q = value_type { -Hex::radius ( ) - 1 }; r = value_type { -Hex::radius ( ) - 1 };
-    }
-
-    [[ nodiscard ]] bool operator == ( const Hex & rhs_ ) const noexcept {
-        return q == rhs_.q and r == rhs_.r;
-    }
-    [[ nodiscard ]] bool operator != ( const Hex & rhs_ ) const noexcept {
-        return q != rhs_.q or r != rhs_.r;
-    }
-
-    [[ nodiscard ]] inline bool in_valid ( ) const noexcept {
-        if constexpr ( zero_base ) {
-            return std::abs ( q ) > radius ( ) or std::abs ( r ) > radius ( ) or std::abs ( -q - r ) > radius ( );
-        }
-        else {
-            return std::abs ( q - radius ( ) ) > radius ( ) or std::abs ( r - radius ( ) ) > radius ( ) or std::abs ( -q - r + ( 2 * radius ( ) ) ) > radius ( );
-        }
-    }
-    [[ nodiscard ]] static constexpr bool in_valid ( value_type q_, value_type r_ ) noexcept {
-        if constexpr ( zero_base ) {
-            return std::abs ( q_ ) > radius ( ) or std::abs ( r_ ) > radius ( ) or std::abs ( -q_ - r_ ) > radius ( );
-        }
-        else {
-            return std::abs ( q_ - radius ( ) ) > radius ( ) or std::abs ( r_ - radius ( ) ) > radius ( ) or std::abs ( -q_ - r_ + ( 2 * radius ( ) ) ) > radius ( );
-        }
-    }
-    [[ nodiscard ]] inline bool valid ( ) const noexcept {
-        return not ( in_valid ( ) );
-    }
-    [[ nodiscard ]] static constexpr bool valid ( value_type q_, value_type r_ ) noexcept {
-        return not ( in_valid ( q_, r_ ) );
-    }
-
-    template<typename Stream>
-    [[ maybe_unused ]] friend Stream & operator << ( Stream & out_, const Hex & h_ ) noexcept {
-        out_ << '<' << h_.q << ' ' << h_.r << '>';
-        return out_;
-    }
-};
-
-
-
-template<std::size_t R, typename T = std::int8_t>
+template<int R>
 struct Mado {
 
-    static_assert ( std::conjunction<std::is_signed<T>, std::is_integral<T>>::value, "signed integer types only" );
+    using hex = Hex<R, true>;
 
-    [[ nodiscard ]] static constexpr std::intptr_t radius ( ) noexcept {
-        return static_cast<std::intptr_t> ( R );
-    }
+    using uidx = uidx<R>;
+    using sidx = sidx<R>;
 
-    [[ nodiscard ]] static constexpr std::size_t size ( ) noexcept {
-        return static_cast<std::size_t> ( 1 + 3 * radius ( ) * ( radius ( ) + 1 ) );
-    }
+    using move = Move<R>;
 
-    [[ nodiscard ]] static constexpr std::intptr_t width ( ) noexcept {
-        return static_cast<std::intptr_t> ( 2 * radius ( ) + 1 );
-    }
-    [[ nodiscard ]] static constexpr std::intptr_t height ( ) noexcept {
-        return static_cast<std::intptr_t> ( 2 * radius ( ) + 1 );
-    }
+    using value = typename Player<R>::Type;
+    using value_type = Player<R>;
+    using pointer = Player<R> * ;
+    using const_pointer = Player<R> const *;
 
-    [[ nodiscard ]] static constexpr std::intptr_t cols ( ) noexcept {
-        return 2 * width ( ) + 1;
-    }
-    [[ nodiscard ]] static constexpr std::intptr_t rows ( ) noexcept {
-        return height ( ) + 2;
-    }
-
-    using uidx = uidx<radius ( )>;
-    using sidx = sidx<radius ( )>;
-
-    [[ nodiscard ]] static constexpr uidx center ( ) noexcept {
-        return static_cast<uidx> ( cols ( ) * ( radius ( ) + 1 ) + width ( ) );
-    }
-
-    using Hex = Hex<radius ( )>;
-
-    // https://www.redblobgames.com/grids/hexagons/
-
-    [[ nodiscard ]] static constexpr uidx hex_to_idx ( const sidx q_, const sidx r_ ) noexcept {
-        return center ( ) + 2 * q_ + ( cols ( ) + 1 ) * r_;
-    }
-    [[ nodiscard ]] static constexpr uidx hex_to_idx ( const Hex & h_ ) noexcept {
-        return center ( ) + 2 * h_.q + ( cols ( ) + 1 ) * h_.r;
-    }
-    [[ nodiscard ]] static constexpr Hex idx_to_hex ( const uidx i_ ) noexcept {
-        Hex h { i_, i_ };
-        h.r /= cols ( );
-        h.q -= center ( );
-        h.r -= rows ( ) / 2;
-        h.q -= ( cols ( ) + 1 ) * h.r;
-        h.q /= 2;
-        return h;
-    }
-
-
-    using move = Move<radius ( )>;
-
-    using value = typename Player<radius ( )>::Type;
-    using value_type = Player<radius ( )>;
-    using pointer = Player<radius ( )> * ;
-    using const_pointer = Player<radius ( )> const *;
-
-    using board = std::array<value_type, cols ( ) * rows ( )>;
-    using indices = std::array<uidx, size ( )>;
+    using board = HexCont<Player<R>, R, true>;
 
     using zobrist_hash = std::uint64_t;
 
     using surrounded_vector = std::experimental::fixed_capacity_vector<sidx, 6>;
 
-    [[ nodiscard ]] uidx north_east ( const uidx o_ ) const noexcept {
-        static_assert ( cols ( ) > 0, "number of columns has to be larger than 0" );
-        assert ( o_ >= ( cols ( ) - 1 ) );
-        return o_ - uidx { cols ( ) - 1 };
-    }
-    [[ nodiscard ]] uidx east ( const uidx o_ ) const noexcept {
-        return o_ + uidx { 2 };
-    }
-    [[ nodiscard ]] uidx south_east ( const uidx o_ ) const noexcept {
-        return o_ + uidx { cols ( ) + 1 };
-    }
-    [[ nodiscard ]] uidx south_west ( const uidx o_ ) const noexcept {
-        static_assert ( cols ( ) > 0, "number of columns has to be larger than 0" );
-        return o_ + uidx { cols ( ) - 1 };
-    }
-    [[ nodiscard ]] uidx west ( const uidx o_ ) const noexcept {
-        assert ( o_ >= 2 );
-        return o_ - uidx { 2 };
-    }
-    [[ nodiscard ]] uidx north_west ( const uidx o_ ) const noexcept {
-        assert ( o_ >= ( cols ( ) + 1 ) );
-        return o_ - uidx { cols ( ) + 1 };
-    }
-
-
-    void init ( ) noexcept {
-        uidx idx = center ( );
-        m_board [ idx ] = value::vacant;
-        std::size_t i = 0u;
-        m_indcs [ i++ ] = idx;
-        for ( int ring = 1; ring < int { radius ( ) + 1 }; ++ring ) {
-            idx = east ( idx ); // move to next ring.
-            for ( int j = 0; j < ring; ++j ) {
-                idx = north_west ( idx );
-                m_board [ idx ] = value::vacant;
-                m_indcs [ i++ ] = idx;
-            }
-            for ( int j = 0; j < ring; ++j ) {
-                idx = west ( idx );
-                m_board [ idx ] = value::vacant;
-                m_indcs [ i++ ] = idx;
-            }
-            for ( int j = 0; j < ring; ++j ) {
-                idx = south_west ( idx );
-                m_board [ idx ] = value::vacant;
-                m_indcs [ i++ ] = idx;
-            }
-            for ( int j = 0; j < ring; ++j ) {
-                idx = south_east ( idx );
-                m_board [ idx ] = value::vacant;
-                m_indcs [ i++ ] = idx;
-            }
-            for ( int j = 0; j < ring; ++j ) {
-                idx = east ( idx );
-                m_board [ idx ] = value::vacant;
-                m_indcs [ i++ ] = idx;
-            }
-            for ( int j = 0; j < ring; ++j ) {
-                idx = north_east ( idx );
-                m_board [ idx ] = value::vacant;
-                m_indcs [ i++ ] = idx;
-            }
-        }
-        std::sort ( std::begin ( m_indcs ), std::end ( m_indcs ) );
-    }
-
-
     board m_board;
-    indices m_indcs;
     zobrist_hash m_zobrist_hash = 0xb735a0f5839e4e22; // Hash of the current m_board, some random initial value;
 
     int m_slides = 0;
@@ -253,8 +79,8 @@ struct Mado {
     value_type m_player_to_move = value::human; // value_type::random ( ),
     value_type m_winner = value::invalid;
 
+
     Mado ( ) noexcept {
-        init ( );
     }
 
 
@@ -293,7 +119,7 @@ struct Mado {
 
     void move_hash_impl ( const move & move_ ) noexcept {
         static constexpr zobrist_hash hash_slide [ 7 ] { 0x0000000000000000, 0x2c507643dcca6c7f, 0x82701a7a226fb2db, 0xe2b504a067cdb385, 0x4c696ea2a6481a72, 0x18dfdafd5c21cf7b, 0xef66e9ab2c19a2d6 };
-        if ( std::numeric_limits<uidx>::max ( ) == move_.from ) { // Place.
+        if ( move_.is_placement ( ) ) { // Place.
             if ( m_slides )
                 m_zobrist_hash ^= hash_slide [ m_slides ];
             m_slides = 0;
@@ -313,7 +139,7 @@ struct Mado {
     }
 
     void move_impl ( const move & move_ ) noexcept {
-        if ( std::numeric_limits<uidx>::max ( ) == move_.from ) { // Place.
+        if ( move_.is_placement ( ) ) { // Place.
             m_slides = 0;
         }
         else { // Slide.
@@ -325,32 +151,26 @@ struct Mado {
 
     private:
 
-    [[ nodiscard ]] bool is_surrounded ( const uidx idx_ ) const noexcept {
-        return
-            m_board [ north_west ( idx_ ) ].is_not_vacant ( ) and
-            m_board [ north_east ( idx_ ) ].is_not_vacant ( ) and
-            m_board [       west ( idx_ ) ].is_not_vacant ( ) and
-            m_board [       east ( idx_ ) ].is_not_vacant ( ) and
-            m_board [ south_west ( idx_ ) ].is_not_vacant ( ) and
-            m_board [ south_east ( idx_ ) ].is_not_vacant ( );
+    template<typename IdxType>
+    [[ nodiscard ]] bool is_surrounded ( const IdxType idx_ ) const noexcept {
+        for ( const auto neighbor_of_idx : board::neighbors [ idx_ ] )
+            if ( m_board [ neighbor_of_idx ].is_vacant ( ) )
+                return false;
+        return true;
     }
-
-    void emplace_back_surrounded ( surrounded_vector & s_, uidx && idx_ ) const noexcept {
-        if ( m_board [ idx_ ].occupied ( ) and is_surrounded ( idx_ ) ) {
+    template<typename IdxType>
+    void emplace_back_surrounded ( surrounded_vector & s_, IdxType && idx_ ) const noexcept {
+        if ( m_board [ idx_ ].occupied ( ) and is_surrounded ( idx_ ) )
             s_.emplace_back ( std::move ( idx_ ) );
-        }
     }
 
     public:
 
     // Return all the surrounded stones in s_ (after a place/slide).
-    void find_surrounded ( surrounded_vector & s_, const uidx idx_ ) const noexcept {
-        emplace_back_surrounded ( s_, north_west ( idx_ ) );
-        emplace_back_surrounded ( s_, north_east ( idx_ ) );
-        emplace_back_surrounded ( s_,       east ( idx_ ) );
-        emplace_back_surrounded ( s_,       west ( idx_ ) );
-        emplace_back_surrounded ( s_, south_west ( idx_ ) );
-        emplace_back_surrounded ( s_, south_west ( idx_ ) );
+    template<typename IdxType>
+    void find_surrounded ( surrounded_vector & s_, const IdxType idx_ ) const noexcept {
+        for ( auto && i : board::neighbors [ idx_ ] )
+            emplace_back_surrounded ( s_, i );
     }
 
     void winner ( ) noexcept {
@@ -403,7 +223,7 @@ struct Mado {
         // Mcts class takes has ownership.
         if ( nonterminal ( ) ) {
             moves_->clear ( );
-            for ( auto i : m_indcs ) {
+            for ( typename move::value_type i = 0; i < static_cast<typename move::value_type> ( board::size ( ) ); ++i ) {
                 // Find places.
                 if ( m_board [ i ].is_vacant ( ) ) {
                     moves_->emplace_back ( i );
@@ -411,18 +231,9 @@ struct Mado {
                 }
                 // Find slides.
                 if ( m_player_to_move == m_board [ i ] ) {
-                    if ( m_board [ north_west ( i ) ].is_vacant ( ) )
-                        moves_->emplace_back ( i, north_west ( i ) );
-                    if ( m_board [ north_east ( i ) ].is_vacant ( ) )
-                        moves_->emplace_back ( i, north_east ( i ) );
-                    if ( m_board [ west ( i ) ].is_vacant ( ) )
-                        moves_->emplace_back ( i, west ( i ) );
-                    if ( m_board [ east ( i ) ].is_vacant ( ) )
-                        moves_->emplace_back ( i, east ( i ) );
-                    if ( m_board [ south_west ( i ) ].is_vacant ( ) )
-                        moves_->emplace_back ( i, south_west ( i ) );
-                    if ( m_board [ south_east ( i ) ].is_vacant ( ) )
-                        moves_->emplace_back ( i, south_east ( i ) );
+                    for ( typename move::value_type to : board::neighbors [ i ] )
+                        if ( m_board [ to ].is_vacant ( ) )
+                            moves_->emplace_back ( i, to );
                 }
             }
             return moves_->size ( );
@@ -455,7 +266,7 @@ struct Mado {
     void set ( uidx x_, value_type v_ ) noexcept {
         m_board [ x_ ] = v_;
     }
-    void set ( Hex & h_, value_type v_ ) noexcept {
+    void set ( hex & h_, value_type v_ ) noexcept {
         m_board [ hex_to_idx ( h_ ) ] = v_;
     }
     void set ( sidx q_, sidx r_, value_type v_ ) noexcept {
@@ -464,6 +275,7 @@ struct Mado {
 
     template<typename Stream>
     [[ maybe_unused ]] friend Stream & operator << ( Stream & out_, const Mado & b_ ) noexcept {
+        /*
         for ( std::size_t r = 0u; r < rows ( ); ++r ) {
             for ( std::size_t c = 0u; c < cols ( ); ++c ) {
                 out_ << b_.m_board [ r * cols ( ) + c ] << ' ';
@@ -471,6 +283,7 @@ struct Mado {
             out_ << nl;
         }
         out_ << nl << "  hash 0x" << std::hex << b_.m_zobrist_hash << " slides " << b_.m_slides << nl;
+        */
         return out_;
     }
 };

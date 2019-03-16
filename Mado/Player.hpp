@@ -38,7 +38,7 @@
 #include "Globals.hpp"
 
 
-template<std::size_t S>
+template<int S>
 struct Player {
 
     private:
@@ -50,7 +50,7 @@ struct Player {
 
     enum class Type : underlying_t { invalid = -2, agent = -1, vacant = 0, human = 1 }; // Keep numbering this way, vacant **has** to be 0.
 
-    Type value = Type::invalid;
+    Type value = Type::vacant;
 
     Player ( ) noexcept {
     }

@@ -37,39 +37,46 @@
 #include "Types.hpp"
 
 
-template<std::size_t S>
+template<int S>
 struct Move {
 
-    using uidx = uidx<S>;
+    using value_type = uidx<S>;
 
-    enum class Type : uidx { place = 0, slide = 1 };
+    enum class Type : value_type { place = 0, slide = 1 };
 
-    uidx from, to;
+    value_type from, to;
 
     Move ( ) noexcept :
-        from { std::move ( std::numeric_limits<uidx>::max ( ) ) },
-        to { std::move ( std::numeric_limits<uidx>::max ( ) ) } {
+        from { std::move ( std::numeric_limits<value_type>::max ( ) ) },
+        to { std::move ( std::numeric_limits<value_type>::max ( ) ) } {
     }
-    Move ( const uidx & to_ ) noexcept :
-        from { std::move ( std::numeric_limits<uidx>::max ( ) ) },
+    Move ( const value_type & to_ ) noexcept :
+        from { std::move ( std::numeric_limits<value_type>::max ( ) ) },
         to { to_ } {
     }
-    Move ( uidx && to_ ) noexcept :
-        from { std::move ( std::numeric_limits<uidx>::max ( ) ) },
+    Move ( value_type && to_ ) noexcept :
+        from { std::move ( std::numeric_limits<value_type>::max ( ) ) },
         to { std::move ( to_ ) } {
     }
-    Move ( const uidx & from_, const uidx & to_ ) noexcept :
+    Move ( const value_type & from_, const value_type & to_ ) noexcept :
         from { from_ },
         to { to_ } {
     }
-    Move ( uidx && from_, uidx && to_ ) noexcept :
+    Move ( value_type && from_, value_type && to_ ) noexcept :
         from { std::move ( from_ ) },
         to { std::move ( to_ ) } {
     }
 
+    [[ nodiscard ]] bool is_placement ( ) const noexcept {
+        return std::numeric_limits<value_type>::max ( ) == from;
+    }
+    [[ nodiscard ]] bool is_slide ( ) const noexcept {
+        return not ( is_placement ( ) );
+    }
+
     template<typename Stream>
     [[ maybe_unused ]] friend Stream & operator << ( Stream & out_, const Move & m_ ) noexcept {
-        if ( std::numeric_limits<uidx>::max ( ) == m_.from )
+        if ( std::numeric_limits<value_type>::max ( ) == m_.from )
             std::cout << '<' << static_cast<std::uint64_t> ( m_.to ) << '>';
         else
             std::cout << '<' << static_cast<std::uint64_t> ( m_.from ) << ' ' << static_cast<std::uint64_t> ( m_.to ) << '>';

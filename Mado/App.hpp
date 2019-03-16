@@ -98,9 +98,9 @@ class App {
 
     using uidx = typename MadoState::uidx;
     using sidx = typename MadoState::sidx;
-    using Hex = typename MadoState::Hex;
+    using hex = typename MadoState::hex;
     using PlayArea = PlayArea<MadoState>;
-    using NextMove = NextMove<MadoState, Hex>;
+    using NextMove = NextMove<MadoState, hex>;
     using Player = typename MadoState::value_type;
 
     MadoState m_state;
@@ -143,7 +143,7 @@ private:
     }
 
     [[ nodiscard ]] uidx pointToIdx ( const sf::Vector2f & p ) const noexcept;
-    [[ nodiscard ]] Hex pointToHex ( sf::Vector2f p_ ) const noexcept;
+    [[ nodiscard ]] hex pointToHex ( sf::Vector2f p_ ) const noexcept;
     [[ nodiscard ]] bool playAreaContains ( sf::Vector2f p_ ) const noexcept;
 
     void setIcon ( ) noexcept;
@@ -211,24 +211,27 @@ public:
 
 
 [[ nodiscard ]] App::uidx App::pointToIdx ( const sf::Vector2f & p_ ) const noexcept {
-    return MadoState::hex_to_idx ( pointToHex ( p_ ) );
+    return 0; // MadoState::hex_to_idx ( pointToHex ( p_ ) );
 }
-[[ nodiscard ]] App::Hex App::pointToHex ( sf::Vector2f p_ ) const noexcept {
-    using value_type = typename Hex::value_type;
+
+[[ nodiscard] ] App::hex App::pointToHex ( sf::Vector2f p_ ) const noexcept {
+    using value_type = typename hex::value_type;
     // https://www.redblobgames.com/grids/hexagons/#comment-1063818420
     static const float radius { m_hori * 0.5773502588f };
     static const sf::Vector2f center { m_center.x, m_center.y - radius };
     p_ -= center;
     p_.x /= m_hori; p_.y /= radius;
-    Hex h { floorf<value_type> ( p_.y + p_.x ), floorf<value_type> ( ( floorf<value_type> ( p_.y - p_.x ) + h.q ) * 0.3333333433f ) };
-    h.q = floorf< value_type> ( ( floorf<value_type> ( 2.0f * p_.x + 1.0f ) + h.q ) * 0.3333333433f ) - h.r;
+    hex h;
+    h.q = floorf<value_type> ( p_.y + p_.x );
+    h.r = floorf<value_type> ( ( floorf<value_type> ( p_.y - p_.x ) + h.q ) * 0.3333333433f );
+    h.q = floorf<value_type> ( ( floorf<value_type> ( 2.0f * p_.x + 1.0f ) + h.q ) * 0.3333333433f ) - h.r;
     return h;
 }
 
 
 [[ nodiscard ]] bool App::playAreaContains ( sf::Vector2f p_ ) const noexcept {
     // http://www.playchilla.com/how-to-check-if-a-point-is-inside-a-hexagon
-    static const float hori { MadoState::width ( ) * 0.5f * m_vert }, vert { hori * 0.5773502588f }, vert_2 { 2.0f * vert }, hori_vert_2 { hori * vert_2 };
+    static const float hori { MadoState::board::width ( ) * 0.5f * m_vert }, vert { hori * 0.5773502588f }, vert_2 { 2.0f * vert }, hori_vert_2 { hori * vert_2 };
     p_ -= m_center;
     p_.x = std::abs ( p_.x ); p_.y = std::abs ( p_.y );
     // x- and y-coordinates swapped (for flat-topped hexagon).
@@ -243,12 +246,12 @@ App::App ( ) :
     m_state { },
     m_hori { 74.0f },
     m_vert { 64.0f },
-    m_window_width { MadoState::width ( ) * m_hori + m_vert + 1.0f },
-    m_window_height { MadoState::height ( ) * m_vert + m_vert + 1.0f + 12.0f },
+    m_window_width { MadoState::board::width ( ) * m_hori + m_vert + 1.0f },
+    m_window_height { MadoState::board::height ( ) * m_vert + m_vert + 1.0f + 12.0f },
     m_center { sf::Vector2f { m_window_width * 0.5f, m_window_height * 0.5f + 6.0f } },
     m_taskbar { m_window_width },
-    m_play_area { m_center, m_hori, m_vert, 67.0f },
-    m_game_clock ( std::floorf ( ( m_window_width - ( MadoState::radius ( ) + 1 ) * m_hori ) / 4 ), m_window_width - std::floorf ( ( m_window_width - ( MadoState::radius ( ) + 1 ) * m_hori ) / 4 ), m_play_area.heightFirstHex ( ) ) {
+    m_play_area { m_state, m_center, m_hori, m_vert, 67.0f },
+    m_game_clock ( std::floorf ( ( m_window_width - ( MadoState::board::radius ( ) + 1 ) * m_hori ) / 4 ), m_window_width - std::floorf ( ( m_window_width - ( MadoState::board::radius ( ) + 1 ) * m_hori ) / 4 ), m_play_area.heightFirstHex ( ) ) {
     m_settings.antialiasingLevel = 8u;
     // Create the m_window.
     m_window.create ( sf::VideoMode ( static_cast< std::uint32_t > ( m_window_width ), static_cast< std::uint32_t > ( m_window_height ) ), L"Mado", sf::Style::None, m_settings );
@@ -320,14 +323,16 @@ void App::mouseEvents ( const sf::Event & event_ ) {
     const sf::Vector2f & mouse_position = m_mouse.update ( );
     if ( m_window_bounds.contains ( mouse_position ) ) {
         // In window.
-        const Hex hex_position = pointToHex ( mouse_position );
-        if ( hex_position.valid ( ) ) {
+        const hex hex_position = pointToHex ( mouse_position );
+        // if ( hex_position.valid ( ) ) {
+        if ( hex::is_valid ( hex_position.q, hex_position.r ) ) {
             if ( sf::Mouse::isButtonPressed ( sf::Mouse::Left ) ) {
                 // Selected a cicle.
                 bool no_reset;
                 switch ( m_human_move.state ( ) ) {
                 case NextMove::State::none:
                     if ( ( no_reset = m_play_area.equal ( hex_position, PlayArea::DisplayValue::active_red ) ) ) {
+                        std::cout << "set move from" << nl;
                         m_human_move.from ( hex_position );
                     }
                     break;
@@ -362,9 +367,17 @@ void App::mouseEvents ( const sf::Event & event_ ) {
                         std::cout << "clock clicked\n";
                     }
                     else {
-                    // Requested placement.
-                        std::cout << "place requested" << nl;
-                        m_human_move.state ( NextMove::State::place );
+                        // Clicked the new area, after selecting where to move from.
+                        if ( NextMove::State::move == m_human_move.state ( ) ) {
+                            std::cout << "cancelled move from" << nl;
+                            m_human_move.reset ( );
+                            m_play_area.unselect ( );
+                        }
+                        // Requested placement.
+                        else {
+                            std::cout << "place requested" << nl;
+                            m_human_move.state ( NextMove::State::place );
+                        }
                     }
                 }
                 m_play_area.reset ( );

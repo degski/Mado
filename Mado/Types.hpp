@@ -33,14 +33,7 @@
 #include <type_traits>
 
 
-template<std::size_t R>
-using rows_size = std::integral_constant<std::size_t, 2 * R + 3>;
-template<std::size_t R>
-using cols_size = std::integral_constant<std::size_t, 4 * R + 3>;
-template<std::size_t R>
-using data_size = std::integral_constant<std::size_t, rows_size<R>::value * cols_size<R>::value>;
-
-template<std::size_t R>
-using uidx = std::conditional_t<data_size<(2 * R + 1)>::value < std::numeric_limits<std::uint8_t>::max ( ), std::uint8_t, std::uint16_t>;
-template<std::size_t R>
-using sidx = std::conditional_t<data_size<(2 * R + 1)>::value < std::numeric_limits<std::int8_t >::max ( ), std::int8_t , std::int16_t >;
+template<int R>
+using uidx = std::conditional_t<std::integral_constant<int, 1 + 3 * R * ( R + 1 )>( ) < std::numeric_limits<std::uint8_t>::max ( ), std::uint8_t, std::uint16_t>;
+template<int R>
+using sidx = std::conditional_t<std::integral_constant<int, 1 + 3 * R * ( R + 1 )>( ) < std::numeric_limits<std::int8_t >::max ( ), std::int8_t , std::int16_t >;

@@ -39,7 +39,7 @@
 
 #include "Types.hpp"
 #include "Globals.hpp"
-
+#include "Hexcontainer.hpp"
 
 #include "resource.h"
 
@@ -52,82 +52,6 @@ struct Quad {
 };
 }
 
-
-
-template<typename T, std::size_t R, bool zero_base = true, typename SizeType = int, typename = std::enable_if_t<std::is_default_constructible_v<T>, T>>
-struct HexContainer {
-
-    using size_type = SizeType;
-    using value_type = T;
-    using pointer = T * ;
-    using const_pointer = const T * ;
-    using reference = T & ;
-    using const_reference = const T &;
-
-    [[ nodiscard ]] static constexpr size_type radius ( ) noexcept {
-        return static_cast<std::size_t> ( R );
-    }
-    [[ nodiscard ]] static constexpr size_type width ( ) noexcept {
-        return 2 * radius ( ) + 1;
-    }
-    [[ nodiscard ]] static constexpr size_type height ( ) noexcept {
-        return 2 * radius ( ) + 1;
-    }
-    [[ nodiscard ]] static constexpr size_type size ( ) noexcept {
-        return width ( ) * height ( );
-    }
-
-    T m_data [ 2 * R + 1 ] [ 2 * R + 1 ] = { };
-
-    HexContainer ( ) noexcept : m_data { { T ( ) } } { }
-
-    [[ nodiscard ]] const_reference at ( const size_type q_, const size_type r_ ) const noexcept {
-        if constexpr ( zero_base ) {
-            // Center at { 0, 0 }.
-            return m_data [ r_ + radius ( ) ] [ q_ + std::max ( radius ( ), r_ ) ];
-        }
-        else {
-            // Center at { radius, radius }.
-            return m_data [ r_ ] [ q_ ];
-        }
-    }
-    [[ nodiscard ]] reference at ( const size_type q_, const size_type r_ ) noexcept {
-        return const_cast<reference> ( std::as_const ( * this ).at ( q_, r_ ) );
-    }
-
-    [[ nodiscard ]] const_reference at ( const Hex<R> & h_ ) const noexcept {
-        return at ( h_.q, h_.r );
-    }
-    [[ nodiscard ]] reference at ( const Hex<R> & h_ ) noexcept {
-        return const_cast<reference> ( std::as_const ( * this ).at ( h_.q, h_.r ) );
-    }
-
-    [[ nodiscard ]] const_reference operator [ ] ( const Hex<R> & h_ ) const noexcept {
-        return at ( h_ );
-    }
-    [[ nodiscard ]] reference operator [ ] ( const Hex<R> & h_ ) noexcept {
-        return const_cast<reference> ( std::as_const ( * this ).operator [ ] ( h_ ) );
-    }
-
-    [[ nodiscard ]] constexpr const_pointer data ( ) const noexcept {
-        return & m_data [ 0 ] [ 0 ];
-    }
-    [[ nodiscard ]] constexpr pointer data ( ) noexcept {
-        return const_cast< pointer > ( std::as_const ( * this ).data ( ) );
-    }
-
-
-    template<typename Stream>
-    [[ maybe_unused ]] friend Stream & operator << ( Stream & out_, const HexContainer & h_ ) noexcept {
-        for ( int r = 0; r < height ( ); ++r ) {
-            for ( int q = 0; q < width ( ); ++q ) {
-                out_ << std::setw ( 3 ) << h_.m_data [ r ] [ q ];
-            }
-            out_ << nl;
-        }
-        return out_;
-    }
-};
 
 struct MouseState {
 
@@ -184,6 +108,11 @@ struct MouseState {
 template<typename State>
 struct PlayArea : public sf::Drawable, public sf::Transformable {
 
+    using board = typename State::board;
+    using board_reference = board &;
+
+    using size_type = typename board::size_type;
+
     static constexpr int not_set = -1;
 
     enum DisplayType : int { vacant = 0, red, green };
@@ -194,12 +123,12 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
     // texCoords store the information as to which sub-texture is referenced.
 
     using sidx = typename State::sidx;
-    using Hex = typename State::Hex;
+    using hex = typename State::hex;
 
     [[ nodiscard ]] sf::Quad makeVertex ( const sf::Vector2f & p_ ) const noexcept;
     void init ( const sf::Vector2f & center_ ) noexcept;
 
-    PlayArea ( const sf::Vector2f & center_, float hori_, float vert_, float circle_diameter_ );
+    PlayArea ( State & state_, const sf::Vector2f & center_, float hori_, float vert_, float circle_diameter_ );
 
     [[ nodiscard ]] float heightFirstHex ( ) const noexcept {
         return m_vertices [ 0 ].position.y + m_circle_radius;
@@ -207,7 +136,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
 
     private:
 
-    void setTexture ( int v_, int i_ ) noexcept {
+    void setTexture ( size_type v_, size_type i_ ) noexcept {
         v_ *= 4;
         const float left { i_ * m_circle_diameter }, right { left + m_circle_diameter };
         sf::Quad & quad = *reinterpret_cast<sf::Quad*> ( & m_vertices [ v_ ] );
@@ -221,37 +150,37 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
         return static_cast<DisplayType> ( static_cast<int> ( d_ ) % 3 );
     }
 
-    [[ nodiscard ]] int what ( int i_ ) const noexcept {
-        static const int radius = static_cast<int> ( m_circle_radius );
-        return static_cast<int> ( m_vertices [ 4 * i_ ].texCoords.x ) % radius;
+    [[ nodiscard ]] size_type what ( size_type i_ ) const noexcept {
+        return static_cast<size_type> ( m_vertices [ 4 * i_ ].texCoords.x ) % static_cast<size_type> ( m_circle_radius );
     }
-    [[ nodiscard ]] DisplayValue what_value ( int i_ ) const noexcept {
+    [[ nodiscard ]] DisplayValue what_value ( size_type i_ ) const noexcept {
         return static_cast<DisplayValue> ( what ( i_ ) );
     }
-    [[ nodiscard ]] DisplayType what_type ( int i_ ) const noexcept {
+    [[ nodiscard ]] DisplayType what_type ( size_type i_ ) const noexcept {
         return static_cast<DisplayType> ( what ( i_ ) % 3 );
     }
 
-    [[ nodiscard ]] bool are_neighbors ( const Hex a_, const Hex b_ ) const noexcept {
+    [[ nodiscard ]] bool are_neighbors ( const hex a_, const hex b_ ) const noexcept {
         if ( a_ != b_ ) {
-            const typename Hex::value_type dq = a_.q - b_.q, dr = a_.r - b_.r;
-            return std::abs ( dq ) + std::abs ( dr ) + std::abs ( -dq - dr ) == typename Hex::value_type { 2 };
+            const typename hex::value_type dq = a_.q - b_.q, dr = a_.r - b_.r;
+            return std::abs ( dq ) + std::abs ( dr ) + std::abs ( -dq - dr ) == typename hex::value_type { 2 };
         }
         return false;
     }
 
     public:
 
-    [[ nodiscard ]] bool equal ( const Hex & i_, const DisplayValue d_ ) noexcept {
-        const int i = m_vertex_indices [ i_ ], w = what_type ( i );
+    [[ nodiscard ]] bool equal ( const hex & i_, const DisplayValue d_ ) noexcept {
+        const size_type i = board::index ( i_.q, i_.r ), w = what_type ( i );
         if ( display_type ( d_ ) == w ) {
             setTexture ( i, w + 6 );
+            m_last = i;
             return true;
         }
         return false;
     }
-    [[ nodiscard ]] bool place ( const Hex & i_, const DisplayValue d_ ) noexcept {
-        const int i = m_vertex_indices [ i_ ];
+    [[ nodiscard ]] bool place ( const hex & i_, const DisplayValue d_ ) noexcept {
+        const size_type i = board::index ( i_.q, i_.r );
         if ( DisplayType::vacant == what_type ( i ) ) {
             setTexture ( i, d_ );
             m_last = i;
@@ -259,9 +188,9 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
         }
         return false;
     }
-    [[ nodiscard ]] bool move ( const Hex & f_, const Hex & t_, const DisplayValue d_ ) noexcept {
+    [[ nodiscard ]] bool move ( const hex & f_, const hex & t_, const DisplayValue d_ ) noexcept {
         if ( are_neighbors ( f_, t_ ) ) {
-            const int f = m_vertex_indices [ f_ ], t = m_vertex_indices [ t_ ];
+            const size_type f = board::index ( f_.q, f_.r ), t = board::index ( t_.q, t_.r );
             if ( display_type ( d_ ) == what_type ( f ) and DisplayValue::active_vacant == what_value ( t ) ) {
                 setTexture ( f, DisplayValue::in_active_vacant );
                 setTexture ( t, d_ );
@@ -269,13 +198,13 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
                 return true;
             }
         }
-        const int f = m_vertex_indices [ f_ ];
+        const size_type f = board::index ( f_.q, f_.r );
         setTexture ( f, what_type ( f ) );
         return false;
     }
 
-    void make_active ( const Hex & i_ ) noexcept {
-        const int i = m_vertex_indices [ i_ ], w = what ( i );
+    void make_active ( const hex & i_ ) noexcept {
+        const size_type i = board::index ( i_.q, i_.r ), w = what ( i );
         if ( w < 3 ) {
             reset ( );
             m_last = i;
@@ -283,13 +212,20 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
         }
     }
 
+    void unselect ( ) noexcept {
+        if ( not_set != m_last ) {
+            setTexture ( m_last, what_type ( m_last ) );
+            m_last = not_set;
+        }
+    }
+
     void reset ( ) noexcept {
         if ( not_set != m_last ) {
-            const int l = what ( m_last );
+            const size_type l = what ( m_last );
             if ( l - 2 < ( 6 - 2 ) ) { // 2 < l < 6
                 setTexture ( m_last, l % 3 );
+                m_last = not_set;
             }
-            m_last = not_set;
         }
     }
 
@@ -305,22 +241,23 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
 
     const float m_hori, m_vert, m_circle_diameter, m_circle_radius;
 
-    int m_last = not_set;
+    size_type m_last = not_set;
 
     sf::Texture m_texture;
 
-    HexContainer<sidx, State::radius ( )> m_vertex_indices;
+    board_reference m_board;
     sf::VertexArray m_vertices;
 };
 
 
 template<typename State>
-PlayArea<State>::PlayArea ( const sf::Vector2f & center_, float hori_, float vert_, float circle_diameter_ ) :
+PlayArea<State>::PlayArea ( State & state_, const sf::Vector2f & center_, float hori_, float vert_, float circle_diameter_ ) :
     // Parameters.
     m_hori { hori_ },
     m_vert { vert_ },
     m_circle_diameter { circle_diameter_ },
-    m_circle_radius { std::floorf ( m_circle_diameter * 0.5f ) } {
+    m_circle_radius { std::floorf ( m_circle_diameter * 0.5f ) },
+    m_board { state_.m_board } {
     // Load play area graphics.
     sf::loadFromResource ( m_texture, CIRCLES_LARGE );
     m_texture.setSmooth ( true );
@@ -343,34 +280,34 @@ template<typename State>
 void PlayArea<State>::init ( const sf::Vector2f & center_ ) noexcept {
     // Construct vertices.
     m_vertices.setPrimitiveType ( sf::Quads );
-    m_vertices.resize ( 4 * State::size ( ) );
+    m_vertices.resize ( 4 * board::size ( ) );
     sf::Quad * quads = reinterpret_cast<sf::Quad*> ( & m_vertices [ 0 ] );
-    int i = 0;
+    size_type i = 0;
     sf::Vector2f p = center_ - sf::Vector2f { m_circle_radius, m_circle_radius };
     quads [ i ] = makeVertex ( p );
-    for ( int ring = 1; ring <= int { State::radius ( ) }; ++ring ) {
+    for ( size_type ring = 1; ring <= board::radius ( ); ++ring ) {
         p.x += m_hori; // Move east.
-        for ( int j = 0; j < ring; ++j ) { // nw.
+        for ( size_type j = 0; j < ring; ++j ) { // nw.
             p.x -= m_hori / 2; p.y -= m_vert;
             quads [ ++i ] = makeVertex ( p );
         }
-        for ( int j = 0; j < ring; ++j ) { // w.
+        for ( size_type j = 0; j < ring; ++j ) { // w.
             p.x -= m_hori;
             quads [ ++i ] = makeVertex ( p );
         }
-        for ( int j = 0; j < ring; ++j ) { // sw.
+        for ( size_type j = 0; j < ring; ++j ) { // sw.
             p.x -= m_hori / 2; p.y += m_vert;
             quads [ ++i ] = makeVertex ( p );
         }
-        for ( int j = 0; j < ring; ++j ) { // se.
+        for ( size_type j = 0; j < ring; ++j ) { // se.
             p.x += m_hori / 2; p.y += m_vert;
             quads [ ++i ] = makeVertex ( p );
         }
-        for ( int j = 0; j < ring; ++j ) { // e.
+        for ( size_type j = 0; j < ring; ++j ) { // e.
             p.x += m_hori;
             quads [ ++i ] = makeVertex ( p );
         }
-        for ( int j = 0; j < ring; ++j ) { // ne.
+        for ( size_type j = 0; j < ring; ++j ) { // ne.
             p.x += m_hori / 2; p.y -= m_vert;
             quads [ ++i ] = makeVertex ( p );
         }
@@ -380,27 +317,6 @@ void PlayArea<State>::init ( const sf::Vector2f & center_ ) noexcept {
         return ( a.v0.position.y < b.v0.position.y ) or ( a.v0.position.y == b.v0.position.y and a.v0.position.x < b.v0.position.x );
     };
     std::sort ( quads, quads + m_vertices.getVertexCount ( ) / 4, quads_less );
-    // Construct indexes.
-    using value_type = typename HexContainer<sidx, State::radius ( )>::value_type;
-    using pointer = typename HexContainer<sidx, State::radius ( )>::pointer;
-    value_type index = 0;
-    pointer ptr = m_vertex_indices.data ( );
-    for ( int skip = State::radius ( ); skip > 0; --skip ) {
-        const pointer skip_end = ptr + skip;
-        while ( ptr != skip_end )
-            *ptr++ = -1;
-        const pointer end = ptr + State::width ( ) - skip;
-        while ( ptr != end )
-            *ptr++ = index++;
-    }
-    for ( int skip = 0; skip <= State::radius ( ); ++skip ) {
-        const pointer end = ptr - skip + State::width ( );
-        while ( ptr != end )
-            *ptr++ = index++;
-        const pointer skip_end = ptr + skip;
-        while ( ptr != skip_end )
-            *ptr++ = -1;
-    }
 }
 
 

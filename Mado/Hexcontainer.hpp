@@ -76,7 +76,7 @@ struct RadiusBase {
         return static_cast<size_type> ( height ( ) + 2 );
     }
 
-    [[ nodiscard ]] static constexpr size_type centre_idx ( ) noexcept {
+    [[ nodiscard ]] static constexpr size_type center_idx ( ) noexcept {
         return static_cast<size_type> ( zero_base ? 0 : radius ( ) );
     }
 
@@ -91,10 +91,6 @@ struct RadiusBase {
             a.emplace_back ( static_cast<idx_type> ( a.back ( ) + i ) );
         return a;
     }
-
-    public:
-
-    constexpr RadiusBase ( ) noexcept { }
 
     [[ nodiscard ]] static constexpr size_type index ( const size_type q_, const size_type r_ ) noexcept {
         assert ( not ( is_invalid ( q_, r_ ) ) );
@@ -112,23 +108,26 @@ struct RadiusBase {
 
 
 template<int R, bool zero_base>
-struct Hex : RadiusBase<R, zero_base> {
+struct Hex : public RadiusBase<R, zero_base> {
 
     using rad = RadiusBase<R, zero_base>;
     using value_type = sidx<R>;
 
-    value_type q = value_type { -rad::radius ( ) - 1 }, r = value_type { -rad::radius ( ) - 1 };
+    using rad::radius;
+    using rad::index;
+    using rad::size;
+    using rad::width;
+    using rad::height;
+    using rad::dw_cols;
+    using rad::dw_rows;
+    using rad::center_idx;
+    using rad::is_invalid;
+    using rad::is_valid;
 
-    Hex ( ) noexcept { }
-    Hex ( const value_type & q_, const value_type & r_ ) noexcept :
-        q ( q_ ), r ( r_ ) {
-    }
-    Hex ( value_type && q_, value_type && r_ ) noexcept :
-        q ( std::move ( q_ ) ), r ( std::move ( r_ ) ) {
-    }
+    value_type q = value_type { -radius ( ) - 1 }, r = value_type { -radius ( ) - 1 };
 
     void nil ( ) noexcept {
-        q = value_type { -rad::radius ( ) - 1 }; r = value_type { -rad::radius ( ) - 1 };
+        q = value_type { -radius ( ) - 1 }; r = value_type { -radius ( ) - 1 };
     }
 
     [[ nodiscard ]] bool operator == ( const Hex & rhs_ ) const noexcept {
@@ -139,7 +138,7 @@ struct Hex : RadiusBase<R, zero_base> {
     }
 
     template<typename Stream>
-    [ [ maybe_unused ] ] friend Stream & operator << ( Stream & out_, const Hex & h_ ) noexcept {
+    [[ maybe_unused ]] friend Stream & operator << ( Stream & out_, const Hex & h_ ) noexcept {
         out_ << '<' << h_.q << ' ' << h_.r << '>';
         return out_;
     }
@@ -147,7 +146,7 @@ struct Hex : RadiusBase<R, zero_base> {
 
 
 template<int R, bool zero_base>
-struct HexBase : RadiusBase<R, zero_base> {
+struct HexBase : public RadiusBase<R, zero_base> {
 
     using rad = RadiusBase<R, zero_base>;
     using idx_type = typename rad::idx_type;
@@ -160,16 +159,27 @@ struct HexBase : RadiusBase<R, zero_base> {
 
     using const_iterator = typename neighbors_type::const_iterator;
 
+    using rad::radius;
+    using rad::index;
+    using rad::size;
+    using rad::width;
+    using rad::height;
+    using rad::dw_cols;
+    using rad::dw_rows;
+    using rad::center_idx;
+    using rad::is_invalid;
+    using rad::is_valid;
+
     private:
 
     static constexpr void emplace_valid_neighbor ( neighbors_type & n_, const size_type q_, const size_type r_ ) noexcept {
-        if ( rad::is_invalid ( q_, r_ ) )
+        if ( is_invalid ( q_, r_ ) )
             return;
-        n_.emplace_back ( rad::index ( q_, r_ ) );
+        n_.emplace_back ( index ( q_, r_ ) );
     }
 
     static constexpr void emplace_neighbors ( neighbors_type_array & na_, const size_type q_, const size_type r_ ) noexcept {
-        neighbors_type & n = na_ [ rad::index ( q_, r_ ) ];
+        neighbors_type & n = na_ [ index ( q_, r_ ) ];
         emplace_valid_neighbor ( n, q_    , r_ - 1 );
         emplace_valid_neighbor ( n, q_ + 1, r_ - 1 );
         emplace_valid_neighbor ( n, q_ - 1, r_     );
@@ -180,41 +190,55 @@ struct HexBase : RadiusBase<R, zero_base> {
     }
 
     [[ nodiscard ]] static constexpr neighbors_type_array const make_neighbors_array ( ) noexcept {
-        neighbors_type_array neighbors;
-        size_type q = rad::centre_idx ( ), r = rad::centre_idx ( );
-        emplace_neighbors ( q, r );
-        for ( size_type ring = 1; ring <= rad::radius ( ); ++ring ) {
+        neighbors_type_array na;
+        size_type q = centre_idx ( ), r = centre_idx ( );
+        emplace_neighbors ( na, q, r );
+        for ( size_type ring = 1; ring <= radius ( ); ++ring ) {
             ++q; // move to next ring, east.
             for ( size_type j = 0; j < ring; ++j ) // nw.
-                emplace_neighbors ( q, --r );
+                emplace_neighbors ( na, q, --r );
             for ( size_type j = 0; j < ring; ++j ) // w.
-                emplace_neighbors ( --q, r );
+                emplace_neighbors ( na, --q, r );
             for ( size_type j = 0; j < ring; ++j ) // sw.
-                emplace_neighbors ( --q, ++r );
+                emplace_neighbors ( na, --q, ++r );
             for ( size_type j = 0; j < ring; ++j ) // se.
-                emplace_neighbors ( q, ++r );
+                emplace_neighbors ( na, q, ++r );
             for ( size_type j = 0; j < ring; ++j ) // e.
-                emplace_neighbors ( ++q, r );
+                emplace_neighbors ( na, ++q, r );
             for ( size_type j = 0; j < ring; ++j ) // ne.
-                emplace_neighbors ( ++q, --r );
+                emplace_neighbors ( na, ++q, --r );
         }
-        return neighbors;
+        return na;
     }
 
     public:
 
-    constexpr HexBase ( ) noexcept { }
+    constexpr HexBase ( ) noexcept : rad { } { }
 
-    static constexpr neighbors_type_array const m_neighbors = make_neighbors_array ( );
+    static constexpr neighbors_type_array const neighbors = make_neighbors_array ( );
 };
 
 
 template<typename Type, int R, bool zero_base>
-class HexCont : public HexBase<R, zero_base> {
+struct HexCont : public HexBase<R, zero_base> {
 
     using rad = RadiusBase<R, zero_base>;
     using hex = Hex<R, zero_base>;
     using hex_base = HexBase<R, zero_base>;
+
+    using rad::radius;
+    using rad::index;
+    using rad::size;
+    using rad::width;
+    using rad::height;
+    using rad::dw_cols;
+    using rad::dw_rows;
+    using rad::center_idx;
+    using rad::is_invalid;
+    using rad::is_valid;
+
+    using hex_base::neighbors;
+
     using size_type = typename rad::size_type;
     using value_type = Type;
     using pointer = value_type * ;
@@ -231,14 +255,14 @@ class HexCont : public HexBase<R, zero_base> {
 
     using const_neighbor_iterator = typename hex_base::const_iterator;
 
-    data_array m_data = { }; // value initialized, i.e. to zero, default is indeterminate.
+    data_array m_data = { }; // value initialized, default is indeterminate.
 
-    public:
+    HexCont ( ) noexcept : hex_base { } { }
 
-    HexCont ( ) noexcept { }
+    // Data access.
 
     [[ nodiscard ]] constexpr const_reference at ( const size_type q_, const size_type r_ ) const noexcept {
-       return m_data [ rad::index ( q_, r_ ) ];
+       return m_data [ index ( q_, r_ ) ];
     }
     [[ nodiscard ]] constexpr reference at ( const size_type q_, const size_type r_ ) noexcept {
         return const_cast<reference> ( std::as_const ( * this ).at ( q_, r_ ) );
@@ -278,16 +302,25 @@ class HexCont : public HexBase<R, zero_base> {
         return const_cast<reference> ( std::as_const ( *this ).operator [ ] ( h_ ) );
     }
 
+    [[ nodiscard ]] const_reference operator [ ] ( const size_type i_ ) const noexcept {
+        return m_data [ i_ ];
+    }
+    [[ nodiscard ]] reference operator [ ] ( const size_type i_ ) noexcept {
+        return const_cast<reference> ( std::as_const ( *this ).operator [ ] ( i_ ) );
+    }
+
+    // Neighbors.
+
     [[ nodiscard ]] const_neighbor_iterator begin ( const size_type i_ ) const noexcept {
-        return std::cbegin ( hex_base::m_neighbors [ i_ ] );
+        return std::cbegin ( neighbors [ i_ ] );
     }
     [[ nodiscard ]] const_neighbor_iterator end ( const size_type i_ ) const noexcept {
-        return std::cend ( hex_base::m_neighbors [ i_ ] );
+        return std::cend ( neighbors [ i_ ] );
     }
     [[ nodiscard ]] const_neighbor_iterator begin ( const size_type q_, const size_type r_ ) const noexcept {
-        return begin ( rad::index ( q_, r_ ) );
+        return begin ( index ( q_, r_ ) );
     }
     [[ nodiscard ]] const_neighbor_iterator end ( const size_type q_, const size_type r_ ) const noexcept {
-        return end ( rad::index ( q_, r_ ) );
+        return end ( index ( q_, r_ ) );
     }
 };
