@@ -177,8 +177,7 @@ struct HexBase : public RadiusBase<R, zero_base> {
     // From https://stackoverflow.com/a/40030044/646940, and fixed the missing constexpr std::swap (in C++17).
 
     static constexpr void emplace_valid_neighbor ( neighbors_type & n_, const size_type q_, const size_type r_ ) noexcept {
-        if ( is_invalid ( q_, r_ ) )
-            return;
+        if ( is_valid ( q_, r_ ) )
         n_.emplace_back ( index ( q_, r_ ) );
     }
 
