@@ -200,8 +200,11 @@ int main ( ) {
 
     std::cout << board_type::index ( 0, 0 ) << nl;
 
-    for ( const auto v : board_type::neighbors [ 0 ] ) {
-        std::cout << static_cast< int > ( v ) << sp;
+    for ( const auto n : board_type::neighbors ) {
+        for ( const auto v : n ) {
+            std::cout << static_cast< int > ( v ) << sp;
+        }
+        std::cout << nl;
     }
     std::cout << nl;
 

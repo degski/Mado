@@ -99,7 +99,7 @@ struct RadiusBase {
     }
 
     [[ nodiscard ]] static constexpr bool is_invalid ( const size_type q_, const size_type r_ ) noexcept {
-        auto abs = [ ] ( auto a ) { return a > decltype ( a ) { 0 } ? a : -a; };
+        auto abs = [ ] ( auto a ) noexcept { return a > decltype ( a ) { 0 } ? a : -a; };
         return abs ( q_ - ( zero_base ? 0 : radius ( ) ) ) > radius ( ) or abs ( r_ - ( zero_base ? 0 : radius ( ) ) ) > radius ( ) or abs ( -q_ - r_ + ( 2 * ( zero_base ? 0 : radius ( ) ) ) ) > radius ( );
     }
     [[ nodiscard ]] static constexpr bool is_valid ( const size_type q_, const size_type r_ ) noexcept {
@@ -182,19 +182,6 @@ struct HexBase : public RadiusBase<R, zero_base> {
         n_.emplace_back ( index ( q_, r_ ) );
     }
 
-    static constexpr void sort_neighbors ( neighbors_type & array_, size_type left_, size_type right_ ) {
-        auto swap = [ ] ( auto & a, auto & b ) { auto const t = a; a = b; b = t; };
-        if ( left_ < right_ ) {
-            auto m = left_;
-            for ( auto i = left_ + 1; i < right_; ++i )
-                if ( array_ [ i ] < array_ [ left_ ] )
-                    swap ( array_ [ ++m ], array_ [ i ] );
-            swap ( array_ [ left_ ], array_ [ m ] );
-            sort_neighbors ( array_, left_, m );
-            sort_neighbors ( array_, m + 1, right_ );
-        }
-    }
-
     static constexpr void emplace_neighbors ( neighbors_type_array & na_, const size_type q_, const size_type r_ ) noexcept {
         neighbors_type & n = na_ [ index ( q_, r_ ) ];
         emplace_valid_neighbor ( n, q_    , r_ - 1 );
@@ -203,7 +190,6 @@ struct HexBase : public RadiusBase<R, zero_base> {
         emplace_valid_neighbor ( n, q_ + 1, r_     );
         emplace_valid_neighbor ( n, q_ - 1, r_ + 1 );
         emplace_valid_neighbor ( n, q_    , r_ + 1 );
-        sort_neighbors ( n, size_type { 0 }, static_cast<size_type> ( n.size ( ) ) );
     }
 
     [[ nodiscard ]] static constexpr neighbors_type_array const make_neighbors_array ( ) noexcept {
