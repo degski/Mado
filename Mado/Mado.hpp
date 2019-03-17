@@ -67,7 +67,7 @@ struct Mado {
 
     using zobrist_hash = std::uint64_t;
 
-    using surrounded_vector = std::experimental::fixed_capacity_vector<sidx, 6>;
+    using surrounded_vector = std::experimental::fixed_capacity_vector<value_type, 6>;
 
     board m_board;
     zobrist_hash m_zobrist_hash = 0xb735a0f5839e4e22; // Hash of the current m_board, some random initial value;
@@ -161,7 +161,7 @@ struct Mado {
     template<typename IdxType>
     void emplace_back_surrounded ( surrounded_vector & s_, IdxType && idx_ ) const noexcept {
         if ( m_board [ idx_ ].occupied ( ) and is_surrounded ( idx_ ) )
-            s_.emplace_back ( std::move ( idx_ ) );
+            s_.push_back ( m_board [ idx_ ] );
     }
 
     public:
@@ -193,10 +193,8 @@ struct Mado {
         }
         surrounded_vector surrounded;
         find_surrounded ( surrounded, m_last_move.to );
-        if ( surrounded.size ( ) ) {
-            bool r = std::end ( surrounded ) == std::find ( std::begin ( surrounded ), std::end ( surrounded ), m_player_to_move );
+        if ( surrounded.size ( ) )
             m_winner = ( std::end ( surrounded ) == std::find ( std::begin ( surrounded ), std::end ( surrounded ), m_player_to_move ) ? m_player_to_move : m_player_to_move.opponent ( ) );
-        }
     }
 
     void move_hash ( const move & move_ ) noexcept {
