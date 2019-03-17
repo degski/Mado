@@ -98,8 +98,13 @@ struct RadiusBase {
         return ( idx.data ( ) + ( zero_base ? R : 0 ) ) [ r_ ] + q_;
     }
 
+    template<typename T>
+    [[ nodiscard ]] static constexpr T abs ( const T & a_ ) noexcept {
+        return a_ > T { 0 } ? a_ : -a_;
+    }
+
     [[ nodiscard ]] static constexpr bool is_invalid ( const size_type q_, const size_type r_ ) noexcept {
-        return std::abs ( q_ - ( zero_base ? 0 : radius ( ) ) ) > radius ( ) or std::abs ( r_ - ( zero_base ? 0 : radius ( ) ) ) > radius ( ) or std::abs ( -q_ - r_ + ( 2 * ( zero_base ? 0 : radius ( ) ) ) ) > radius ( );
+        return abs ( q_ - ( zero_base ? 0 : radius ( ) ) ) > radius ( ) or abs ( r_ - ( zero_base ? 0 : radius ( ) ) ) > radius ( ) or abs ( -q_ - r_ + ( 2 * ( zero_base ? 0 : radius ( ) ) ) ) > radius ( );
     }
     [[ nodiscard ]] static constexpr bool is_valid ( const size_type q_, const size_type r_ ) noexcept {
         return not ( is_invalid ( q_, r_ ) );

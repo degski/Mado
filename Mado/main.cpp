@@ -56,6 +56,7 @@
 // #include "../../MCTSSearchTree/include/flat_search_tree.hpp"
 
 
+#if 0
 
 #include "App.hpp"
 
@@ -182,12 +183,17 @@ int main ( ) {
     return EXIT_SUCCESS;
 }
 
+#endif
 
-// using board_type = HexContainer<Player<4>, 4, true>;
+
+#include "Hexcontainer.hpp"
+
+
+using board_type = HexContainer<char, 4, true>;
 
 
 int main6769687 ( ) {
-    /*
+
     board_type board;
 
     std::cout << sizeof ( board ) << nl;
@@ -198,7 +204,7 @@ int main6769687 ( ) {
         std::cout << static_cast< int > ( v ) << sp;
     }
     std::cout << nl;
-    */
+
     return EXIT_SUCCESS;
 }
 
@@ -468,7 +474,7 @@ static T* hashLookup2(T* table, size_t buckets, const Hash& hash, const T& key, 
 
 */
 
-
+#if 0
 
 #include <iostream>
 #include <vector>
@@ -887,3 +893,5 @@ template <typename T>
 struct counted : T, private instance_counter<T> {
     using T::T;
 };
+
+#endif
