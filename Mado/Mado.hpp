@@ -194,7 +194,8 @@ struct Mado {
         surrounded_vector surrounded;
         find_surrounded ( surrounded, m_last_move.to );
         if ( surrounded.size ( ) ) {
-            m_winner = std::end ( surrounded ) == std::find ( std::begin ( surrounded ), std::end ( surrounded ), m_player_to_move ) ? m_player_to_move : m_player_to_move.opponent ( );
+            bool r = std::end ( surrounded ) == std::find ( std::begin ( surrounded ), std::end ( surrounded ), m_player_to_move );
+            m_winner = ( std::end ( surrounded ) == std::find ( std::begin ( surrounded ), std::end ( surrounded ), m_player_to_move ) ? m_player_to_move : m_player_to_move.opponent ( ) );
         }
     }
 

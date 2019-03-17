@@ -46,31 +46,31 @@ struct Move {
 
     value_type from, to;
 
-    Move ( ) noexcept :
+    constexpr Move ( ) noexcept :
         from { std::move ( std::numeric_limits<value_type>::max ( ) ) },
         to { std::move ( std::numeric_limits<value_type>::max ( ) ) } {
     }
-    Move ( const value_type & to_ ) noexcept :
+    constexpr Move ( const value_type & to_ ) noexcept :
         from { std::move ( std::numeric_limits<value_type>::max ( ) ) },
         to { to_ } {
     }
-    Move ( value_type && to_ ) noexcept :
+    constexpr Move ( value_type && to_ ) noexcept :
         from { std::move ( std::numeric_limits<value_type>::max ( ) ) },
         to { std::move ( to_ ) } {
     }
-    Move ( const value_type & from_, const value_type & to_ ) noexcept :
+    constexpr Move ( const value_type & from_, const value_type & to_ ) noexcept :
         from { from_ },
         to { to_ } {
     }
-    Move ( value_type && from_, value_type && to_ ) noexcept :
+    constexpr Move ( value_type && from_, value_type && to_ ) noexcept :
         from { std::move ( from_ ) },
         to { std::move ( to_ ) } {
     }
 
-    [[ nodiscard ]] bool is_placement ( ) const noexcept {
+    [[ nodiscard ]] constexpr bool is_placement ( ) const noexcept {
         return std::numeric_limits<value_type>::max ( ) == from;
     }
-    [[ nodiscard ]] bool is_slide ( ) const noexcept {
+    [[ nodiscard ]] constexpr bool is_slide ( ) const noexcept {
         return not ( is_placement ( ) );
     }
 

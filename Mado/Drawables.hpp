@@ -109,6 +109,7 @@ template<typename State>
 struct PlayArea : public sf::Drawable, public sf::Transformable {
 
     using board = typename State::board;
+    using state_move = typename State::move;
     using state_reference = State &;
 
     using size_type = typename board::size_type;
@@ -184,6 +185,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
         if ( DisplayType::vacant == what_type ( i ) ) {
             setTexture ( i, d_ );
             m_last = i;
+            m_state.move_hash_winner ( state_move { i } );
             return true;
         }
         return false;
@@ -195,6 +197,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
                 setTexture ( f, DisplayValue::in_active_vacant );
                 setTexture ( t, d_ );
                 m_last = t;
+                m_state.move_hash_winner ( state_move { f, t } );
                 return true;
             }
         }
