@@ -67,7 +67,7 @@ struct Mado {
 
     using zobrist_hash = std::uint64_t;
 
-    using surrounded_vector = std::experimental::fixed_capacity_vector<value_type, 6>;
+    using surrounded_player_vector = std::experimental::fixed_capacity_vector<value_type, 6>;
 
     board m_board;
     zobrist_hash m_zobrist_hash = 0xb735a0f5839e4e22; // Hash of the current m_board, some random initial value;
@@ -159,7 +159,7 @@ struct Mado {
         return true;
     }
     template<typename IdxType>
-    void emplace_back_surrounded ( surrounded_vector & s_, IdxType && idx_ ) const noexcept {
+    void find_surrounded_neighbor ( surrounded_player_vector & s_, IdxType && idx_ ) const noexcept {
         if ( m_board [ idx_ ].occupied ( ) and is_surrounded ( idx_ ) )
             s_.push_back ( m_board [ idx_ ] );
     }
@@ -168,9 +168,9 @@ struct Mado {
 
     // Return all the surrounded stones in s_ (after a place/slide).
     template<typename IdxType>
-    void find_surrounded ( surrounded_vector & s_, const IdxType idx_ ) const noexcept {
+    void find_surrounded_neighbors ( surrounded_player_vector & s_, const IdxType idx_ ) const noexcept {
         for ( auto && i : board::neighbors [ idx_ ] )
-            emplace_back_surrounded ( s_, i );
+            find_surrounded_neighbor ( s_, i );
     }
 
     void winner ( ) noexcept {
@@ -191,10 +191,11 @@ struct Mado {
             m_winner = m_player_to_move.opponent ( );
             return;
         }
-        surrounded_vector surrounded;
-        find_surrounded ( surrounded, m_last_move.to );
-        if ( surrounded.size ( ) )
-            m_winner = ( std::end ( surrounded ) == std::find ( std::begin ( surrounded ), std::end ( surrounded ), m_player_to_move ) ? m_player_to_move : m_player_to_move.opponent ( ) );
+        surrounded_player_vector surrounded_players;
+        find_surrounded_neighbors ( surrounded_players, m_last_move.to );
+        if ( surrounded_players.size ( ) )
+            // Iff one location is surrounded,
+            m_winner = ( std::end ( surrounded_players ) == std::find ( std::begin ( surrounded_players ), std::end ( surrounded_players ), m_player_to_move ) ? m_player_to_move : m_player_to_move.opponent ( ) );
     }
 
     void move_hash ( const move & move_ ) noexcept {
