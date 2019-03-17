@@ -176,7 +176,7 @@ struct HexBase : public RadiusBase<R, zero_base> {
 
     // From https://stackoverflow.com/a/40030044/646940, and fixed the missing constexpr std::swap (in C++17).
 
-    static constexpr void constexpr_sort ( neighbors_type & array_, size_type left_, size_type right_ ) {
+    static constexpr void sort_neighbors ( neighbors_type & array_, size_type left_, size_type right_ ) {
         auto swap = [ ] ( auto & a, auto & b ) { auto const t = a; a = b; b = t; };
         if ( left_ < right_ ) {
             auto m = left_;
@@ -184,8 +184,8 @@ struct HexBase : public RadiusBase<R, zero_base> {
                 if ( array_ [ i ] < array_ [ left_ ] )
                     swap ( array_ [ ++m ], array_ [ i ] );
             swap ( array_ [ left_ ], array_ [ m ] );
-            constexpr_sort ( array_, left_, m );
-            constexpr_sort ( array_, m + 1, right_ );
+            sort_neighbors ( array_, left_, m );
+            sort_neighbors ( array_, m + 1, right_ );
         }
     }
 
@@ -203,7 +203,7 @@ struct HexBase : public RadiusBase<R, zero_base> {
         emplace_valid_neighbor ( n, q_ + 1, r_     );
         emplace_valid_neighbor ( n, q_ - 1, r_ + 1 );
         emplace_valid_neighbor ( n, q_    , r_ + 1 );
-        constexpr_sort ( n, size_type { 0 }, static_cast<size_type> ( n.size ( ) ) );
+        sort_neighbors ( n, size_type { 0 }, static_cast<size_type> ( n.size ( ) ) );
     }
 
     [[ nodiscard ]] static constexpr neighbors_type_array const make_neighbors_array ( ) noexcept {
