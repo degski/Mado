@@ -56,7 +56,7 @@
 // #include "../../MCTSSearchTree/include/flat_search_tree.hpp"
 
 
-#if 0
+#if 1
 
 #include "App.hpp"
 
@@ -185,6 +185,7 @@ int main ( ) {
 
 #endif
 
+#if 0
 
 #include "Hexcontainer.hpp"
 
@@ -211,7 +212,7 @@ int main ( ) {
     return EXIT_SUCCESS;
 }
 
-
+#endif
 
 
 /* some (932) random hashes

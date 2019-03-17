@@ -109,7 +109,7 @@ template<typename State>
 struct PlayArea : public sf::Drawable, public sf::Transformable {
 
     using board = typename State::board;
-    using board_reference = board &;
+    using state_reference = State &;
 
     using size_type = typename board::size_type;
 
@@ -245,7 +245,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
 
     sf::Texture m_texture;
 
-    board_reference m_board;
+    state_reference m_state;
     sf::VertexArray m_vertices;
 };
 
@@ -257,7 +257,7 @@ PlayArea<State>::PlayArea ( State & state_, const sf::Vector2f & center_, float 
     m_vert { vert_ },
     m_circle_diameter { circle_diameter_ },
     m_circle_radius { std::floorf ( m_circle_diameter * 0.5f ) },
-    m_board { state_.m_board } {
+    m_state { state_ } {
     // Load play area graphics.
     sf::loadFromResource ( m_texture, CIRCLES_LARGE );
     m_texture.setSmooth ( true );

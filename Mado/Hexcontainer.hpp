@@ -178,7 +178,7 @@ struct HexBase : public RadiusBase<R, zero_base> {
 
     static constexpr void emplace_valid_neighbor ( neighbors_type & n_, const size_type q_, const size_type r_ ) noexcept {
         if ( is_valid ( q_, r_ ) )
-        n_.emplace_back ( index ( q_, r_ ) );
+            n_.emplace_back ( index ( q_, r_ ) );
     }
 
     static constexpr void emplace_neighbors ( neighbors_type_array & na_, const size_type q_, const size_type r_ ) noexcept {
