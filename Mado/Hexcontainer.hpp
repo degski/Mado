@@ -191,7 +191,7 @@ struct HexBase : public RadiusBase<R, zero_base> {
 
     [[ nodiscard ]] static constexpr neighbors_type_array const make_neighbors_array ( ) noexcept {
         neighbors_type_array na;
-        size_type q = centre_idx ( ), r = centre_idx ( );
+        size_type q = center_idx ( ), r = center_idx ( );
         emplace_neighbors ( na, q, r );
         for ( size_type ring = 1; ring <= radius ( ); ++ring ) {
             ++q; // move to next ring, east.

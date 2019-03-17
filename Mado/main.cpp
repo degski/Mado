@@ -183,22 +183,21 @@ int main ( ) {
 }
 
 
+// using board_type = HexContainer<Player<4>, 4, true>;
 
-int main97979 ( ) {
+
+int main6769687 ( ) {
     /*
-    using board = Mado<9>;
-    using move = typename board::move;
+    board_type board;
 
-    board b;
+    std::cout << sizeof ( board ) << nl;
 
-    std::cout << b << nl;
+    std::cout << board_type::index ( 0, 0 ) << nl;
 
-    b.move_hash ( move { 104 } );
-    b.move_hash ( move { 24 } );
-    b.move_hash ( move { 104, 106 } );
-    b.move_hash ( move { 28 } );
-    b.move_hash ( move { 106, 104 } );
-    b.move_hash ( move { 28, 26 } );
+    for ( const auto v : board_type::neighbors [ 0 ] ) {
+        std::cout << static_cast< int > ( v ) << sp;
+    }
+    std::cout << nl;
     */
     return EXIT_SUCCESS;
 }
