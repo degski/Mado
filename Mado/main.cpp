@@ -192,7 +192,7 @@ int main ( ) {
 using board_type = HexContainer<char, 4, true>;
 
 
-int main6769687 ( ) {
+int main ( ) {
 
     board_type board;
 

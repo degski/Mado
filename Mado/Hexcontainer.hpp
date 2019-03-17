@@ -98,12 +98,8 @@ struct RadiusBase {
         return ( idx.data ( ) + ( zero_base ? R : 0 ) ) [ r_ ] + q_;
     }
 
-    template<typename T>
-    [[ nodiscard ]] static constexpr T abs ( const T & a_ ) noexcept {
-        return a_ > T { 0 } ? a_ : -a_;
-    }
-
     [[ nodiscard ]] static constexpr bool is_invalid ( const size_type q_, const size_type r_ ) noexcept {
+        auto abs = [ ] ( auto a ) { return a > decltype ( a ) { 0 } ? a : -a; };
         return abs ( q_ - ( zero_base ? 0 : radius ( ) ) ) > radius ( ) or abs ( r_ - ( zero_base ? 0 : radius ( ) ) ) > radius ( ) or abs ( -q_ - r_ + ( 2 * ( zero_base ? 0 : radius ( ) ) ) ) > radius ( );
     }
     [[ nodiscard ]] static constexpr bool is_valid ( const size_type q_, const size_type r_ ) noexcept {
@@ -117,6 +113,7 @@ struct Hex : public RadiusBase<R, zero_base> {
 
     using rad = RadiusBase<R, zero_base>;
     using value_type = sidx<R>;
+    using size_type = typename rad::size_type;
 
     using rad::radius;
     using rad::index;
@@ -177,6 +174,21 @@ struct HexBase : public RadiusBase<R, zero_base> {
 
     private:
 
+    // From https://stackoverflow.com/a/40030044/646940, and fixed the missing constexpr std::swap (in C++17).
+
+    static constexpr void constexpr_sort ( neighbors_type & array_, size_type left_, size_type right_ ) {
+        auto swap = [ ] ( auto & a, auto & b ) { auto const t = a; a = b; b = t; };
+        if ( left_ < right_ ) {
+            auto m = left_;
+            for ( auto i = left_ + 1; i < right_; ++i )
+                if ( array_ [ i ] < array_ [ left_ ] )
+                    swap ( array_ [ ++m ], array_ [ i ] );
+            swap ( array_ [ left_ ], array_ [ m ] );
+            constexpr_sort ( array_, left_, m );
+            constexpr_sort ( array_, m + 1, right_ );
+        }
+    }
+
     static constexpr void emplace_valid_neighbor ( neighbors_type & n_, const size_type q_, const size_type r_ ) noexcept {
         if ( is_invalid ( q_, r_ ) )
             return;
@@ -191,7 +203,7 @@ struct HexBase : public RadiusBase<R, zero_base> {
         emplace_valid_neighbor ( n, q_ + 1, r_     );
         emplace_valid_neighbor ( n, q_ - 1, r_ + 1 );
         emplace_valid_neighbor ( n, q_    , r_ + 1 );
-        std::sort ( std::begin ( n ), std::end ( n ) );
+        constexpr_sort ( n, size_type { 0 }, static_cast<size_type> ( n.size ( ) ) );
     }
 
     [[ nodiscard ]] static constexpr neighbors_type_array const make_neighbors_array ( ) noexcept {
