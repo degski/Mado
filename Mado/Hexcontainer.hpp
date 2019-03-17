@@ -132,10 +132,10 @@ struct Hex : public RadiusBase<R, zero_base> {
         q = value_type { -radius ( ) - 1 }; r = value_type { -radius ( ) - 1 };
     }
 
-    [[ nodiscard ]] bool operator == ( const Hex & rhs_ ) const noexcept {
+    [[ nodiscard ]] constexpr bool operator == ( const Hex & rhs_ ) const noexcept {
         return q == rhs_.q and r == rhs_.r;
     }
-    [[ nodiscard ]] bool operator != ( const Hex & rhs_ ) const noexcept {
+    [[ nodiscard ]] constexpr bool operator != ( const Hex & rhs_ ) const noexcept {
         return q != rhs_.q or r != rhs_.r;
     }
 
@@ -176,6 +176,12 @@ struct HexBase : public RadiusBase<R, zero_base> {
 
     // From https://stackoverflow.com/a/40030044/646940, and fixed the missing constexpr std::swap (in C++17).
 
+    static constexpr void emplace_valid_neighbor ( neighbors_type & n_, const size_type q_, const size_type r_ ) noexcept {
+        if ( is_invalid ( q_, r_ ) )
+            return;
+        n_.emplace_back ( index ( q_, r_ ) );
+    }
+
     static constexpr void sort_neighbors ( neighbors_type & array_, size_type left_, size_type right_ ) {
         auto swap = [ ] ( auto & a, auto & b ) { auto const t = a; a = b; b = t; };
         if ( left_ < right_ ) {
@@ -187,12 +193,6 @@ struct HexBase : public RadiusBase<R, zero_base> {
             sort_neighbors ( array_, left_, m );
             sort_neighbors ( array_, m + 1, right_ );
         }
-    }
-
-    static constexpr void emplace_valid_neighbor ( neighbors_type & n_, const size_type q_, const size_type r_ ) noexcept {
-        if ( is_invalid ( q_, r_ ) )
-            return;
-        n_.emplace_back ( index ( q_, r_ ) );
     }
 
     static constexpr void emplace_neighbors ( neighbors_type_array & na_, const size_type q_, const size_type r_ ) noexcept {
