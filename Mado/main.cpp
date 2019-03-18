@@ -32,6 +32,7 @@
 #include <exception>
 #include <filesystem>
 #include <fstream>
+#include <future>
 #include <sax/iostream.hpp>
 #include <iterator>
 #include <list>
@@ -40,6 +41,7 @@
 #include <optional>
 #include <random>
 #include <string>
+#include <thread>
 #include <type_traits>
 #include <vector>
 
@@ -56,7 +58,7 @@
 // #include "../../MCTSSearchTree/include/flat_search_tree.hpp"
 
 
-#if 1
+#if 0
 
 #include "App.hpp"
 
@@ -187,11 +189,72 @@ int main ( ) {
 
 #include "Hexcontainer.hpp"
 
+namespace detail {
+
+// https://stackoverflow.com/q/24896622/646940
+
+template<typename Future, typename Work, typename Result>
+class helper {
+
+    Future m_future;
+    Work m_work;
+
+    public:
+
+    helper ( Future && future_, Work && work_ ) :
+        m_future ( std::move ( future_ ) ),
+        m_work ( std::move ( work_ ) ) {
+    }
+
+    helper ( helper && other_ ) :
+        m_future ( std::move ( other_.m_future ) ),
+        m_work ( std::move ( other_.m_work ) ) {
+    }
+
+    helper & operator = ( helper && other_ ) {
+        m_future = std::move ( other_.m_future );
+        m_work = std::move ( other_.m_work );
+        return * this;
+    }
+
+    Result operator ( ) ( ) {
+        m_future.wait ( );
+        return m_work ( std::move ( m_future ) );
+    }
+};
+
+}
+
+namespace sax {
+
+template<typename Future, typename Work>
+auto then ( Future && future_, Work && work_ ) {
+    return std::async ( std::launch::async, detail::helper<Future, Work, decltype ( work_ ( std::move ( future_ ) ) )> ( std::move ( future_ ), std::move ( work_ ) ) );
+}
+
+}
+
+
+int main ( ) {
+    std::promise<int> prom;
+    auto fut = prom.get_future ( );
+
+    std::thread th ( [ & ] ( ) {
+        sf::sleepForMilliseconds ( 1'000 );
+        prom.set_value ( 42 );
+    } );
+
+    sax::then ( std::move ( fut ), [ ] ( std::future<int> f ) {
+        printf ( "future got: %i\n", f.get ( ) );
+    } );
+
+    th.detach ( );
+}
 
 using board_type = HexContainer<int, 2, true>;
 
 
-int main ( ) {
+int main7686787 ( ) {
 
     board_type board;
 

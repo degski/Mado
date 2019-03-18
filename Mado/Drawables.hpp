@@ -29,6 +29,7 @@
 #include <cstdlib>
 
 #include <array>
+#include <future>
 #include <iostream>
 #include <vector>
 
@@ -172,6 +173,8 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
     public:
 
     void make_agent_move ( const DisplayValue d_ = DisplayValue::in_active_green ) noexcept {
+        // std::future<state_move> m = std::async ( std::launch::async, m_state.get_random_move );
+
         const state_move m = m_state.get_random_move ( );
         if ( m.is_slide ( ) )
             setTexture ( m.from, DisplayValue::in_active_vacant );

@@ -245,6 +245,7 @@ struct Mado {
     }
 
     move get_random_move ( ) noexcept {
+        sf::sleepForMilliseconds ( sax::uniform_int_distribution<size_type> ( 500, 3'500 ) ( Rng::gen ( ) ) );
         static std::vector<move> available_moves;
         available_moves.clear ( );
         if ( moves ( &available_moves ) ) {
