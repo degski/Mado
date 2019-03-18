@@ -188,51 +188,7 @@ int main ( ) {
 #else
 
 #include "Hexcontainer.hpp"
-
-namespace detail {
-
-// https://stackoverflow.com/q/24896622/646940
-
-template<typename Future, typename Work, typename Result>
-class helper {
-
-    Future m_future;
-    Work m_work;
-
-    public:
-
-    helper ( Future && future_, Work && work_ ) :
-        m_future ( std::move ( future_ ) ),
-        m_work ( std::move ( work_ ) ) {
-    }
-
-    helper ( helper && other_ ) :
-        m_future ( std::move ( other_.m_future ) ),
-        m_work ( std::move ( other_.m_work ) ) {
-    }
-
-    helper & operator = ( helper && other_ ) {
-        m_future = std::move ( other_.m_future );
-        m_work = std::move ( other_.m_work );
-        return * this;
-    }
-
-    Result operator ( ) ( ) {
-        m_future.wait ( );
-        return m_work ( std::move ( m_future ) );
-    }
-};
-
-}
-
-namespace sax {
-
-template<typename Future, typename Work>
-auto then ( Future && future_, Work && work_ ) {
-    return std::async ( std::launch::async, detail::helper<Future, Work, decltype ( work_ ( std::move ( future_ ) ) )> ( std::move ( future_ ), std::move ( work_ ) ) );
-}
-
-}
+#include <sax/stl.hpp>
 
 
 int main ( ) {

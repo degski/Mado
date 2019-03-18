@@ -44,6 +44,8 @@
 #include <cereal/cereal.hpp>
 #include <cereal/archives/binary.hpp>
 
+#include <sax/stl.hpp>
+
 #include "Types.hpp"
 #include "Player.hpp"
 #include "Hexcontainer.hpp"
