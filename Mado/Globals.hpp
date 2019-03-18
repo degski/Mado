@@ -89,4 +89,4 @@ namespace fs = std::filesystem;
 extern fs::path const & g_app_data_path;
 extern fs::path const & g_app_path;
 
-[[ nodiscard ]] std::int32_t getNumberOfProcessors ( ) noexcept;
+[[ nodiscard ]] std::uint32_t getNumberOfProcessors ( ) noexcept;

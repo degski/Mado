@@ -27,6 +27,7 @@
 
 #include <filesystem>
 #include <string>
+#include <thread>
 
 
 namespace fs = std::filesystem;
@@ -55,9 +56,6 @@ fs::path app_path_ = getExePath ( );
 fs::path const & g_app_path = app_path_;
 
 
-[[ nodiscard ]] std::int32_t getNumberOfProcessors ( ) noexcept {
-	char *value;
-	std::size_t len;
-	_dupenv_s ( & value, & len, "NUMBER_OF_PROCESSORS" );
-	return std::atoi ( value );
+[[ nodiscard ]] std::uint32_t getNumberOfProcessors ( ) noexcept {
+	return std::thread::hardware_concurrency ( );
 }
