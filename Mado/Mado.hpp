@@ -37,6 +37,8 @@
 #include <type_traits>
 #include <vector>
 
+#include <SFML/Extensions.hpp>
+
 #include <experimental/fixed_capacity_vector>
 
 #include <cereal/cereal.hpp>
@@ -64,6 +66,7 @@ struct Mado {
     using const_pointer = value_type const *;
 
     using board = HexContainer<value_type, R, true>;
+    using size_type = typename board::size_type;
 
     using zobrist_hash = std::uint64_t;
 
@@ -239,6 +242,18 @@ struct Mado {
             return moves_->size ( );
         }
         return false;
+    }
+
+    move get_random_move ( ) noexcept {
+        static std::vector<move> available_moves;
+        available_moves.clear ( );
+        if ( moves ( &available_moves ) ) {
+            const size_type i = sax::uniform_int_distribution<size_type> ( 0, available_moves.size ( ) - 1 ) ( Rng::gen ( ) );
+            return available_moves [ i ];
+        }
+        else {
+            std::exit ( EXIT_SUCCESS );
+        }
     }
 
     [[ nodiscard ]] std::optional<value_type> ended ( ) const noexcept {

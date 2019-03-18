@@ -171,6 +171,16 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
 
     public:
 
+    void make_agent_move ( const DisplayValue d_ = DisplayValue::in_active_green ) noexcept {
+        const state_move m = m_state.get_random_move ( );
+        if ( m.is_slide ( ) )
+            setTexture ( m.from, DisplayValue::in_active_vacant );
+        setTexture ( m.to, d_ );
+        m_state.move_hash_winner ( m );
+        std::cout << m_state << nl;
+        m_done_human_move = false;
+    }
+
     [[ nodiscard ]] bool equal ( const hex & i_, const DisplayValue d_ ) noexcept {
         const size_type i = board::index ( i_.q, i_.r ), w = what_type ( i );
         if ( display_type ( d_ ) == w ) {
@@ -180,13 +190,14 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
         }
         return false;
     }
-    [[ nodiscard ]] bool place ( const hex & i_, const DisplayValue d_ ) noexcept {
-        const size_type i = board::index ( i_.q, i_.r );
-        if ( DisplayType::vacant == what_type ( i ) ) {
-            setTexture ( i, d_ );
-            m_last = i;
-            m_state.move_hash_winner ( state_move { i } );
+    [[ nodiscard ]] bool place ( const hex & t_, const DisplayValue d_ ) noexcept {
+        const size_type t = board::index ( t_.q, t_.r );
+        if ( DisplayType::vacant == what_type ( t ) ) {
+            setTexture ( t, d_ );
+            m_last = t;
+            m_state.move_hash_winner ( state_move { t } );
             std::cout << m_state << nl;
+            m_done_human_move = true;
             return true;
         }
         return false;
@@ -200,6 +211,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
                 m_last = t;
                 m_state.move_hash_winner ( state_move { f, t } );
                 std::cout << m_state << nl;
+                m_done_human_move = true;
                 return true;
             }
         }
@@ -246,7 +258,8 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
 
     const float m_hori, m_vert, m_circle_diameter, m_circle_radius;
 
-    size_type m_last = not_set;
+    size_type m_last;
+    bool m_done_human_move;
 
     sf::Texture m_texture;
 
@@ -262,6 +275,8 @@ PlayArea<State>::PlayArea ( State & state_, const sf::Vector2f & center_, float 
     m_vert { vert_ },
     m_circle_diameter { circle_diameter_ },
     m_circle_radius { std::floorf ( m_circle_diameter * 0.5f ) },
+    m_last { not_set },
+    m_done_human_move { false },
     m_state { state_ } {
     // Load play area graphics.
     sf::loadFromResource ( m_texture, CIRCLES_LARGE );

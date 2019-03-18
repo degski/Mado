@@ -34,6 +34,7 @@
 #include <random>
 
 #include <sax/prng.hpp>
+#include <sax/uniform_int_distribution.hpp>
 
 
 // C++ global constants have static linkage. This is different from C.
