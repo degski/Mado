@@ -186,6 +186,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
             setTexture ( i, d_ );
             m_last = i;
             m_state.move_hash_winner ( state_move { i } );
+            std::cout << m_state << nl;
             return true;
         }
         return false;
@@ -198,6 +199,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
                 setTexture ( t, d_ );
                 m_last = t;
                 m_state.move_hash_winner ( state_move { f, t } );
+                std::cout << m_state << nl;
                 return true;
             }
         }

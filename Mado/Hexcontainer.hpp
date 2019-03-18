@@ -325,4 +325,32 @@ struct HexContainer : public HexBase<R, zero_base> {
     [[ nodiscard ]] const_neighbor_iterator end ( const size_type q_, const size_type r_ ) const noexcept {
         return end ( index ( q_, r_ ) );
     }
+
+    // Output.
+
+    template<typename Stream>
+    [[ maybe_unused ]] friend Stream & operator << ( Stream & out_, const HexContainer & hc_ ) noexcept {
+        constexpr int width = 1;
+        size_type r = 0;
+        const_pointer p = hc_.m_data.data ( );
+        for ( ; r <= radius ( ); ++r ) {
+            out_ << std::setw ( width ) << ' ';
+            for ( size_type s = 0; s < radius ( ) - r; ++s )
+                out_ << std::setw ( width ) << ' ';
+            for ( size_type q = 0; q <= radius ( ) + r; ++q )
+                out_ << std::setw ( width ) << *p++ << ' ';
+            out_ << nl;
+        }
+        --r;
+        for ( ; r > size_type { 0 }; --r ) {
+            out_ << std::setw ( width ) << ' ';
+            for ( size_type s = 0; s < radius ( ) - r + 1; ++s )
+                out_ << std::setw ( width ) << ' ';
+            for ( size_type q = 0; q < radius ( ) + r; ++q )
+                out_ << std::setw ( width ) << *p++ << ' ';
+            out_ << nl;
+        }
+        out_ << nl;
+        return out_;
+    }
 };

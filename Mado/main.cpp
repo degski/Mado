@@ -183,14 +183,12 @@ int main ( ) {
     return EXIT_SUCCESS;
 }
 
-#endif
-
-#if 0
+#else
 
 #include "Hexcontainer.hpp"
 
 
-using board_type = HexContainer<char, 4, true>;
+using board_type = HexContainer<int, 2, true>;
 
 
 int main ( ) {
@@ -208,6 +206,11 @@ int main ( ) {
         std::cout << nl;
     }
     std::cout << nl;
+
+    for ( auto & v : board )
+        v = 1;
+
+    std::cout << board << nl;
 
     return EXIT_SUCCESS;
 }

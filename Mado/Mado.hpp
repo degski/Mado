@@ -60,10 +60,10 @@ struct Mado {
 
     using value = typename Player<R>::Type;
     using value_type = Player<R>;
-    using pointer = Player<R> * ;
-    using const_pointer = Player<R> const *;
+    using pointer = value_type * ;
+    using const_pointer = value_type const *;
 
-    using board = HexContainer<Player<R>, R, true>;
+    using board = HexContainer<value_type, R, true>;
 
     using zobrist_hash = std::uint64_t;
 
@@ -194,7 +194,7 @@ struct Mado {
         surrounded_player_vector surrounded_players;
         find_surrounded_neighbors ( surrounded_players, m_last_move.to );
         if ( surrounded_players.size ( ) )
-            // Iff one location is surrounded,
+            // Iff one location is surrounded, iff it's not the current player, the current player wins.
             m_winner = ( std::end ( surrounded_players ) == std::find ( std::begin ( surrounded_players ), std::end ( surrounded_players ), m_player_to_move ) ? m_player_to_move : m_player_to_move.opponent ( ) );
     }
 
@@ -275,15 +275,8 @@ struct Mado {
 
     template<typename Stream>
     [[ maybe_unused ]] friend Stream & operator << ( Stream & out_, const Mado & b_ ) noexcept {
-        /*
-        for ( std::size_t r = 0u; r < rows ( ); ++r ) {
-            for ( std::size_t c = 0u; c < cols ( ); ++c ) {
-                out_ << b_.m_board [ r * cols ( ) + c ] << ' ';
-            }
-            out_ << nl;
-        }
+        out_ << b_.m_board << nl;
         out_ << nl << "  hash 0x" << std::hex << b_.m_zobrist_hash << " slides " << b_.m_slides << nl;
-        */
         return out_;
     }
 };
