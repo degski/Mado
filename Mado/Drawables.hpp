@@ -334,7 +334,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
 
     using size_type = typename board::size_type;
 
-    using vlock = sax::SRWLock<true>;
+    using play_area_lock = sax::SRWLock<true>;
     using future_state_move = stlab::future<state_move>;
 
     static constexpr int not_set = -1;
@@ -395,15 +395,15 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
         m_move_future = std::move ( stlab::async ( stlab::default_executor, [ & ] { return m_state.get_random_move ( ); } )
             .then ( [ this, d_ ] ( state_move m ) {
             if ( m.is_slide ( ) ) {
-                m_vlock.lock ( );
+                m_lock.lock ( );
                 setTexture ( m.from, DisplayValue::in_active_vacant );
                 setTexture ( m.to, d_ );
-                m_vlock.unlock ( );
+                m_lock.unlock ( );
             }
             else {
-                m_vlock.lock ( );
+                m_lock.lock ( );
                 setTexture ( m.to, d_ );
-                m_vlock.unlock ( );
+                m_lock.unlock ( );
             }
             m_state.move_hash_winner ( m );
             std::cout << m_state << nl;
@@ -415,9 +415,9 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
     [[ nodiscard ]] bool equal ( const hex & i_, const DisplayValue d_ ) noexcept {
         const size_type i = board::index ( i_.q, i_.r ), w = what_type ( i );
         if ( display_type ( d_ ) == w ) {
-            m_vlock.lock ( );
+            m_lock.lock ( );
             setTexture ( i, w + 6 );
-            m_vlock.unlock ( );
+            m_lock.unlock ( );
             m_last = i;
             return true;
         }
@@ -426,9 +426,9 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
     [[ nodiscard ]] bool place ( const hex & t_, const DisplayValue d_ ) noexcept {
         const size_type t = board::index ( t_.q, t_.r );
         if ( DisplayType::vacant == what_type ( t ) ) {
-            m_vlock.lock ( );
+            m_lock.lock ( );
             setTexture ( t, d_ );
-            m_vlock.unlock ( );
+            m_lock.unlock ( );
             m_last = t;
             m_state.move_hash_winner ( state_move { t } );
             std::cout << m_state << nl;
@@ -442,10 +442,10 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
         if ( are_neighbors ( f_, t_ ) ) {
             const size_type f = board::index ( f_.q, f_.r ), t = board::index ( t_.q, t_.r );
             if ( display_type ( d_ ) == what_type ( f ) and DisplayValue::active_vacant == what_value ( t ) ) {
-                m_vlock.lock ( );
+                m_lock.lock ( );
                 setTexture ( f, DisplayValue::in_active_vacant );
                 setTexture ( t, d_ );
-                m_vlock.unlock ( );
+                m_lock.unlock ( );
                 m_last = t;
                 m_state.move_hash_winner ( state_move { f, t } );
                 std::cout << m_state << nl;
@@ -455,9 +455,9 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
             }
         }
         const size_type f = board::index ( f_.q, f_.r );
-        m_vlock.lock ( );
+        m_lock.lock ( );
         setTexture ( f, what_type ( f ) );
-        m_vlock.unlock ( );
+        m_lock.unlock ( );
         return false;
     }
 
@@ -466,17 +466,17 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
         if ( w < 3 ) {
             reset ( );
             m_last = i;
-            m_vlock.lock ( );
+            m_lock.lock ( );
             setTexture ( i, w + 3 );
-            m_vlock.unlock ( );
+            m_lock.unlock ( );
         }
     }
 
     void unselect ( ) noexcept {
         if ( not_set != m_last ) {
-            m_vlock.lock ( );
+            m_lock.lock ( );
             setTexture ( m_last, what_type ( m_last ) );
-            m_vlock.unlock ( );
+            m_lock.unlock ( );
             m_last = not_set;
         }
     }
@@ -485,9 +485,9 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
         if ( not_set != m_last ) {
             const size_type l = what ( m_last );
             if ( l - 2 < ( 6 - 2 ) ) { // 2 < l < 6
-                m_vlock.lock ( );
+                m_lock.lock ( );
                 setTexture ( m_last, l % 3 );
-                m_vlock.unlock ( );
+                m_lock.unlock ( );
                 m_last = not_set;
             }
         }
@@ -497,12 +497,12 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
         // Apply the entity's transform -- combine it with the one that was passed by the caller.
         // states.transform *= getTransform ( ); // getTransform() is defined by sf::Transformable.
         // Apply the texture.
-        m_vlock.lock ( );
+        m_lock.lock ( );
         states.texture = & m_texture;
         // You may also override states.shader or states.blendMode if you want.
         // Draw the vertex array.
         target.draw ( m_vertices, states );
-        m_vlock.unlock ( );
+        m_lock.unlock ( );
     }
 
     const float m_hori, m_vert, m_circle_diameter, m_circle_radius;
@@ -520,7 +520,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
     state_reference m_state;
     clock_reference m_clock;
 
-    mutable vlock m_vlock;
+    mutable play_area_lock m_lock;
     stlab::future<void> m_move_future;
     sf::VertexArray m_vertices;
 };
