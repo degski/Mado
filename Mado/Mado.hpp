@@ -247,14 +247,17 @@ struct Mado {
     }
 
     move get_random_move ( ) noexcept {
+        std::cout << "random agent move" << nl;
         sf::sleepForMilliseconds ( sax::uniform_int_distribution<size_type> ( 2'000, 5'000 ) ( Rng::gen ( ) ) );
         static std::vector<move> available_moves;
         available_moves.clear ( );
-        if ( moves ( &available_moves ) ) {
+        if ( moves ( & available_moves ) ) {
             const size_type i = sax::uniform_int_distribution<size_type> ( 0, available_moves.size ( ) - 1 ) ( Rng::gen ( ) );
+            std::cout << "random agent move returned" << nl << nl;
             return available_moves [ i ];
         }
         else {
+            std::cout << "game ended" << nl << nl;
             std::exit ( EXIT_SUCCESS );
         }
     }

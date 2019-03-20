@@ -35,6 +35,7 @@
 
 #include <stlab/concurrency/default_executor.hpp>
 #include <stlab/concurrency/future.hpp>
+#include <stlab/concurrency/utility.hpp>
 
 #include <SFML/System.hpp>
 #include <SFML/Graphics.hpp>
@@ -495,6 +496,8 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
         // Apply the entity's transform -- combine it with the one that was passed by the caller.
         // states.transform *= getTransform ( ); // getTransform() is defined by sf::Transformable.
         // Apply the texture.
+        //if ( m_move_future.valid ( ) )
+            //m_move_future.get_try ( );
         m_vlock.lock ( );
         states.texture = & m_texture;
         // You may also override states.shader or states.blendMode if you want.

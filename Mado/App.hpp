@@ -364,13 +364,11 @@ void App::mouseEvents ( const sf::Event & event_ ) {
                     else {
                         // Clicked the new area, after selecting where to move from.
                         if ( NextMove::State::move == m_human_move.state ( ) ) {
-                            std::cout << "cancelled move from" << nl;
                             m_human_move.reset ( );
                             m_play_area.unselect ( );
                         }
                         // Requested placement.
                         else {
-                            std::cout << "place requested" << nl;
                             m_human_move.state ( NextMove::State::place );
                         }
                     }
