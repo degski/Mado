@@ -111,6 +111,77 @@ struct MouseState {
 };
 
 
+
+
+class Taskbar : public sf::Drawable {
+
+    static constexpr float width = 135.0f, height = 30.0f;
+
+    public:
+
+    enum State : int { in_active = 0, minimize, maximize, close };
+
+    private:
+
+    [[ nodiscard ]] sf::Quad makeVertex ( const sf::Vector2f & p_ ) const noexcept {
+        return {
+            sf::Vertex { sf::Vector2f { p_.x, p_.y }, sf::Vector2f { 0.0f, 0.0f } },
+            sf::Vertex { sf::Vector2f { p_.x + width, p_.y }, sf::Vector2f { width, 0.0f } },
+            sf::Vertex { sf::Vector2f { p_.x + width, p_.y + height }, sf::Vector2f { width, height } },
+            sf::Vertex { sf::Vector2f { p_.x, p_.y + height }, sf::Vector2f { 0.0f, height } }
+        };
+    }
+
+    void setTexture ( const State state_ ) noexcept {
+        if ( state_ != state ( ) ) {
+            sf::Quad & quads = *reinterpret_cast< sf::Quad* > ( &m_vertices [ 0 ] );
+            const float left { state_ * width }, right { left + width };
+            quads.v0.texCoords.x = left;
+            quads.v1.texCoords.x = right;
+            quads.v2.texCoords.x = right;
+            quads.v3.texCoords.x = left;
+        }
+    }
+
+    public:
+
+    Taskbar ( const float window_width_ ) :
+        m_minimize_bounds { window_width_ - width, 0.0f, width / 3.0f, height },
+        m_close_bounds { window_width_ - width / 3.0f, 0.0f, width / 3.0f, height } {
+        sf::loadFromResource ( m_texture, TASKBAR );
+        m_texture.setSmooth ( true );
+        m_vertices.setPrimitiveType ( sf::Quads );
+        m_vertices.resize ( 4 );
+        sf::Quad * quads = reinterpret_cast< sf::Quad* > ( &m_vertices [ 0 ] );
+        quads [ 0 ] = makeVertex ( sf::Vector2f { window_width_ - width, 0.0f } );
+    }
+
+    virtual void draw ( sf::RenderTarget & target, sf::RenderStates states ) const {
+        states.texture = &m_texture;
+        target.draw ( m_vertices, states );
+    }
+
+    [[ nodiscard ]] State state ( ) const noexcept {
+        return static_cast< State > ( static_cast< int > ( m_vertices [ 0 ].texCoords.x ) / static_cast< int > ( width ) );
+    }
+
+    void update ( const sf::Vector2f & p_ ) noexcept {
+        setTexture ( m_minimize_bounds.contains ( p_ ) ? State::minimize : m_close_bounds.contains ( p_ ) ? State::close : State::in_active );
+    }
+
+    void reset ( ) noexcept {
+        setTexture ( State::in_active );
+    }
+
+    private:
+
+    sf::FloatRect m_minimize_bounds, m_close_bounds;
+
+    sf::Texture m_texture;
+    sf::VertexArray m_vertices;
+};
+
+
 struct DelayTimer {
 
     void set ( const int d_ ) {
@@ -319,7 +390,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
 
     void make_agent_move ( const DisplayValue d_ = DisplayValue::in_active_green ) noexcept {
         agent_is_making_move = true;
-        m_move = std::move ( stlab::async ( stlab::default_executor, [ & ] { return m_state.get_random_move ( ); } )
+        m_move_future = std::move ( stlab::async ( stlab::default_executor, [ & ] { return m_state.get_random_move ( ); } )
             .then ( [ this, d_ ] ( state_move m ) {
             if ( m.is_slide ( ) ) {
                 m_vlock.lock ( );
@@ -446,8 +517,9 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
 
     state_reference m_state;
     clock_reference m_clock;
+
     mutable vlock m_vlock;
-    stlab::future<void> m_move;
+    stlab::future<void> m_move_future;
     sf::VertexArray m_vertices;
 };
 
@@ -523,72 +595,3 @@ void PlayArea<State>::init ( const sf::Vector2f & center_ ) noexcept {
     };
     std::sort ( quads, quads + m_vertices.getVertexCount ( ) / 4, quads_less );
 }
-
-
-class Taskbar : public sf::Drawable {
-
-    static constexpr float width = 135.0f, height = 30.0f;
-
-    public:
-
-    enum State : int { in_active = 0, minimize, maximize, close };
-
-    private:
-
-    [[ nodiscard ]] sf::Quad makeVertex ( const sf::Vector2f & p_ ) const noexcept {
-        return {
-            sf::Vertex { sf::Vector2f { p_.x, p_.y }, sf::Vector2f { 0.0f, 0.0f } },
-            sf::Vertex { sf::Vector2f { p_.x + width, p_.y }, sf::Vector2f { width, 0.0f } },
-            sf::Vertex { sf::Vector2f { p_.x + width, p_.y + height }, sf::Vector2f { width, height } },
-            sf::Vertex { sf::Vector2f { p_.x, p_.y + height }, sf::Vector2f { 0.0f, height } }
-        };
-    }
-
-    void setTexture ( const State state_ ) noexcept {
-        if ( state_ != state ( ) ) {
-            sf::Quad & quads = *reinterpret_cast< sf::Quad* > ( &m_vertices [ 0 ] );
-            const float left { state_ * width }, right { left + width };
-            quads.v0.texCoords.x = left;
-            quads.v1.texCoords.x = right;
-            quads.v2.texCoords.x = right;
-            quads.v3.texCoords.x = left;
-        }
-    }
-
-    public:
-
-    Taskbar ( const float window_width_ ) :
-        m_minimize_bounds { window_width_ - width, 0.0f, width / 3.0f, height },
-        m_close_bounds { window_width_ - width / 3.0f, 0.0f, width / 3.0f, height } {
-        sf::loadFromResource ( m_texture, TASKBAR );
-        m_texture.setSmooth ( true );
-        m_vertices.setPrimitiveType ( sf::Quads );
-        m_vertices.resize ( 4 );
-        sf::Quad * quads = reinterpret_cast<sf::Quad*> ( & m_vertices [ 0 ] );
-        quads [ 0 ] = makeVertex ( sf::Vector2f { window_width_ - width, 0.0f } );
-    }
-
-    virtual void draw ( sf::RenderTarget & target, sf::RenderStates states ) const {
-        states.texture = & m_texture;
-        target.draw ( m_vertices, states );
-    }
-
-    [[ nodiscard ]] State state ( ) const noexcept {
-        return static_cast<State> ( static_cast<int> ( m_vertices [ 0 ].texCoords.x ) / static_cast<int> ( width ) );
-    }
-
-    void update ( const sf::Vector2f & p_ ) noexcept {
-        setTexture ( m_minimize_bounds.contains ( p_ ) ? State::minimize : m_close_bounds.contains ( p_ ) ? State::close : State::in_active );
-    }
-
-    void reset ( ) noexcept {
-        setTexture ( State::in_active );
-    }
-
-    private:
-
-    sf::FloatRect m_minimize_bounds, m_close_bounds;
-
-    sf::Texture m_texture;
-    sf::VertexArray m_vertices;
-};
