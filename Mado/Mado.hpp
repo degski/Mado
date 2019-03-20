@@ -247,7 +247,7 @@ struct Mado {
         return false;
     }
 
-    move get_random_move ( ) noexcept {
+    [[ nodiscard ]] move get_random_move ( ) noexcept {
         sf::sleepForMilliseconds ( sax::uniform_int_distribution<size_type> ( 2'000, 5'000 ) ( Rng::gen ( ) ) );
         static std::vector<move> available_moves ( ( board::size ( ) * 3 ) / 2 );
         available_moves.clear ( );
@@ -263,7 +263,7 @@ struct Mado {
     }
 
     [[ nodiscard ]] std::optional<value_type> ended ( ) const noexcept {
-        return m_winner.value == value::invalid ? std::optional<value_type> ( ) : std::optional<value_type> ( m_winner );
+        return m_winner.value == value::invalid ? std::optional<value_type> { } : std::optional<value_type> { m_winner };
     }
 
     [[ nodiscard ]] float result ( const value_type player_just_moved_ ) const noexcept {
