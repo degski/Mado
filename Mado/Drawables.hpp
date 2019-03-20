@@ -438,7 +438,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
 
     public:
 
-    bool agent_is_making_move;
+    std::atomic<bool> agent_is_making_move;
 
     private:
 
