@@ -248,7 +248,7 @@ struct Mado {
     }
 
     [[ nodiscard ]] move get_random_move ( ) noexcept {
-        sf::sleepForMilliseconds ( sax::uniform_int_distribution<size_type> ( 2'000, 5'000 ) ( Rng::gen ( ) ) );
+        sf::sleep ( sf::milliseconds ( sax::uniform_int_distribution<size_type> ( 2'000, 5'000 ) ( Rng::gen ( ) ) ) );
         static std::vector<move> available_moves ( ( board::size ( ) * 3 ) / 2 );
         available_moves.clear ( );
         if ( moves ( & available_moves ) ) {
