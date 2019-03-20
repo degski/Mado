@@ -271,7 +271,7 @@ App::App ( ) :
     loop.offset = sf::seconds ( 3.0f );
     loop.length = sf::seconds ( 192.0f );
     m_music.setLoopPoints ( loop );
-    // m_music.play ( );
+    m_music.play ( );
     // Player to move.
     // m_player_to_move.what = display::in_active_green;
     // Ge started.

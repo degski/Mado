@@ -107,7 +107,7 @@ struct Mado {
     }
 
     [[ nodiscard ]] static constexpr zobrist_hash hash ( value_type p_, uidx i_ ) noexcept {
-        return mm_mix64 ( static_cast<std::uint64_t> ( p_.as_index ( ) ) ^ static_cast<std::uint64_t> ( i_ ) );
+        return iu_mix64 ( static_cast<std::uint64_t> ( p_.as_index ( ) ) ^ static_cast<std::uint64_t> ( i_ ) );
     }
 
     [[ nodiscard ]] zobrist_hash zobrist ( ) const noexcept {
@@ -247,13 +247,11 @@ struct Mado {
     }
 
     move get_random_move ( ) noexcept {
-        std::cout << "random agent move" << nl;
         sf::sleepForMilliseconds ( sax::uniform_int_distribution<size_type> ( 2'000, 5'000 ) ( Rng::gen ( ) ) );
         static std::vector<move> available_moves;
         available_moves.clear ( );
         if ( moves ( & available_moves ) ) {
             const size_type i = sax::uniform_int_distribution<size_type> ( 0, available_moves.size ( ) - 1 ) ( Rng::gen ( ) );
-            std::cout << "random agent move returned" << nl << nl;
             return available_moves [ i ];
         }
         else {

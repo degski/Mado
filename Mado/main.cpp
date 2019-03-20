@@ -153,7 +153,7 @@ int main ( ) {
             keep.pace ( );
         }
         // Regular game loop.
-        keep.reset ( 10 );
+        keep.reset ( 12 );
         while ( app_uptr->isWindowOpen ( ) ) {
             while ( app_uptr->pollWindowEvent ( event ) ) {
                 if ( sf::Event::LostFocus == event.type ) {
