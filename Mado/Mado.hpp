@@ -249,9 +249,10 @@ struct Mado {
 
     move get_random_move ( ) noexcept {
         sf::sleepForMilliseconds ( sax::uniform_int_distribution<size_type> ( 2'000, 5'000 ) ( Rng::gen ( ) ) );
-        static std::vector<move> available_moves;
+        static std::vector<move> available_moves ( ( board::size ( ) * 3 ) / 2 );
         available_moves.clear ( );
         if ( moves ( & available_moves ) ) {
+            std::cout << "no moves available " << std::dec << available_moves.size ( ) << nl << nl;
             const size_type i = sax::uniform_int_distribution<size_type> ( 0, available_moves.size ( ) - 1 ) ( Rng::gen ( ) );
             return available_moves [ i ];
         }
