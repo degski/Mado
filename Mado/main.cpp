@@ -58,7 +58,7 @@
 // #include "../../MCTSSearchTree/include/flat_search_tree.hpp"
 
 
-#if 0
+#if 1
 
 #include "App.hpp"
 
@@ -188,23 +188,26 @@ int main ( ) {
 #else
 
 #include "Hexcontainer.hpp"
-#include <sax/stl.hpp>
 
+#include <cstdio>
+#include <thread>
+
+#include <stlab/concurrency/default_executor.hpp>
+#include <stlab/concurrency/future.hpp>
+
+#include <plf/plf_nanotimer.h>
 
 int main ( ) {
-    std::promise<int> prom;
-    auto fut = prom.get_future ( );
 
-    std::thread th ( [ & ] ( ) {
-        sf::sleepForMilliseconds ( 1'000 );
-        prom.set_value ( 42 );
-    } );
+    auto x = stlab::async ( stlab::default_executor, [ ] { return 42; } );
 
-    sax::then ( std::move ( fut ), [ ] ( std::future<int> f ) {
-        printf ( "future got: %i\n", f.get ( ) );
-    } );
+    auto c1 = x.then ( [ ] ( int x ) { std::this_thread::sleep_for ( std::chrono::milliseconds ( 2'000 ) ); std::printf ( "Split A %d \n", x ); } );
+    auto c2 = x.then ( [ ] ( int x ) { std::this_thread::sleep_for ( std::chrono::milliseconds ( 20 ) ); std::printf ( "Split B %d \n", x ); } );
 
-    th.detach ( );
+    std::this_thread::sleep_for ( std::chrono::milliseconds ( 4'000 ) );
+
+    //while ( !c1.get_try ( ) ) { std::this_thread::sleep_for ( std::chrono::milliseconds ( 1 ) ); }
+    //while ( !c2.get_try ( ) ) { std::this_thread::sleep_for ( std::chrono::milliseconds ( 1 ) ); }
 }
 
 using board_type = HexContainer<int, 2, true>;

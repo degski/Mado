@@ -29,14 +29,19 @@
 #include <cstdlib>
 
 #include <array>
-#include <future>
 #include <iostream>
+#include <mutex>
 #include <vector>
+
+#include <stlab/concurrency/default_executor.hpp>
+#include <stlab/concurrency/future.hpp>
 
 #include <SFML/System.hpp>
 #include <SFML/Graphics.hpp>
 #include <SFML/Audio.hpp>
 #include <SFML/Extensions.hpp>
+
+#include <sax/srwlock.hpp>
 
 #include "Types.hpp"
 #include "Globals.hpp"
@@ -115,6 +120,9 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
 
     using size_type = typename board::size_type;
 
+    using vlock = sax::SRWLock<true>;
+    using future_state_move = stlab::future<state_move>;
+
     static constexpr int not_set = -1;
 
     enum DisplayType : int { vacant = 0, red, green };
@@ -173,21 +181,30 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
     public:
 
     void make_agent_move ( const DisplayValue d_ = DisplayValue::in_active_green ) noexcept {
-        // std::future<state_move> m = std::async ( std::launch::async, m_state.get_random_move );
-
-        const state_move m = m_state.get_random_move ( );
-        if ( m.is_slide ( ) )
-            setTexture ( m.from, DisplayValue::in_active_vacant );
-        setTexture ( m.to, d_ );
-        m_state.move_hash_winner ( m );
-        std::cout << m_state << nl;
-        m_done_human_move = false;
+        m_move = std::move ( stlab::async ( stlab::default_executor, [ & ] { return m_state.get_random_move ( ); } )
+            .then ( [ this, d_ ] ( state_move m ) {
+            if ( m.is_slide ( ) ) {
+                m_vlock.lock ( );
+                setTexture ( m.from, DisplayValue::in_active_vacant );
+                setTexture ( m.to, d_ );
+                m_vlock.unlock ( );
+            }
+            else {
+                m_vlock.lock ( );
+                setTexture ( m.to, d_ );
+                m_vlock.unlock ( );
+            }
+            m_state.move_hash_winner ( m );
+            std::cout << m_state << nl;
+        } ) );
     }
 
     [[ nodiscard ]] bool equal ( const hex & i_, const DisplayValue d_ ) noexcept {
         const size_type i = board::index ( i_.q, i_.r ), w = what_type ( i );
         if ( display_type ( d_ ) == w ) {
+            m_vlock.lock ( );
             setTexture ( i, w + 6 );
+            m_vlock.unlock ( );
             m_last = i;
             return true;
         }
@@ -196,11 +213,13 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
     [[ nodiscard ]] bool place ( const hex & t_, const DisplayValue d_ ) noexcept {
         const size_type t = board::index ( t_.q, t_.r );
         if ( DisplayType::vacant == what_type ( t ) ) {
+            m_vlock.lock ( );
             setTexture ( t, d_ );
+            m_vlock.unlock ( );
             m_last = t;
             m_state.move_hash_winner ( state_move { t } );
             std::cout << m_state << nl;
-            m_done_human_move = true;
+            make_agent_move ( );
             return true;
         }
         return false;
@@ -209,17 +228,21 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
         if ( are_neighbors ( f_, t_ ) ) {
             const size_type f = board::index ( f_.q, f_.r ), t = board::index ( t_.q, t_.r );
             if ( display_type ( d_ ) == what_type ( f ) and DisplayValue::active_vacant == what_value ( t ) ) {
+                m_vlock.lock ( );
                 setTexture ( f, DisplayValue::in_active_vacant );
                 setTexture ( t, d_ );
+                m_vlock.unlock ( );
                 m_last = t;
                 m_state.move_hash_winner ( state_move { f, t } );
                 std::cout << m_state << nl;
-                m_done_human_move = true;
+                make_agent_move ( );
                 return true;
             }
         }
         const size_type f = board::index ( f_.q, f_.r );
+        m_vlock.lock ( );
         setTexture ( f, what_type ( f ) );
+        m_vlock.unlock ( );
         return false;
     }
 
@@ -228,13 +251,17 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
         if ( w < 3 ) {
             reset ( );
             m_last = i;
+            m_vlock.lock ( );
             setTexture ( i, w + 3 );
+            m_vlock.unlock ( );
         }
     }
 
     void unselect ( ) noexcept {
         if ( not_set != m_last ) {
+            m_vlock.lock ( );
             setTexture ( m_last, what_type ( m_last ) );
+            m_vlock.unlock ( );
             m_last = not_set;
         }
     }
@@ -243,7 +270,9 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
         if ( not_set != m_last ) {
             const size_type l = what ( m_last );
             if ( l - 2 < ( 6 - 2 ) ) { // 2 < l < 6
+                m_vlock.lock ( );
                 setTexture ( m_last, l % 3 );
+                m_vlock.unlock ( );
                 m_last = not_set;
             }
         }
@@ -253,20 +282,23 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
         // Apply the entity's transform -- combine it with the one that was passed by the caller.
         // states.transform *= getTransform ( ); // getTransform() is defined by sf::Transformable.
         // Apply the texture.
+        m_vlock.lock ( );
         states.texture = & m_texture;
         // You may also override states.shader or states.blendMode if you want.
         // Draw the vertex array.
         target.draw ( m_vertices, states );
+        m_vlock.unlock ( );
     }
 
     const float m_hori, m_vert, m_circle_diameter, m_circle_radius;
 
     size_type m_last;
-    bool m_done_human_move;
 
     sf::Texture m_texture;
 
     state_reference m_state;
+    mutable vlock m_vlock;
+    stlab::future<void> m_move;
     sf::VertexArray m_vertices;
 };
 
@@ -279,7 +311,6 @@ PlayArea<State>::PlayArea ( State & state_, const sf::Vector2f & center_, float 
     m_circle_diameter { circle_diameter_ },
     m_circle_radius { std::floorf ( m_circle_diameter * 0.5f ) },
     m_last { not_set },
-    m_done_human_move { false },
     m_state { state_ } {
     // Load play area graphics.
     sf::loadFromResource ( m_texture, CIRCLES_LARGE );

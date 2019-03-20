@@ -308,17 +308,6 @@ void App::updateWindow ( ) noexcept {
     m_window.draw ( m_play_area );
     m_window.draw ( m_game_clock );
     m_window.display ( );
-    if ( m_play_area.m_done_human_move ) {
-        sf::sleepForMilliseconds ( 250 );
-        m_play_area.reset ( );
-        m_window.clear ( sf::Color { 10u, 10u, 10u, 255u } );
-        m_window.draw ( m_taskbar );
-        m_window.draw ( m_play_area );
-        m_window.draw ( m_game_clock );
-        m_window.display ( );
-        m_play_area.make_agent_move ( );
-        // sf::sleepForMilliseconds ( sax::uniform_int_distribution<int> ( 500, 3'000 ) ( Rng::gen ( ) ) );
-    }
     // Minimize if required (after updating above).
     if ( m_minimize ) {
         m_minimize = false;
