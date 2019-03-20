@@ -54,8 +54,3 @@ fs::path const & g_app_data_path = app_data_path_;
 
 fs::path app_path_ = getExePath ( );
 fs::path const & g_app_path = app_path_;
-
-
-[[ nodiscard ]] std::uint32_t getNumberOfProcessors ( ) noexcept {
-	return std::thread::hardware_concurrency ( );
-}
