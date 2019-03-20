@@ -253,8 +253,7 @@ struct Mado {
         available_moves.clear ( );
         if ( moves ( & available_moves ) ) {
             std::cout << "no moves available " << std::dec << available_moves.size ( ) << nl << nl;
-            const size_type i = sax::uniform_int_distribution<size_type> ( 0, available_moves.size ( ) - 1 ) ( Rng::gen ( ) );
-            return available_moves [ i ];
+            return available_moves [ sax::uniform_int_distribution<size_type> ( 0, available_moves.size ( ) - 1 ) ( Rng::gen ( ) ) ];
         }
         else {
             std::cout << "game ended" << nl << nl;
