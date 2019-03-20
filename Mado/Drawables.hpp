@@ -181,6 +181,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
     public:
 
     void make_agent_move ( const DisplayValue d_ = DisplayValue::in_active_green ) noexcept {
+        agent_is_making_move = true;
         m_move = std::move ( stlab::async ( stlab::default_executor, [ & ] { return m_state.get_random_move ( ); } )
             .then ( [ this, d_ ] ( state_move m ) {
             if ( m.is_slide ( ) ) {
@@ -196,6 +197,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
             }
             m_state.move_hash_winner ( m );
             std::cout << m_state << nl;
+            agent_is_making_move = false;
         } ) );
     }
 
@@ -294,6 +296,12 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
 
     size_type m_last;
 
+    public:
+
+    bool agent_is_making_move;
+
+    private:
+
     sf::Texture m_texture;
 
     state_reference m_state;
@@ -311,6 +319,7 @@ PlayArea<State>::PlayArea ( State & state_, const sf::Vector2f & center_, float 
     m_circle_diameter { circle_diameter_ },
     m_circle_radius { std::floorf ( m_circle_diameter * 0.5f ) },
     m_last { not_set },
+    agent_is_making_move { false },
     m_state { state_ } {
     // Load play area graphics.
     sf::loadFromResource ( m_texture, CIRCLES_LARGE );

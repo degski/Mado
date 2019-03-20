@@ -326,7 +326,7 @@ void App::mouseEvents ( const sf::Event & event_ ) {
         const hex hex_position = pointToHex ( mouse_position );
         // if ( hex_position.valid ( ) ) {
         if ( hex::is_valid ( hex_position.q, hex_position.r ) ) {
-            if ( sf::Mouse::isButtonPressed ( sf::Mouse::Left ) ) {
+            if ( not ( m_play_area.agent_is_making_move ) and sf::Mouse::isButtonPressed ( sf::Mouse::Left ) ) {
                 // Selected a cicle.
                 bool no_reset;
                 switch ( m_human_move.state ( ) ) {
