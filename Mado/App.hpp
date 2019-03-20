@@ -119,8 +119,8 @@ class App {
     MouseState m_mouse;
 
     Taskbar m_taskbar;
-    PlayArea m_play_area;
     GameClock m_game_clock;
+    PlayArea m_play_area;
 
     NextMove m_human_move;
 
@@ -250,8 +250,8 @@ App::App ( ) :
     m_window_height { MadoState::board::height ( ) * m_vert + m_vert + 1.0f + 12.0f },
     m_center { sf::Vector2f { m_window_width * 0.5f, m_window_height * 0.5f + 6.0f } },
     m_taskbar { m_window_width },
-    m_play_area { m_state, m_center, m_hori, m_vert, 67.0f },
-    m_game_clock ( std::floorf ( ( m_window_width - ( MadoState::board::radius ( ) + 1 ) * m_hori ) / 4 ), m_window_width - std::floorf ( ( m_window_width - ( MadoState::board::radius ( ) + 1 ) * m_hori ) / 4 ), m_play_area.heightFirstHex ( ) ) {
+    m_game_clock { std::floorf ( ( m_window_width - ( MadoState::board::radius ( ) + 1 ) * m_hori ) / 4 ), m_window_width - std::floorf ( ( m_window_width - ( MadoState::board::radius ( ) + 1 ) * m_hori ) / 4 ), 76.5f },
+    m_play_area { m_state, m_game_clock, m_center, m_hori, m_vert, 67.0f } {
     m_settings.antialiasingLevel = 8u;
     // Create the m_window.
     m_window.create ( sf::VideoMode ( static_cast< std::uint32_t > ( m_window_width ), static_cast< std::uint32_t > ( m_window_height ) ), L"Mado", sf::Style::None, m_settings );
@@ -331,22 +331,17 @@ void App::mouseEvents ( const sf::Event & event_ ) {
                 bool no_reset;
                 switch ( m_human_move.state ( ) ) {
                 case NextMove::State::none:
-                    if ( ( no_reset = m_play_area.equal ( hex_position, PlayArea::DisplayValue::active_red ) ) ) {
-                        std::cout << "set move from" << nl;
+                    if ( ( no_reset = m_play_area.equal ( hex_position, PlayArea::DisplayValue::active_red ) ) )
                         m_human_move.from ( hex_position );
-                    }
                     break;
                 case NextMove::State::place:
-                    if ( ( no_reset = m_play_area.place ( hex_position, PlayArea::DisplayValue::active_red ) ) ) {
+                    if ( ( no_reset = m_play_area.place ( hex_position, PlayArea::DisplayValue::active_red ) ) )
                         m_human_move.to ( hex_position );
-                        m_game_clock.update_next ( );
-                    }
                     break;
                 case NextMove::State::move:
-                    if ( ( no_reset = m_play_area.move ( m_human_move.from ( ), hex_position, PlayArea::DisplayValue::active_red ) ) ) {
+                    if ( ( no_reset = m_play_area.move ( m_human_move.from ( ), hex_position, PlayArea::DisplayValue::active_red ) ) )
                         m_human_move.to ( hex_position );
-                        m_game_clock.update_next ( );
-                    }
+                    break;
                 }
                 if ( not ( no_reset ) ) {
                     m_human_move.reset ( );
