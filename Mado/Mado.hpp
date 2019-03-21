@@ -226,7 +226,7 @@ struct Mado {
     }
 
     [[ nodiscard ]] bool moves ( std::vector<move> * moves_ ) const noexcept {
-        // Mcts class takes has ownership.
+        // Mcts class takes/has ownership.
         if ( nonterminal ( ) ) {
             moves_->clear ( );
             for ( typename move::value_type i = 0; i < static_cast<typename move::value_type> ( board::size ( ) ); ++i ) {

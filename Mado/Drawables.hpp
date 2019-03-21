@@ -36,7 +36,6 @@
 
 #include <stlab/concurrency/default_executor.hpp>
 #include <stlab/concurrency/future.hpp>
-#include <stlab/concurrency/utility.hpp>
 
 #include <SFML/System.hpp>
 #include <SFML/Graphics.hpp>
@@ -99,9 +98,8 @@ struct MouseState {
 
     const sf::Vector2f & update ( ) noexcept {
         m_mouse_state = mouse_state::idle;
-        if ( sf::Mouse::isButtonPressed ( sf::Mouse::Left ) ) {
+        if ( sf::Mouse::isButtonPressed ( sf::Mouse::Left ) )
             m_mouse_state = mouse_state::left_clicked;
-        }
         m_data [ m_current ^ 1 ] = sf::Mouse::getPosition ( * m_window_ptr );
         if ( m_data [ 0 ] != m_data [ 1 ] ) {
             m_current ^= 1;
@@ -164,7 +162,7 @@ class Taskbar : public sf::Drawable {
     }
 
     [[ nodiscard ]] State state ( ) const noexcept {
-        return static_cast< State > ( static_cast< int > ( m_vertices [ 0 ].texCoords.x ) / static_cast< int > ( width ) );
+        return static_cast<State> ( static_cast< int > ( m_vertices [ 0 ].texCoords.x ) / static_cast< int > ( width ) );
     }
 
     void update ( const sf::Vector2f & p_ ) noexcept {
