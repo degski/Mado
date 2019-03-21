@@ -406,61 +406,6 @@ void App::mouseEvents ( const sf::Event & event_ ) {
 
 #if 0
 
-bool App::doHumanMove ( const Point point_ ) noexcept {
-
-    if ( m_state.getHexRefFromID ( m_human_id_to ).isClose ( point_ ) ) {
-
-        const Move human_move = m_state.humanMove ( m_human_id_from, m_human_id_to );
-
-        if ( human_move == Move::none ) {
-
-            m_state.getHexRefFromID ( m_human_id_to ).setOffsetFromPoint ( point_ );
-
-            return false;
-        }
-
-        if ( human_move == Move::invalid ) {
-
-            return false;
-        }
-
-        if ( human_move.isCapture ( ) ) {
-
-            m_human_stone_captor.start ( m_state.other ( human_move.captured ( ) ), 0.4f, sf::milliseconds ( 100 ) );
-        }
-
-        m_state.doMove ( human_move );
-        m_state.getHexRefFromID ( m_human_id_to ).setOffsetFromPoint ( point_ );
-
-        return true;
-    }
-
-    return false;
-}
-
-
-void App::doAgentRandomMove ( ) noexcept {
-
-    const Move agent_move = m_state.randomMove ( );
-
-    if ( agent_move not_eq Move::invalid ) {
-
-        if ( agent_move.isCapture ( ) ) {
-
-            m_agent_stone_captor.start ( agent_move.captured ( ), 0.4f, sf::milliseconds ( 350 ) );
-        }
-
-        m_agent_stone_mover.start ( agent_move, 0.25f );
-        m_state.doMove ( agent_move );
-
-        return;
-    }
-
-    std::cout << "Invalid random move.\n";
-    exit ( 0 );
-}
-
-
 void App::doAgentMctsMove ( ) noexcept {
 
     const Move agent_move = mcts::Mcts<os::OskaState>::compute ( m_state );
