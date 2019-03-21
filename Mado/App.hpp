@@ -196,8 +196,6 @@ public:
 
 private:
 
-    // [[ nodiscard ]] bool doHumanMove ( const Point point_ ) noexcept;
-    // void doAgentRandomMove ( ) noexcept;
     // void doAgentMctsMove ( ) noexcept;
 
 public:
