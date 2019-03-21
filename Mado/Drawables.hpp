@@ -29,6 +29,7 @@
 #include <cstdlib>
 
 #include <array>
+#include <atomic>
 #include <iostream>
 #include <mutex>
 #include <thread>
@@ -42,13 +43,23 @@
 #include <SFML/Audio.hpp>
 #include <SFML/Extensions.hpp>
 
-#include <sax/srwlock.hpp>
-
 #include "Types.hpp"
 #include "Globals.hpp"
 #include "Hexcontainer.hpp"
 
 #include "resource.h"
+
+
+class spinlock_mutex {
+    std::atomic_flag flag = ATOMIC_FLAG_INIT;
+    public:
+    void lock ( ) noexcept {
+        while ( flag.test_and_set ( std::memory_order_acquire ) );
+    }
+    void unlock ( ) noexcept {
+        flag.clear ( std::memory_order_release );
+    }
+};
 
 
 namespace sf {
@@ -332,7 +343,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
 
     using size_type = typename board::size_type;
 
-    using play_area_lock = sax::SRWLock<true>;
+    using play_area_lock = spinlock_mutex;
     using future_state_move = stlab::future<state_move>;
 
     static constexpr int not_set = -1;
