@@ -124,16 +124,15 @@ struct Mado {
 
 
     void move_hash_impl ( const move & move_ ) noexcept {
-        static constexpr zobrist_hash hash_slide [ 7 ] { 0x0000000000000000, 0x2c507643dcca6c7f, 0x82701a7a226fb2db, 0xe2b504a067cdb385, 0x4c696ea2a6481a72, 0x18dfdafd5c21cf7b, 0xef66e9ab2c19a2d6 };
         if ( move_.is_placement ( ) ) { // Place.
             if ( m_slides )
-                m_zobrist_hash ^= hash_slide [ m_slides ];
+                m_zobrist_hash ^= mm_mix64 ( static_cast<std::uint64_t> ( m_slides ) );
             m_slides = 0;
         }
         else { // Slide.
             if ( m_slides )
-                m_zobrist_hash ^= hash_slide [ m_slides ];
-            m_zobrist_hash ^= hash_slide [ ++m_slides ];
+                m_zobrist_hash ^= mm_mix64 ( static_cast<std::uint64_t> ( m_slides ) );
+            m_zobrist_hash ^= mm_mix64 ( static_cast<std::uint64_t> ( ++m_slides ) );
             m_zobrist_hash ^= hash ( m_player_to_move, move_.from );
             m_board [ move_.from ] = value::vacant;
         }
