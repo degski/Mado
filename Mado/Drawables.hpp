@@ -363,6 +363,11 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
 
     PlayArea ( State & state_, GameClock & clock_, const sf::Vector2f & center_, float hori_, float vert_, float circle_diameter_ );
 
+    ~PlayArea ( ) {
+        // Wait for the agent to return it's move.
+        m_agent_move_lock.lock ( );
+    }
+
     private:
 
     void setTexture ( size_type v_, size_type i_ ) noexcept {
@@ -399,6 +404,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
     public:
 
     void make_agent_move ( const DisplayValue d_ = DisplayValue::in_active_green ) noexcept {
+        m_agent_move_lock.lock ( );
         agent_is_making_move = true;
         m_move_future = std::move ( stlab::async ( stlab::default_executor, [ & ] { return m_state.get_random_move ( ); } )
             .then ( [ this, d_ ] ( state_move m ) {
@@ -415,8 +421,9 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
             }
             m_state.move_hash_winner ( m );
             std::cout << m_state << nl;
-            agent_is_making_move = false;
             m_clock.update_next ( );
+            agent_is_making_move = false;
+            m_agent_move_lock.unlock ( );
         } ) );
     }
 
@@ -513,13 +520,15 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
         m_lock.unlock ( );
     }
 
+    mutable play_area_lock m_agent_move_lock;
+
     const float m_hori, m_vert, m_circle_diameter, m_circle_radius;
 
     size_type m_last;
 
-    public:
-
     bool agent_is_making_move;
+
+    public:
 
     private:
 
@@ -532,7 +541,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
     mutable play_area_lock m_lock;
     stlab::future<void> m_move_future;
     sf::VertexArray m_vertices;
-    sf::Quad * m_quads;
+    sf::Quad * m_quads, * m_from_quad;
 };
 
 
@@ -569,7 +578,7 @@ template<typename State>
 void PlayArea<State>::init ( const sf::Vector2f & center_ ) noexcept {
     // Construct vertices.
     m_vertices.setPrimitiveType ( sf::Quads );
-    m_vertices.resize ( 4 * board::size ( ) );
+    m_vertices.resize ( 4 * ( board::size ( ) + 1 ) );
     m_quads = reinterpret_cast<sf::Quad*> ( & m_vertices [ 0 ] );
     size_type i = 0;
     sf::Vector2f p = center_ - sf::Vector2f { m_circle_radius, m_circle_radius };
@@ -605,5 +614,6 @@ void PlayArea<State>::init ( const sf::Vector2f & center_ ) noexcept {
     auto quads_less = [ ] ( const auto & a, const auto & b ) {
         return ( a.v0.position.y < b.v0.position.y ) or ( a.v0.position.y == b.v0.position.y and a.v0.position.x < b.v0.position.x );
     };
-    std::sort ( m_quads, m_quads + ( m_vertices.getVertexCount ( ) / 4 ), quads_less );
+    std::sort ( m_quads, m_quads + ( m_vertices.getVertexCount ( ) / 4 ) - 1, quads_less );
+    m_from_quad = m_quads + ( m_vertices.getVertexCount ( ) / 4 ) - 1;
 }
