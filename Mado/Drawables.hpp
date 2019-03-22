@@ -458,10 +458,10 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
             const size_type f = board::index ( f_.q, f_.r ), t = board::index ( t_.q, t_.r );
             if ( display_type ( d_ ) == what_type ( f ) and DisplayValue::active_vacant == what_value ( t ) ) {
                 m_lock.lock ( );
-                * m_from_quad = m_quads [ f ];
+                //* m_from_quad = m_quads [ f ];
                 setTexture ( f, DisplayValue::in_active_vacant );
                 setTexture ( t, d_ );
-                * m_to_quad = m_quads [ t ];
+                //* m_to_quad = m_quads [ t ];
                 m_lock.unlock ( );
                 m_last = t;
                 m_state.move_hash_winner ( state_move { f, t } );
