@@ -458,8 +458,10 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
             const size_type f = board::index ( f_.q, f_.r ), t = board::index ( t_.q, t_.r );
             if ( display_type ( d_ ) == what_type ( f ) and DisplayValue::active_vacant == what_value ( t ) ) {
                 m_lock.lock ( );
+                * m_from_quad = m_quads [ f ];
                 setTexture ( f, DisplayValue::in_active_vacant );
                 setTexture ( t, d_ );
+                * m_to_quad = m_quads [ t ];
                 m_lock.unlock ( );
                 m_last = t;
                 m_state.move_hash_winner ( state_move { f, t } );
@@ -541,7 +543,14 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
     mutable play_area_lock m_lock;
     stlab::future<void> m_move_future;
     sf::VertexArray m_vertices;
-    sf::Quad * m_quads, * m_from_quad;
+    sf::Quad * m_quads, * m_to_quad, * m_from_quad;
+
+    void resetToFromQuads ( ) noexcept {
+        std::memset ( m_to_quad, 0, 2 * sizeof ( sf::Quad ) );
+    }
+    void resetFromQuad ( ) noexcept {
+        std::memset ( m_from_quad, 0, sizeof ( sf::Quad ) );
+    }
 };
 
 
@@ -578,8 +587,8 @@ template<typename State>
 void PlayArea<State>::init ( const sf::Vector2f & center_ ) noexcept {
     // Construct vertices.
     m_vertices.setPrimitiveType ( sf::Quads );
-    m_vertices.resize ( 4 * ( board::size ( ) + 1 ) );
-    m_quads = reinterpret_cast<sf::Quad*> ( & m_vertices [ 0 ] );
+    m_vertices.resize ( 4 * ( board::size ( ) + 2 ) );
+    m_quads = reinterpret_cast< sf::Quad* > ( &m_vertices [ 0 ] );
     size_type i = 0;
     sf::Vector2f p = center_ - sf::Vector2f { m_circle_radius, m_circle_radius };
     m_quads [ i ] = makeVertex ( p );
@@ -610,10 +619,11 @@ void PlayArea<State>::init ( const sf::Vector2f & center_ ) noexcept {
             m_quads [ ++i ] = makeVertex ( p );
         }
     }
+    m_to_quad = m_quads + ( m_vertices.getVertexCount ( ) / 4 ) - 2;
+    m_from_quad = m_to_quad + 1;
     // Sort m_quads lambda.
     auto quads_less = [ ] ( const auto & a, const auto & b ) {
         return ( a.v0.position.y < b.v0.position.y ) or ( a.v0.position.y == b.v0.position.y and a.v0.position.x < b.v0.position.x );
     };
-    std::sort ( m_quads, m_quads + ( m_vertices.getVertexCount ( ) / 4 ) - 1, quads_less );
-    m_from_quad = m_quads + ( m_vertices.getVertexCount ( ) / 4 ) - 1;
+    std::sort ( m_quads, m_to_quad, quads_less );
 }
