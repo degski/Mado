@@ -366,9 +366,8 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
     private:
 
     void setTexture ( size_type v_, size_type i_ ) noexcept {
-        v_ *= 4;
+        sf::Quad & quad = m_quads [ v_ ];
         const float left { i_ * m_circle_diameter }, right { left + m_circle_diameter };
-        sf::Quad & quad = *reinterpret_cast<sf::Quad*> ( & m_vertices [ v_ ] );
         quad.v0.texCoords.x = left;
         quad.v1.texCoords.x = right;
         quad.v2.texCoords.x = right;
@@ -528,10 +527,12 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
 
     state_reference m_state;
     clock_reference m_clock;
+    sf::CallbackAnimator m_animator;
 
     mutable play_area_lock m_lock;
     stlab::future<void> m_move_future;
     sf::VertexArray m_vertices;
+    sf::Quad * m_quads;
 };
 
 
@@ -569,40 +570,40 @@ void PlayArea<State>::init ( const sf::Vector2f & center_ ) noexcept {
     // Construct vertices.
     m_vertices.setPrimitiveType ( sf::Quads );
     m_vertices.resize ( 4 * board::size ( ) );
-    sf::Quad * quads = reinterpret_cast<sf::Quad*> ( & m_vertices [ 0 ] );
+    m_quads = reinterpret_cast<sf::Quad*> ( & m_vertices [ 0 ] );
     size_type i = 0;
     sf::Vector2f p = center_ - sf::Vector2f { m_circle_radius, m_circle_radius };
-    quads [ i ] = makeVertex ( p );
+    m_quads [ i ] = makeVertex ( p );
     for ( size_type ring = 1; ring <= board::radius ( ); ++ring ) {
         p.x += m_hori; // Move east.
         for ( size_type j = 0; j < ring; ++j ) { // nw.
             p.x -= m_hori / 2; p.y -= m_vert;
-            quads [ ++i ] = makeVertex ( p );
+            m_quads [ ++i ] = makeVertex ( p );
         }
         for ( size_type j = 0; j < ring; ++j ) { // w.
             p.x -= m_hori;
-            quads [ ++i ] = makeVertex ( p );
+            m_quads [ ++i ] = makeVertex ( p );
         }
         for ( size_type j = 0; j < ring; ++j ) { // sw.
             p.x -= m_hori / 2; p.y += m_vert;
-            quads [ ++i ] = makeVertex ( p );
+            m_quads [ ++i ] = makeVertex ( p );
         }
         for ( size_type j = 0; j < ring; ++j ) { // se.
             p.x += m_hori / 2; p.y += m_vert;
-            quads [ ++i ] = makeVertex ( p );
+            m_quads [ ++i ] = makeVertex ( p );
         }
         for ( size_type j = 0; j < ring; ++j ) { // e.
             p.x += m_hori;
-            quads [ ++i ] = makeVertex ( p );
+            m_quads [ ++i ] = makeVertex ( p );
         }
         for ( size_type j = 0; j < ring; ++j ) { // ne.
             p.x += m_hori / 2; p.y -= m_vert;
-            quads [ ++i ] = makeVertex ( p );
+            m_quads [ ++i ] = makeVertex ( p );
         }
     }
-    // Sort quads lambda.
+    // Sort m_quads lambda.
     auto quads_less = [ ] ( const auto & a, const auto & b ) {
         return ( a.v0.position.y < b.v0.position.y ) or ( a.v0.position.y == b.v0.position.y and a.v0.position.x < b.v0.position.x );
     };
-    std::sort ( quads, quads + m_vertices.getVertexCount ( ) / 4, quads_less );
+    std::sort ( m_quads, m_quads + ( m_vertices.getVertexCount ( ) / 4 ), quads_less );
 }
