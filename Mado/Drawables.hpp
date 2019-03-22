@@ -364,7 +364,8 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
     PlayArea ( State & state_, GameClock & clock_, const sf::Vector2f & center_, float hori_, float vert_, float circle_diameter_ );
 
     ~PlayArea ( ) {
-        // Wait for the agent to return it's move.
+        // Wait for the agent to return it's move. This
+        // is the only time this lock might spin.
         m_agent_move_lock.lock ( );
     }
 
@@ -372,11 +373,10 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
 
     void setTexture ( size_type v_, size_type i_ ) noexcept {
         sf::Quad & quad = m_quads [ v_ ];
-        const float left { i_ * m_circle_diameter }, right { left + m_circle_diameter };
-        quad.v0.texCoords.x = left;
-        quad.v1.texCoords.x = right;
-        quad.v2.texCoords.x = right;
-        quad.v3.texCoords.x = left;
+        quad.v0.texCoords.x = i_ * m_circle_diameter;
+        quad.v1.texCoords.x = quad.v0.texCoords.x + m_circle_diameter;
+        quad.v2.texCoords.x = quad.v1.texCoords.x;
+        quad.v3.texCoords.x = quad.v0.texCoords.x;
     }
 
     [[ nodiscard ]] DisplayType display_type ( DisplayValue d_ ) const noexcept {
