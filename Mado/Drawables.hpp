@@ -424,7 +424,8 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
             m_clock.update_next ( );
             agent_is_making_move = false;
             m_agent_move_lock.unlock ( );
-        } ) );
+        } )
+        );
     }
 
     [[ nodiscard ]] bool equal ( const hex & i_, const DisplayValue d_ ) noexcept {
