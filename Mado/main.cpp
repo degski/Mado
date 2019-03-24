@@ -189,27 +189,6 @@ int main ( ) {
 
 #include "Hexcontainer.hpp"
 
-#include <cstdio>
-#include <thread>
-
-#include <stlab/concurrency/default_executor.hpp>
-#include <stlab/concurrency/future.hpp>
-
-#include <plf/plf_nanotimer.h>
-
-int main ( ) {
-
-    auto x = stlab::async ( stlab::default_executor, [ ] { return 42; } );
-
-    auto c1 = x.then ( [ ] ( int x ) { std::this_thread::sleep_for ( std::chrono::milliseconds ( 2'000 ) ); std::printf ( "Split A %d \n", x ); } );
-    auto c2 = x.then ( [ ] ( int x ) { std::this_thread::sleep_for ( std::chrono::milliseconds ( 20 ) ); std::printf ( "Split B %d \n", x ); } );
-
-    std::this_thread::sleep_for ( std::chrono::milliseconds ( 4'000 ) );
-
-    //while ( !c1.get_try ( ) ) { std::this_thread::sleep_for ( std::chrono::milliseconds ( 1 ) ); }
-    //while ( !c2.get_try ( ) ) { std::this_thread::sleep_for ( std::chrono::milliseconds ( 1 ) ); }
-}
-
 using board_type = HexContainer<int, 2, true>;
 
 

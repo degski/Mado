@@ -406,7 +406,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
     void make_agent_move ( const DisplayValue d_ = DisplayValue::in_active_green ) noexcept {
         m_agent_move_lock.lock ( );
         agent_is_making_move = true;
-        m_move_future = std::move ( stlab::async ( stlab::default_executor, [ & ] noexcept { return m_state.get_random_move ( ); } )
+        m_move_future = std::move ( stlab::async ( stlab::default_executor, [ & ] ( ) noexcept { return m_state.get_random_move ( ); } )
             .then ( [ this, d_ ] ( state_move m ) noexcept {
             if ( m.is_slide ( ) ) {
                 m_lock.lock ( );
