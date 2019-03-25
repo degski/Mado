@@ -444,6 +444,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
             m_last = i;
             return true;
         }
+        m_last = not_set;
         return false;
     }
     void unselect ( ) noexcept {
