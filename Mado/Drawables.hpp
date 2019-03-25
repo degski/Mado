@@ -146,7 +146,7 @@ class Taskbar : public sf::Drawable {
         };
     }
 
-    void setTexture ( const State state_ ) noexcept {
+    void setQuadTexture ( const State state_ ) noexcept {
         if ( state_ != state ( ) ) {
             sf::Quad & quads = *reinterpret_cast< sf::Quad* > ( &m_vertices [ 0 ] );
             const float left { state_ * width }, right { left + width };
@@ -180,11 +180,11 @@ class Taskbar : public sf::Drawable {
     }
 
     void update ( const sf::Vector2f & p_ ) noexcept {
-        setTexture ( m_minimize_bounds.contains ( p_ ) ? State::minimize : m_close_bounds.contains ( p_ ) ? State::close : State::in_active );
+        setQuadTexture ( m_minimize_bounds.contains ( p_ ) ? State::minimize : m_close_bounds.contains ( p_ ) ? State::close : State::in_active );
     }
 
     void reset ( ) noexcept {
-        setTexture ( State::in_active );
+        setQuadTexture ( State::in_active );
     }
 
     private:
@@ -374,11 +374,24 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
 
     private:
 
-    void setTexture ( sf::Quad & quad_, size_type i_ ) noexcept {
+    void setQuadTexture ( sf::Quad & quad_, size_type i_ ) noexcept {
         quad_.v0.texCoords.x = i_ * m_circle_diameter;
         quad_.v1.texCoords.x = quad_.v0.texCoords.x + m_circle_diameter;
         quad_.v2.texCoords.x = quad_.v1.texCoords.x;
         quad_.v3.texCoords.x = quad_.v0.texCoords.x;
+    }
+    void setQuadTexture ( sf::Quad * quad_, size_type i_ ) noexcept {
+        setQuadTexture ( * quad_, i_ );
+    }
+
+    void setQuadAlpha ( sf::Quad & quad_, const float alpha_ ) noexcept {
+        quad_.v0.color.a = static_cast< sf::Uint8 > ( alpha_ );
+        quad_.v1.color.a = static_cast< sf::Uint8 > ( alpha_ );
+        quad_.v2.color.a = static_cast< sf::Uint8 > ( alpha_ );
+        quad_.v3.color.a = static_cast< sf::Uint8 > ( alpha_ );
+    }
+    void setQuadAlpha ( sf::Quad * quad_, const float alpha_ ) noexcept {
+        setQuadAlpha ( * quad_, alpha_ );
     }
 
     [[ nodiscard ]] DisplayType display_type ( DisplayValue d_ ) const noexcept {
@@ -412,13 +425,13 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
             .then ( [ this, d_ ] ( state_move m ) noexcept {
             if ( m.is_slide ( ) ) {
                 m_lock.lock ( );
-                setTexture ( m_quads [ m.from ], DisplayValue::in_active_vacant );
-                setTexture ( m_quads [ m.to ], d_ );
+                setQuadTexture ( m_quads [ m.from ], DisplayValue::in_active_vacant );
+                setQuadTexture ( m_quads [ m.to ], d_ );
                 m_lock.unlock ( );
             }
             else {
                 m_lock.lock ( );
-                setTexture ( m_quads [ m.to ], d_ );
+                setQuadTexture ( m_quads [ m.to ], d_ );
                 m_lock.unlock ( );
             }
             m_state.move_hash_winner ( m );
@@ -434,7 +447,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
         const size_type i = board::index ( i_.q, i_.r ), w = what_type ( i );
         if ( display_type ( d_ ) == w ) {
             m_lock.lock ( );
-            setTexture ( m_quads [ i ], w + 6 );
+            setQuadTexture ( m_quads [ i ], w + 6 );
             m_lock.unlock ( );
             m_last = i;
             return true;
@@ -445,7 +458,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
         const size_type t = board::index ( t_.q, t_.r );
         if ( DisplayType::vacant == what_type ( t ) ) {
             m_lock.lock ( );
-            setTexture ( m_quads [ t ], d_ );
+            setQuadTexture ( m_quads [ t ], d_ );
             m_lock.unlock ( );
             m_last = t;
             m_state.move_hash_winner ( state_move { t } );
@@ -456,25 +469,20 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
         }
         return false;
     }
-    void setQuadAlpha ( sf::Quad * quad_, const float alpha_ ) noexcept {
-        quad_->v0.color.a = static_cast<sf::Uint8> ( alpha_ );
-        quad_->v1.color.a = static_cast<sf::Uint8> ( alpha_ );
-        quad_->v2.color.a = static_cast<sf::Uint8> ( alpha_ );
-        quad_->v3.color.a = static_cast<sf::Uint8> ( alpha_ );
-    }
+
     [[ nodiscard ]] bool move ( const hex & f_, const hex & t_, const DisplayValue d_ ) noexcept {
         if ( are_neighbors ( f_, t_ ) ) {
             const size_type f = board::index ( f_.q, f_.r ), t = board::index ( t_.q, t_.r );
             if ( display_type ( d_ ) == what_type ( f ) and DisplayValue::active_vacant == what_value ( t ) ) {
                 m_lock.lock ( );
-                * m_from_quad = m_quads [ f ];
-                setTexture ( * m_from_quad, what_type ( f ) );
-                m_animator.emplace ( LAMBDA_EASING_START_END_DURATION ( [ & ] ( const float v ) noexcept { setQuadAlpha ( m_from_quad, v ); }, sf::easing::exponentialInEasing, 255.0f, 0.0f, 500 ) );
-                m_animator.emplace ( LAMBDA_DELAY ( [ & ] ( const float ) noexcept { std::memset ( m_from_quad, 0, sizeof ( sf::Quad ) ); }, 500 ) );
-                setTexture ( m_quads [ f ], DisplayValue::in_active_vacant );
-                setTexture ( m_quads [ t ], d_ );
+                // * m_from_quad = m_quads [ f ];
+                // setQuadTexture ( * m_from_quad, what_type ( f ) );
+                // m_animator.emplace ( LAMBDA_EASING_START_END_DURATION ( [ & ] ( const float v ) noexcept { setQuadAlpha ( m_from_quad, v ); }, sf::easing::exponentialInEasing, 255.0f, 0.0f, 500 ) );
+                // m_animator.emplace ( LAMBDA_DELAY ( [ & ] ( const float ) noexcept { std::memset ( m_from_quad, 0, sizeof ( sf::Quad ) ); }, 500 ) );
+                setQuadTexture ( m_quads [ f ], DisplayValue::in_active_vacant );
+                setQuadTexture ( m_quads [ t ], d_ );
                 // * m_to_quad = m_quads [ t ];
-                // setTexture ( * m_to_quad, d_ );
+                // setQuadTexture ( * m_to_quad, d_ );
                 // m_animator.emplace ( LAMBDA_EASING_START_END_DURATION ( [ & ] ( const float v ) noexcept { setQuadAlpha ( m_to_quad, v ); }, sf::easing::exponentialInEasing, 0.0f, 255.0f, 1500 ) );
                 // m_animator.emplace ( LAMBDA_DELAY ( ( [ &, t ] ( const float ) noexcept {
                 //    m_quads [ t ] = * m_to_quad;
@@ -491,7 +499,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
         }
         const size_type f = board::index ( f_.q, f_.r );
         m_lock.lock ( );
-        setTexture ( m_quads [ f ], what_type ( f ) );
+        setQuadTexture ( m_quads [ f ], what_type ( f ) );
         m_lock.unlock ( );
         return false;
     }
@@ -502,7 +510,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
             reset ( );
             m_last = i;
             m_lock.lock ( );
-            setTexture ( m_quads [ i ], w + 3 );
+            setQuadTexture ( m_quads [ i ], w + 3 );
             m_lock.unlock ( );
         }
     }
@@ -510,7 +518,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
     void unselect ( ) noexcept {
         if ( not_set != m_last ) {
             m_lock.lock ( );
-            setTexture ( m_quads [ m_last ], what_type ( m_last ) );
+            setQuadTexture ( m_quads [ m_last ], what_type ( m_last ) );
             m_lock.unlock ( );
             m_last = not_set;
         }
@@ -521,7 +529,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
             const size_type l = what ( m_last );
             if ( l - 2 < ( 6 - 2 ) ) { // 2 < l < 6
                 m_lock.lock ( );
-                setTexture ( m_quads [ m_last ], l % 3 );
+                setQuadTexture ( m_quads [ m_last ], l % 3 );
                 m_lock.unlock ( );
                 m_last = not_set;
             }
@@ -532,7 +540,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
         // Apply the entity's transform -- combine it with the one that was passed by the caller.
         // states.transform *= getTransform ( ); // getTransform() is defined by sf::Transformable.
         // Apply the texture.
-        m_animator.run ( );
+        // m_animator.run ( );
         m_lock.lock ( );
         states.texture = & m_texture;
         // You may also override states.shader or states.blendMode if you want.
