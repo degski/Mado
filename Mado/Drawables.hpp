@@ -66,11 +66,11 @@ class spinlock_mutex {
 
 
 namespace sf {
-using Boxf = Box<float>;
 
 struct Quad {
     Vertex v0, v1, v2, v3;
 };
+
 }
 
 
@@ -148,12 +148,9 @@ class Taskbar : public sf::Drawable {
 
     void setQuadTexture ( const State state_ ) noexcept {
         if ( state_ != state ( ) ) {
-            sf::Quad & quads = *reinterpret_cast< sf::Quad* > ( &m_vertices [ 0 ] );
-            const float left { state_ * width }, right { left + width };
-            quads.v0.texCoords.x = left;
-            quads.v1.texCoords.x = right;
-            quads.v2.texCoords.x = right;
-            quads.v3.texCoords.x = left;
+            sf::Quad & quads = *reinterpret_cast<sf::Quad*> ( & m_vertices [ 0 ] );
+            quads.v3.texCoords.x = quads.v0.texCoords.x = state_ * width;
+            quads.v2.texCoords.x = quads.v1.texCoords.x = quads.v0.texCoords.x + width;
         }
     }
 
@@ -166,17 +163,17 @@ class Taskbar : public sf::Drawable {
         m_texture.setSmooth ( true );
         m_vertices.setPrimitiveType ( sf::Quads );
         m_vertices.resize ( 4 );
-        sf::Quad * quads = reinterpret_cast< sf::Quad* > ( &m_vertices [ 0 ] );
+        sf::Quad * quads = reinterpret_cast<sf::Quad*> ( & m_vertices [ 0 ] );
         quads [ 0 ] = makeVertex ( sf::Vector2f { window_width_ - width, 0.0f } );
     }
 
     virtual void draw ( sf::RenderTarget & target, sf::RenderStates states ) const {
-        states.texture = &m_texture;
+        states.texture = & m_texture;
         target.draw ( m_vertices, states );
     }
 
     [[ nodiscard ]] State state ( ) const noexcept {
-        return static_cast<State> ( static_cast< int > ( m_vertices [ 0 ].texCoords.x ) / static_cast< int > ( width ) );
+        return static_cast<State> ( static_cast<int> ( m_vertices [ 0 ].texCoords.x ) / static_cast<int> ( width ) );
     }
 
     void update ( const sf::Vector2f & p_ ) noexcept {
@@ -204,9 +201,8 @@ struct DelayTimer {
     }
 
     void restart ( const sf::HrClock::time_point now_ ) {
-        if ( not ( expired = m_delay == std::chrono::milliseconds { 0 } ) ) {
+        if ( not ( expired = m_delay == std::chrono::milliseconds { 0 } ) )
             m_end_time = now_ + m_delay;
-        }
     }
 
     [[ nodiscard ]] bool update ( const sf::HrClock::time_point now_ ) noexcept {
@@ -263,16 +259,14 @@ struct GameClock : public sf::Drawable, public sf::Transformable {
                 m_start = now;
             }
             else {
-                if ( m_delay_timer.update ( now ) ) {
+                if ( m_delay_timer.update ( now ) )
                     // Just expired, start timing.
                     m_start = now;
-                }
-                else {
+                else
                     return;
-                }
             }
             char buf [ 6 ] = { 0 };
-            int s = static_cast< int > ( m_time [ m_player_to_move ].count ( ) );
+            int s = static_cast<int> ( m_time [ m_player_to_move ].count ( ) );
             if ( s < 0 )
                 s = 0;
             std::snprintf ( buf, 6, "%0.2i:%0.2i", s / 60, s % 60 );
@@ -300,9 +294,8 @@ struct GameClock : public sf::Drawable, public sf::Transformable {
 
     [[ nodiscard ]] bool isClicked ( const sf::Vector2f & mouse_position_ ) noexcept {
         const bool is_clicked = m_bounds [ m_player_to_move ].contains ( mouse_position_ );
-        if ( is_clicked ) {
+        if ( is_clicked )
             update_next ( );
-        }
         return is_clicked;
     }
 
@@ -392,6 +385,8 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
     void setQuadAlpha ( sf::Quad * quad_, const float alpha_ ) noexcept {
         setQuadAlpha ( * quad_, alpha_ );
     }
+
+
 
     [[ nodiscard ]] DisplayType display_type ( DisplayValue d_ ) const noexcept {
         return static_cast<DisplayType> ( static_cast<int> ( d_ ) % 3 );

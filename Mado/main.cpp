@@ -202,7 +202,7 @@ int main7686787 ( ) {
 
     for ( const auto n : board_type::neighbors ) {
         for ( const auto v : n ) {
-            std::cout << static_cast< int > ( v ) << sp;
+            std::cout << static_cast<int> ( v ) << sp;
         }
         std::cout << nl;
     }
