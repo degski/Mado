@@ -373,7 +373,7 @@ void App::mouseEvents ( const sf::Event & event_ ) {
                         }
                     }
                 }
-                m_play_area.reset ( );
+                m_play_area.make_inactive ( );
             }
             else {
                 // In taskbar area.
@@ -384,7 +384,7 @@ void App::mouseEvents ( const sf::Event & event_ ) {
                     }
                     else if ( Taskbar::State::minimize == m_taskbar.state ( ) ) {
                         m_taskbar.reset ( );
-                        m_play_area.reset ( );
+                        m_play_area.make_inactive ( );
                         m_minimize = true;
                         m_human_move.reset ( );
                     }
@@ -396,7 +396,7 @@ void App::mouseEvents ( const sf::Event & event_ ) {
     else {
         // Outside window.
         m_taskbar.reset ( );
-        m_play_area.reset ( );
+        m_play_area.make_inactive ( );
         m_human_move.reset ( );
     }
 }

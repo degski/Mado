@@ -451,9 +451,12 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
         }
         return false;
     }
+    void unselect ( ) noexcept {
+        m_last = not_set;
+    }
+
     [[ nodiscard ]] bool place ( const hex & t_, const DisplayValue d_ ) noexcept {
-        const size_type t = board::index ( t_.q, t_.r );
-        if ( DisplayType::vacant == what_type ( t ) ) {
+        if ( const size_type t = board::index ( t_.q, t_.r ); DisplayType::vacant == what_type ( t ) ) {
             m_lock.lock ( );
             setQuadTexture ( m_quads [ t ], d_ );
             m_lock.unlock ( );
@@ -469,22 +472,10 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
 
     [[ nodiscard ]] bool move ( const hex & f_, const hex & t_, const DisplayValue d_ ) noexcept {
         if ( are_neighbors ( f_, t_ ) ) {
-            const size_type f = board::index ( f_.q, f_.r ), t = board::index ( t_.q, t_.r );
-            if ( display_type ( d_ ) == what_type ( f ) and DisplayValue::active_vacant == what_value ( t ) ) {
+            if ( const size_type f = board::index ( f_.q, f_.r ), t = board::index ( t_.q, t_.r ); display_type ( d_ ) == what_type ( f ) and DisplayValue::active_vacant == what_value ( t ) ) {
                 m_lock.lock ( );
-                // * m_from_quad = m_quads [ f ];
-                // setQuadTexture ( * m_from_quad, what_type ( f ) );
-                // m_animator.emplace ( LAMBDA_EASING_START_END_DURATION ( [ & ] ( const float v ) noexcept { setQuadAlpha ( m_from_quad, v ); }, sf::easing::exponentialInEasing, 255.0f, 0.0f, 500 ) );
-                // m_animator.emplace ( LAMBDA_DELAY ( [ & ] ( const float ) noexcept { std::memset ( m_from_quad, 0, sizeof ( sf::Quad ) ); }, 500 ) );
                 setQuadTexture ( m_quads [ f ], DisplayValue::in_active_vacant );
                 setQuadTexture ( m_quads [ t ], d_ );
-                // * m_to_quad = m_quads [ t ];
-                // setQuadTexture ( * m_to_quad, d_ );
-                // m_animator.emplace ( LAMBDA_EASING_START_END_DURATION ( [ & ] ( const float v ) noexcept { setQuadAlpha ( m_to_quad, v ); }, sf::easing::exponentialInEasing, 0.0f, 255.0f, 1500 ) );
-                // m_animator.emplace ( LAMBDA_DELAY ( ( [ &, t ] ( const float ) noexcept {
-                //    m_quads [ t ] = * m_to_quad;
-                //    std::memset ( m_to_quad, 0, sizeof ( sf::Quad ) );
-                // } ), 1500 ) );
                 m_lock.unlock ( );
                 m_last = t;
                 m_state.move_hash_winner ( state_move { f, t } );
@@ -502,27 +493,20 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
     }
 
     void make_active ( const hex & i_ ) noexcept {
-        const size_type i = board::index ( i_.q, i_.r ), w = what ( i );
-        if ( w < 3 ) {
-            reset ( );
-            m_last = i;
+        if ( const size_type i = board::index ( i_.q, i_.r ), w = what ( i ); w < 3 ) {
             m_lock.lock ( );
+            if ( not_set != m_last )
+                setQuadTexture ( m_quads [ m_last ], what_type ( m_last ) );
             setQuadTexture ( m_quads [ i ], w + 3 );
             m_lock.unlock ( );
+            m_last = i;
         }
     }
 
-    void unselect ( ) noexcept {
+    void make_inactive ( ) noexcept {
         if ( not_set != m_last ) {
-            m_last = not_set;
-        }
-    }
-
-    void reset ( ) noexcept {
-        if ( not_set != m_last ) {
-            const size_type l = what ( m_last );
             m_lock.lock ( );
-            setQuadTexture ( m_quads [ m_last ], l % 3 );
+            setQuadTexture ( m_quads [ m_last ], what_type ( m_last ) );
             m_lock.unlock ( );
             m_last = not_set;
         }
