@@ -51,7 +51,7 @@
 template<typename GameState, typename Position>
 struct NextMove {
 
-    enum State : int { none = 0, place, move };
+    enum State : int { select = 0, place, move };
 
     using position = Position;
 
@@ -73,7 +73,7 @@ struct NextMove {
     }
     void to ( const position & t_ ) noexcept {
         m_to = t_;
-        m_state = State::none;
+        m_state = State::select;
         sf::sleepForMilliseconds ( 150 );
     }
 
@@ -87,7 +87,7 @@ struct NextMove {
     private:
 
     position m_from, m_to;
-    State m_state = State::none;
+    State m_state = State::select;
 };
 
 
@@ -328,8 +328,8 @@ void App::mouseEvents ( const sf::Event & event_ ) {
                 // Selected a cicle.
                 bool no_reset;
                 switch ( m_human_move.state ( ) ) {
-                case NextMove::State::none:
-                    if ( ( no_reset = m_play_area.equal ( hex_position, PlayArea::DisplayValue::active_red ) ) )
+                case NextMove::State::select:
+                    if ( ( no_reset = m_play_area.select ( hex_position, PlayArea::DisplayValue::active_red ) ) )
                         m_human_move.from ( hex_position );
                     break;
                 case NextMove::State::place:

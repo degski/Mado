@@ -352,7 +352,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
     static constexpr int not_set = -1;
 
     enum DisplayType : int { vacant = 0, red, green };
-    enum DisplayValue : int { in_active_vacant = 0, in_active_red, in_active_green, active_vacant, active_red, active_green, selected_vacant, selected_red, selected_green };
+    enum DisplayValue : int { in_active_vacant = 0, in_active_red, in_active_green, active_vacant, active_red, active_green };
 
     // sf::VertexArray m_vertices; is an array of quads. The x coordinate of the texCoords of the
     // first sf::Vertex of the sf::Quad is a multiple of the DisplayValue, as per above, i.e. the
@@ -443,12 +443,9 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
         );
     }
 
-    [[ nodiscard ]] bool equal ( const hex & i_, const DisplayValue d_ ) noexcept {
+    [[ nodiscard ]] bool select ( const hex & i_, const DisplayValue d_ ) noexcept {
         const size_type i = board::index ( i_.q, i_.r ), w = what_type ( i );
         if ( display_type ( d_ ) == w ) {
-            m_lock.lock ( );
-            setQuadTexture ( m_quads [ i ], w + 6 );
-            m_lock.unlock ( );
             m_last = i;
             return true;
         }
@@ -517,9 +514,6 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
 
     void unselect ( ) noexcept {
         if ( not_set != m_last ) {
-            m_lock.lock ( );
-            setQuadTexture ( m_quads [ m_last ], what_type ( m_last ) );
-            m_lock.unlock ( );
             m_last = not_set;
         }
     }
@@ -527,12 +521,10 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
     void reset ( ) noexcept {
         if ( not_set != m_last ) {
             const size_type l = what ( m_last );
-            if ( l - 2 < ( 6 - 2 ) ) { // 2 < l < 6
-                m_lock.lock ( );
-                setQuadTexture ( m_quads [ m_last ], l % 3 );
-                m_lock.unlock ( );
-                m_last = not_set;
-            }
+            m_lock.lock ( );
+            setQuadTexture ( m_quads [ m_last ], l % 3 );
+            m_lock.unlock ( );
+            m_last = not_set;
         }
     }
 
