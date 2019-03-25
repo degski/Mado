@@ -389,10 +389,10 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
     }
 
     void setQuadAlpha ( sf::Quad & quad_, const float alpha_ ) noexcept {
-        quad_.v0.color.a = static_cast< sf::Uint8 > ( alpha_ );
-        quad_.v1.color.a = static_cast< sf::Uint8 > ( alpha_ );
-        quad_.v2.color.a = static_cast< sf::Uint8 > ( alpha_ );
-        quad_.v3.color.a = static_cast< sf::Uint8 > ( alpha_ );
+        quad_.v0.color.a = static_cast<sf::Uint8> ( alpha_ );
+        quad_.v1.color.a = static_cast<sf::Uint8> ( alpha_ );
+        quad_.v2.color.a = static_cast<sf::Uint8> ( alpha_ );
+        quad_.v3.color.a = static_cast<sf::Uint8> ( alpha_ );
     }
     void setQuadAlpha ( sf::Quad * quad_, const float alpha_ ) noexcept {
         setQuadAlpha ( * quad_, alpha_ );
@@ -450,8 +450,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
     }
 
     [[ nodiscard ]] bool select ( const hex & i_, const DisplayValue d_ ) noexcept {
-        const size_type i = board::index ( i_.q, i_.r ), w = what_type ( i );
-        if ( display_type ( d_ ) == w ) {
+        if ( const size_type i = board::index ( i_.q, i_.r ); display_type ( d_ ) == what_type ( i ) ) {
             m_last = i;
             return true;
         }
