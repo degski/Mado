@@ -352,7 +352,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
     static constexpr int not_set = -1;
 
     enum DisplayType : int { vacant = 0, red, green };
-    enum DisplayValue : int { in_active_vacant = 0, in_active_red, in_active_green, active_vacant, active_red, active_green };
+    enum DisplayValue : int { inactive_vacant = 0, inactive_red, inactive_green, active_vacant, active_red, active_green };
 
     // sf::VertexArray m_vertices; is an array of quads. The x coordinate of the texCoords of the
     // first sf::Vertex of the sf::Quad is a multiple of the DisplayValue, as per above, i.e. the
@@ -418,14 +418,14 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
 
     public:
 
-    void make_agent_move ( const DisplayValue d_ = DisplayValue::in_active_green ) noexcept {
+    void make_agent_move ( const DisplayValue d_ = DisplayValue::inactive_green ) noexcept {
         m_agent_move_lock.lock ( );
         agent_is_making_move = true;
         m_move_future = std::move ( stlab::async ( stlab::default_executor, [ & ] ( ) noexcept { return m_state.get_random_move ( ); } )
             .then ( [ this, d_ ] ( state_move m ) noexcept {
             if ( m.is_slide ( ) ) {
                 m_lock.lock ( );
-                setQuadTexture ( m_quads [ m.from ], DisplayValue::in_active_vacant );
+                setQuadTexture ( m_quads [ m.from ], DisplayValue::inactive_vacant );
                 setQuadTexture ( m_quads [ m.to ], d_ );
                 m_lock.unlock ( );
             }
@@ -474,7 +474,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
         if ( are_neighbors ( f_, t_ ) ) {
             if ( const size_type f = board::index ( f_.q, f_.r ), t = board::index ( t_.q, t_.r ); display_type ( d_ ) == what_type ( f ) and DisplayValue::active_vacant == what_value ( t ) ) {
                 m_lock.lock ( );
-                setQuadTexture ( m_quads [ f ], DisplayValue::in_active_vacant );
+                setQuadTexture ( m_quads [ f ], DisplayValue::inactive_vacant );
                 setQuadTexture ( m_quads [ t ], d_ );
                 m_lock.unlock ( );
                 m_last = t;
