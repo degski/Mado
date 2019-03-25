@@ -352,7 +352,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
     static constexpr int not_set = -1;
 
     enum DisplayType : int { vacant = 0, red, green };
-    enum DisplayValue : int { in_active_vacant = 0, in_active_red, in_active_green, active_vacant, active_red, active_green, selected_vacant, selected_red, selected_green };
+    enum DisplayValue : int { inactive_red = 0, inactive_green, active_red, active_green, selected_red, selected_green, inactive_vacant_circle, active_vacant_circle, empty };
 
     // sf::VertexArray m_vertices; is an array of quads. The x coordinate of the texCoords of the
     // first sf::Vertex of the sf::Quad is a multiple of the DisplayValue, as per above, i.e. the
@@ -382,7 +382,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
     }
 
     [[ nodiscard ]] DisplayType display_type ( DisplayValue d_ ) const noexcept {
-        return static_cast<DisplayType> ( static_cast<int> ( d_ ) % 3 );
+        return static_cast<DisplayType> ( static_cast<int> ( d_ ) % 2 );
     }
 
     [[ nodiscard ]] size_type what ( size_type i_ ) const noexcept {
@@ -392,7 +392,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
         return static_cast<DisplayValue> ( what ( i_ ) );
     }
     [[ nodiscard ]] DisplayType what_type ( size_type i_ ) const noexcept {
-        return static_cast<DisplayType> ( what ( i_ ) % 3 );
+        return static_cast<DisplayType> ( what ( i_ ) % 2 );
     }
 
     [[ nodiscard ]] bool are_neighbors ( const hex a_, const hex b_ ) const noexcept {
@@ -405,14 +405,14 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
 
     public:
 
-    void make_agent_move ( const DisplayValue d_ = DisplayValue::in_active_green ) noexcept {
+    void make_agent_move ( const DisplayValue d_ = DisplayValue::inactive_green ) noexcept {
         m_agent_move_lock.lock ( );
         agent_is_making_move = true;
         m_move_future = std::move ( stlab::async ( stlab::default_executor, [ & ] ( ) noexcept { return m_state.get_random_move ( ); } )
             .then ( [ this, d_ ] ( state_move m ) noexcept {
             if ( m.is_slide ( ) ) {
                 m_lock.lock ( );
-                setTexture ( m_quads [ m.from ], DisplayValue::in_active_vacant );
+                setTexture ( m_quads [ m.from ], DisplayValue::inactive_vacant_circle );
                 setTexture ( m_quads [ m.to ], d_ );
                 m_lock.unlock ( );
             }
@@ -434,7 +434,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
         const size_type i = board::index ( i_.q, i_.r ), w = what_type ( i );
         if ( display_type ( d_ ) == w ) {
             m_lock.lock ( );
-            setTexture ( m_quads [ i ], w + 6 );
+            setTexture ( m_quads [ i ], w + 4 );
             m_lock.unlock ( );
             m_last = i;
             return true;
@@ -465,13 +465,12 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
     [[ nodiscard ]] bool move ( const hex & f_, const hex & t_, const DisplayValue d_ ) noexcept {
         if ( are_neighbors ( f_, t_ ) ) {
             const size_type f = board::index ( f_.q, f_.r ), t = board::index ( t_.q, t_.r );
-            if ( display_type ( d_ ) == what_type ( f ) and DisplayValue::active_vacant == what_value ( t ) ) {
+            if ( display_type ( d_ ) == what_type ( f ) and DisplayValue::active_vacant_circle == what_value ( t ) ) {
                 m_lock.lock ( );
-                * m_from_quad = m_quads [ f ];
-                setTexture ( * m_from_quad, what_type ( f ) );
-                m_animator.emplace ( LAMBDA_EASING_START_END_DURATION ( [ & ] ( const float v ) noexcept { setQuadAlpha ( m_from_quad, v ); }, sf::easing::exponentialInEasing, 255.0f, 0.0f, 500 ) );
-                m_animator.emplace ( LAMBDA_DELAY ( [ & ] ( const float ) noexcept { std::memset ( m_from_quad, 0, sizeof ( sf::Quad ) ); }, 500 ) );
-                setTexture ( m_quads [ f ], DisplayValue::in_active_vacant );
+                // * m_from_quad = m_quads [ f ];
+                // setTexture ( * m_from_quad, what_type ( f ) );
+                // m_animator.emplace ( LAMBDA_DELAY ( [ & ] ( const float ) noexcept { std::memset ( m_from_quad, 0, sizeof ( sf::Quad ) ); }, 500 ) );
+                setTexture ( m_quads [ f ], DisplayValue::inactive_vacant_circle );
                 setTexture ( m_quads [ t ], d_ );
                 // * m_to_quad = m_quads [ t ];
                 // setTexture ( * m_to_quad, d_ );
@@ -498,11 +497,18 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
 
     void make_active ( const hex & i_ ) noexcept {
         const size_type i = board::index ( i_.q, i_.r ), w = what ( i );
-        if ( w < 3 ) {
+        if ( w < 2 ) {
             reset ( );
             m_last = i;
             m_lock.lock ( );
-            setTexture ( m_quads [ i ], w + 3 );
+            setTexture ( m_quads [ i ], w + 2 );
+            setTexture ( m_circles [ i ], DisplayValue::active_vacant_circle );
+            m_lock.unlock ( );
+        }
+        else {
+            reset ( );
+            m_lock.lock ( );
+            setTexture ( m_circles [ i ], DisplayValue::active_vacant_circle );
             m_lock.unlock ( );
         }
     }
@@ -519,9 +525,16 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
     void reset ( ) noexcept {
         if ( not_set != m_last ) {
             const size_type l = what ( m_last );
-            if ( l - 2 < ( 6 - 2 ) ) { // 2 < l < 6
+            if ( l - 1 < ( 4 - 1 ) ) { // 2 < l < 6
                 m_lock.lock ( );
-                setTexture ( m_quads [ m_last ], l % 3 );
+                setTexture ( m_quads [ m_last ], l % 2 );
+                setTexture ( m_circles [ m_last ], DisplayValue::inactive_vacant_circle );
+                m_lock.unlock ( );
+                m_last = not_set;
+            }
+            else {
+                m_lock.lock ( );
+                setTexture ( m_circles [ m_last ], DisplayValue::inactive_vacant_circle );
                 m_lock.unlock ( );
                 m_last = not_set;
             }
@@ -532,7 +545,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
         // Apply the entity's transform -- combine it with the one that was passed by the caller.
         // states.transform *= getTransform ( ); // getTransform() is defined by sf::Transformable.
         // Apply the texture.
-        m_animator.run ( );
+        // m_animator.run ( );
         m_lock.lock ( );
         states.texture = & m_texture;
         // You may also override states.shader or states.blendMode if you want.
@@ -562,7 +575,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
     mutable play_area_lock m_lock;
     stlab::future<void> m_move_future;
     sf::VertexArray m_vertices;
-    sf::Quad * m_quads, * m_to_quad, * m_from_quad;
+    sf::Quad * m_circles, * m_quads, * m_to_quad, * m_from_quad;
 
     void resetToFromQuads ( ) noexcept {
         std::memset ( m_to_quad, 0, 2 * sizeof ( sf::Quad ) );
@@ -607,7 +620,7 @@ void PlayArea<State>::init ( const sf::Vector2f & center_ ) noexcept {
     // Construct vertices.
     m_vertices.setPrimitiveType ( sf::Quads );
     m_vertices.resize ( 4 * ( 2 * board::size ( ) + 2 ) );
-    m_quads = reinterpret_cast<sf::Quad*> ( & m_vertices [ 0 ] );
+    m_circles = m_quads = reinterpret_cast<sf::Quad*> ( & m_vertices [ 0 ] );
     size_type i = 0;
     sf::Vector2f p = center_ - sf::Vector2f { m_circle_radius, m_circle_radius };
     m_quads [ i ] = makeVertex ( p );
@@ -646,7 +659,13 @@ void PlayArea<State>::init ( const sf::Vector2f & center_ ) noexcept {
     };
     std::sort ( m_quads, m_to_quad, quads_less );
     std::memcpy ( m_to_quad, m_quads, quad_size * sizeof ( sf::Quad ) );
+    for ( int i = 0; i < quad_size; ++i )
+        setTexture ( m_quads [ i ], DisplayValue::inactive_vacant_circle );
     m_quads = m_to_quad;
+    for ( int i = 0; i < quad_size; ++i )
+        setTexture ( m_quads [ i ], DisplayValue::empty );
     m_to_quad += quad_size;
     m_from_quad = m_to_quad + 1;
 }
+
+
