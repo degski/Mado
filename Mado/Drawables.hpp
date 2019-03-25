@@ -369,6 +369,10 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
     ~PlayArea ( ) {
         // Wait for the agent to return it's move. This
         // is the only time this lock might spin.
+        if ( m_agent_move_lock.try_lock ( ) )
+            return;
+        else
+            agent_is_making_move = false;
         m_agent_move_lock.lock ( );
     }
 
@@ -422,22 +426,24 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
         m_agent_move_lock.lock ( );
         agent_is_making_move = true;
         m_move_future = std::move ( stlab::async ( stlab::default_executor, [ & ] ( ) noexcept { return m_state.get_random_move ( ); } )
-            .then ( [ this, d_ ] ( state_move m ) noexcept {
-            if ( m.is_slide ( ) ) {
-                m_lock.lock ( );
-                setQuadTexture ( m_quads [ m.from ], DisplayValue::inactive_vacant );
-                setQuadTexture ( m_quads [ m.to ], d_ );
-                m_lock.unlock ( );
+            .then ( [ &, d_ ] ( state_move m ) noexcept {
+            if ( agent_is_making_move ) {
+                if ( m.is_slide ( ) ) {
+                    m_lock.lock ( );
+                    setQuadTexture ( m_quads [ m.from ], DisplayValue::inactive_vacant );
+                    setQuadTexture ( m_quads [ m.to ], d_ );
+                    m_lock.unlock ( );
+                }
+                else {
+                    m_lock.lock ( );
+                    setQuadTexture ( m_quads [ m.to ], d_ );
+                    m_lock.unlock ( );
+                }
+                m_state.move_hash_winner ( m );
+                std::cout << m_state << nl;
+                m_clock.update_next ( );
+                agent_is_making_move = false;
             }
-            else {
-                m_lock.lock ( );
-                setQuadTexture ( m_quads [ m.to ], d_ );
-                m_lock.unlock ( );
-            }
-            m_state.move_hash_winner ( m );
-            std::cout << m_state << nl;
-            m_clock.update_next ( );
-            agent_is_making_move = false;
             m_agent_move_lock.unlock ( );
         } )
         );
