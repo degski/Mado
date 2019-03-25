@@ -379,20 +379,15 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
     private:
 
     void setQuadTexture ( sf::Quad & quad_, size_type i_ ) noexcept {
-        quad_.v0.texCoords.x = i_ * m_circle_diameter;
-        quad_.v1.texCoords.x = quad_.v0.texCoords.x + m_circle_diameter;
-        quad_.v2.texCoords.x = quad_.v1.texCoords.x;
-        quad_.v3.texCoords.x = quad_.v0.texCoords.x;
+        quad_.v3.texCoords.x = quad_.v0.texCoords.x = i_ * m_circle_diameter;
+        quad_.v2.texCoords.x = quad_.v1.texCoords.x = quad_.v0.texCoords.x + m_circle_diameter;
     }
     void setQuadTexture ( sf::Quad * quad_, size_type i_ ) noexcept {
         setQuadTexture ( * quad_, i_ );
     }
 
     void setQuadAlpha ( sf::Quad & quad_, const float alpha_ ) noexcept {
-        quad_.v0.color.a = static_cast<sf::Uint8> ( alpha_ );
-        quad_.v1.color.a = static_cast<sf::Uint8> ( alpha_ );
-        quad_.v2.color.a = static_cast<sf::Uint8> ( alpha_ );
-        quad_.v3.color.a = static_cast<sf::Uint8> ( alpha_ );
+        quad_.v3.color.a = quad_.v2.color.a = quad_.v1.color.a = quad_.v0.color.a = static_cast<sf::Uint8> ( alpha_ );
     }
     void setQuadAlpha ( sf::Quad * quad_, const float alpha_ ) noexcept {
         setQuadAlpha ( * quad_, alpha_ );
