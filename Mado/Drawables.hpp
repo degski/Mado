@@ -412,6 +412,20 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
 
     public:
 
+    void setTo ( const size_type t_, const DisplayValue d_ ) noexcept {
+        setQuadTexture ( m_circles [ t_ ], static_cast<int> ( d_ ) < 3 ? DisplayValue::inactive_vacant : DisplayValue::active_vacant );
+        setQuadTexture ( m_quads [ t_ ], d_ );
+        setQuadAlpha ( m_quads [ t_ ], 0.0f );
+        m_animator.emplace ( LAMBDA_EASING_START_END_DURATION ( ( [ &, t_ ] ( const float v ) noexcept { setQuadAlpha ( m_quads [ t_ ], v ); } ), sf::easing::exponentialInEasing, 0.0f, 255.0f, 500 ) );
+    }
+
+    void setFrom ( const size_type f_ ) noexcept {
+        setQuadTexture ( m_circles [ f_ ], DisplayValue::inactive_vacant );
+        setQuadTexture ( m_quads [ f_ ], what_type ( f_ ) );
+        setQuadAlpha ( m_quads [ f_ ], 255.0f );
+        m_animator.emplace ( LAMBDA_EASING_START_END_DURATION ( ( [ &, f_ ] ( const float v ) noexcept { setQuadAlpha ( m_quads [ f_ ], v ); } ), sf::easing::exponentialInEasing, 255.0f, 0.0f, 500 ) );
+    }
+
     void make_agent_move ( const DisplayValue d_ = DisplayValue::inactive_green ) noexcept {
         m_agent_move_lock.lock ( );
         agent_is_making_move = true;
@@ -420,13 +434,13 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
             if ( agent_is_making_move ) {
                 if ( m.is_slide ( ) ) {
                     m_lock.lock ( );
-                    setQuadTexture ( m_quads [ m.from ], DisplayValue::inactive_vacant );
-                    setQuadTexture ( m_quads [ m.to ], d_ );
+                    setFrom ( m.from );
+                    setTo ( m.to, d_ );
                     m_lock.unlock ( );
                 }
                 else {
                     m_lock.lock ( );
-                    setQuadTexture ( m_quads [ m.to ], d_ );
+                    setTo ( m.to, d_ );
                     m_lock.unlock ( );
                 }
                 m_state.move_hash_winner ( m );
@@ -440,12 +454,8 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
     }
 
     [[ nodiscard ]] bool select ( const hex & i_, const DisplayValue d_ ) noexcept {
-        if ( const size_type i = board::index ( i_.q, i_.r ); display_type ( d_ ) == what_type ( i ) ) {
-            m_last = i;
-            return true;
-        }
-        m_last = not_set;
-        return false;
+        m_last = board::index ( i_.q, i_.r );
+        return display_type ( d_ ) == what_type ( m_last );
     }
     void unselect ( ) noexcept {
         m_last = not_set;
@@ -454,7 +464,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
     [[ nodiscard ]] bool place ( const hex & t_, const DisplayValue d_ ) noexcept {
         if ( const size_type t = board::index ( t_.q, t_.r ); DisplayType::vacant == what_type ( t ) ) {
             m_lock.lock ( );
-            setQuadTexture ( m_quads [ t ], d_ );
+            setTo ( t, d_ );
             m_lock.unlock ( );
             m_last = t;
             m_state.move_hash_winner ( state_move { t } );
@@ -470,8 +480,8 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
         if ( are_neighbors ( f_, t_ ) ) {
             if ( const size_type f = board::index ( f_.q, f_.r ), t = board::index ( t_.q, t_.r ); display_type ( d_ ) == what_type ( f ) and DisplayValue::active_vacant == what_value ( t ) ) {
                 m_lock.lock ( );
-                setQuadTexture ( m_quads [ f ], DisplayValue::inactive_vacant );
-                setQuadTexture ( m_quads [ t ], d_ );
+                setFrom ( f );
+                setTo ( t, d_ );
                 m_lock.unlock ( );
                 m_last = t;
                 m_state.move_hash_winner ( state_move { f, t } );
@@ -491,9 +501,12 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
     void make_active ( const hex & i_ ) noexcept {
         if ( const size_type i = board::index ( i_.q, i_.r ), w = what ( i ); w < 3 ) {
             m_lock.lock ( );
-            if ( not_set != m_last )
+            if ( not_set != m_last ) {
                 setQuadTexture ( m_quads [ m_last ], what_type ( m_last ) );
+                setQuadTexture ( m_circles [ m_last ], DisplayValue::inactive_vacant );
+            }
             setQuadTexture ( m_quads [ i ], w + 3 );
+            setQuadTexture ( m_circles [ i ], DisplayValue::active_vacant );
             m_lock.unlock ( );
             m_last = i;
         }
@@ -503,6 +516,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
         if ( not_set != m_last ) {
             m_lock.lock ( );
             setQuadTexture ( m_quads [ m_last ], what_type ( m_last ) );
+            setQuadTexture ( m_circles [ m_last ], DisplayValue::inactive_vacant );
             m_lock.unlock ( );
             m_last = not_set;
         }
@@ -512,7 +526,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
         // Apply the entity's transform -- combine it with the one that was passed by the caller.
         // states.transform *= getTransform ( ); // getTransform() is defined by sf::Transformable.
         // Apply the texture.
-        // m_animator.run ( );
+        m_animator.run ( );
         m_lock.lock ( );
         states.texture = & m_texture;
         // You may also override states.shader or states.blendMode if you want.
@@ -542,14 +556,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
     mutable play_area_lock m_lock;
     stlab::future<void> m_move_future;
     sf::VertexArray m_vertices;
-    sf::Quad * m_quads, * m_to_quad, * m_from_quad;
-
-    void resetToFromQuads ( ) noexcept {
-        std::memset ( m_to_quad, 0, 2 * sizeof ( sf::Quad ) );
-    }
-    void resetFromQuad ( ) noexcept {
-        std::memset ( m_from_quad, 0, sizeof ( sf::Quad ) );
-    }
+    sf::Quad * m_circles, * m_quads;
 };
 
 
@@ -586,8 +593,10 @@ template<typename State>
 void PlayArea<State>::init ( const sf::Vector2f & center_ ) noexcept {
     // Construct vertices.
     m_vertices.setPrimitiveType ( sf::Quads );
-    m_vertices.resize ( 4 * ( 2 * board::size ( ) + 2 ) );
+    m_vertices.resize ( 4 * ( 2 * board::size ( ) ) );
     m_quads = reinterpret_cast<sf::Quad*> ( & m_vertices [ 0 ] );
+    auto const quads_size = ( m_vertices.getVertexCount ( ) ) / 8;
+    m_circles = m_quads + quads_size;
     size_type i = 0;
     sf::Vector2f p = center_ - sf::Vector2f { m_circle_radius, m_circle_radius };
     m_quads [ i ] = makeVertex ( p );
@@ -618,15 +627,11 @@ void PlayArea<State>::init ( const sf::Vector2f & center_ ) noexcept {
             m_quads [ ++i ] = makeVertex ( p );
         }
     }
-    auto const quad_size = ( m_vertices.getVertexCount ( ) - 2 ) / 8;
-    m_to_quad = m_quads + quad_size;
+
     // Sort m_quads lambda.
     auto quads_less = [ ] ( const auto & a, const auto & b ) {
         return ( a.v0.position.y < b.v0.position.y ) or ( a.v0.position.y == b.v0.position.y and a.v0.position.x < b.v0.position.x );
     };
-    std::sort ( m_quads, m_to_quad, quads_less );
-    std::memcpy ( m_to_quad, m_quads, quad_size * sizeof ( sf::Quad ) );
-    m_quads = m_to_quad;
-    m_to_quad += quad_size;
-    m_from_quad = m_to_quad + 1;
+    std::sort ( m_quads, m_circles, quads_less );
+    std::memcpy ( m_circles, m_quads, quads_size * sizeof ( sf::Quad ) );
 }
