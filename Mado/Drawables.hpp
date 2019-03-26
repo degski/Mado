@@ -426,10 +426,12 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
         setQuadTexture ( m_circles [ f_ ], is_active ( w ) ? DisplayValue::inactive_vacant : DisplayValue::active_vacant );
         setQuadAlpha ( m_quads [ f_ ], 255.0f );
         m_animator.emplace ( LAMBDA_EASING_START_END_DURATION ( ( [ &, f_ ] ( const float v ) noexcept { setQuadAlpha ( m_quads [ f_ ], v ); } ), sf::easing::exponentialInEasing, 255.0f, 0.0f, 750 ) );
-        m_animator.emplace ( LAMBDA_DELAY ( ( [ &, f_, w ] ( const float v ) noexcept {
-            if ( w == what_value ( f_ ) ) {
+        m_animator.emplace ( LAMBDA_DELAY ( ( [ &, w, f_ ] ( const float v ) noexcept {
+            if ( w == what_value ( f_ ) ) { // Reset, iff not changed.
+                m_lock.lock ( );
                 setQuadTexture ( m_quads [ f_ ], DisplayValue::inactive_vacant );
                 setQuadAlpha ( m_quads [ f_ ], 255.0f );
+                m_lock.unlock ( );
             }
         } ), 750 ) );
     }
