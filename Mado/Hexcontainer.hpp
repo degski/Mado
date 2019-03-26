@@ -141,7 +141,7 @@ struct Hex : public RadiusBase<R, zero_base> {
 
     template<typename Stream>
     [[ maybe_unused ]] friend Stream & operator << ( Stream & out_, const Hex & h_ ) noexcept {
-        out_ << '<' << h_.q << ' ' << h_.r << '>';
+        out_ << std::dec << '<' << std::setw ( 2 ) << static_cast<int> ( h_.q ) << ' ' << std::setw ( 2 ) << static_cast<int> ( h_.r ) << '>';
         return out_;
     }
 };

@@ -86,15 +86,15 @@ struct NextMove {
 
     template<typename Stream>
     [[ maybe_unused ]] friend Stream & operator << ( Stream & out_, const NextMove & nm_ ) noexcept {
-        switch ( static_cast<int> ( m_state ) ) {
+        switch ( static_cast<int> ( nm_.m_state ) ) {
         case 0:
-            out_ << "select [" << m_from << ' ' << m_to << "]" << nl;
+            out_ << "select <" << nm_.m_from << nm_.m_to << ">";
             break;
         case 1:
-            out_ << "place  [" << m_from << ' ' << m_to << "]" << nl;
+            out_ << "place  <" << nm_.m_from << nm_.m_to << ">";
             break;
         case 2:
-            out_ << "move   [" << m_from << ' ' << m_to << "]" << nl;
+            out_ << "move   <" << nm_.m_from << nm_.m_to << ">";
             break;
         }
         return out_;
@@ -342,6 +342,7 @@ void App::mouseEvents ( const sf::Event & event_ ) {
         if ( hex::is_valid ( hex_position.q, hex_position.r ) ) {
             if ( not ( m_play_area.agent_is_making_move ) and sf::Mouse::isButtonPressed ( sf::Mouse::Left ) ) {
                 // Selected a cicle.
+                std::cout << m_human_move << nl;
                 bool no_reset;
                 switch ( m_human_move.state ( ) ) {
                 case NextMove::State::select:
