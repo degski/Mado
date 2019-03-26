@@ -68,10 +68,10 @@ struct Move {
     }
 
     [[ nodiscard ]] constexpr bool is_placement ( ) const noexcept {
-        return std::numeric_limits<value_type>::max ( ) == from and std::numeric_limits<value_type>::max ( ) != to;
+        return std::numeric_limits<value_type>::max ( ) != to and std::numeric_limits<value_type>::max ( ) == from;
     }
     [[ nodiscard ]] constexpr bool is_slide ( ) const noexcept {
-        return std::numeric_limits<value_type>::max ( ) != from and std::numeric_limits<value_type>::max ( ) != to;
+        return std::numeric_limits<value_type>::max ( ) != to and std::numeric_limits<value_type>::max ( ) != from;
     }
     [[ nodiscard ]] constexpr bool is_valid ( ) const noexcept {
         return std::numeric_limits<value_type>::max ( ) != to;
