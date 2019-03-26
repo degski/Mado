@@ -247,11 +247,11 @@ struct Mado {
     }
 
     [[ nodiscard ]] move get_random_move ( ) noexcept {
-        sf::sleep ( sf::milliseconds ( sax::uniform_int_distribution<size_type> ( 2'000, 5'000 ) ( Rng::gen ( ) ) ) );
+        sf::sleep ( sf::milliseconds ( sax::uniform_int_distribution<size_type> ( 1'000, 3'000 ) ( Rng::gen ( ) ) ) );
         static std::vector<move> available_moves ( ( board::size ( ) * 3 ) / 2 );
         available_moves.clear ( );
         if ( moves ( & available_moves ) ) {
-            std::cout << "no moves available " << std::dec << available_moves.size ( ) << nl << nl;
+            // std::cout << "no moves available " << std::dec << available_moves.size ( ) << nl << nl;
             return available_moves [ sax::uniform_int_distribution<size_type> ( 0, available_moves.size ( ) - 1 ) ( Rng::gen ( ) ) ];
         }
         else {

@@ -418,14 +418,20 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
         setQuadTexture ( m_circles [ t_ ], is_active ( d_ ) ? DisplayValue::inactive_vacant : DisplayValue::active_vacant );
         setQuadTexture ( m_quads [ t_ ], d_ );
         setQuadAlpha ( m_quads [ t_ ], 0.0f );
-        m_animator.emplace ( LAMBDA_EASING_START_END_DURATION ( ( [ &, t_ ] ( const float v ) noexcept { setQuadAlpha ( m_quads [ t_ ], v ); } ), sf::easing::exponentialInEasing, 0.0f, 255.0f, 500 ) );
+        m_animator.emplace ( LAMBDA_EASING_START_END_DURATION ( ( [ &, t_ ] ( const float v ) noexcept { setQuadAlpha ( m_quads [ t_ ], v ); } ), sf::easing::exponentialInEasing, 0.0f, 255.0f, 750 ) );
     }
 
     void setFrom ( const size_type f_ ) noexcept {
-        setQuadTexture ( m_circles [ f_ ], is_active ( what_value ( f_ ) ) ? DisplayValue::inactive_vacant : DisplayValue::active_vacant );
-        setQuadTexture ( m_quads [ f_ ], what_type ( f_ ) );
+        auto const w = what_value ( f_ );
+        setQuadTexture ( m_circles [ f_ ], is_active ( w ) ? DisplayValue::inactive_vacant : DisplayValue::active_vacant );
         setQuadAlpha ( m_quads [ f_ ], 255.0f );
-        m_animator.emplace ( LAMBDA_EASING_START_END_DURATION ( ( [ &, f_ ] ( const float v ) noexcept { setQuadAlpha ( m_quads [ f_ ], v ); } ), sf::easing::exponentialInEasing, 255.0f, 0.0f, 500 ) );
+        m_animator.emplace ( LAMBDA_EASING_START_END_DURATION ( ( [ &, f_ ] ( const float v ) noexcept { setQuadAlpha ( m_quads [ f_ ], v ); } ), sf::easing::exponentialInEasing, 255.0f, 0.0f, 750 ) );
+        m_animator.emplace ( LAMBDA_DELAY ( ( [ &, f_, w ] ( const float v ) noexcept {
+            if ( w == what_value ( f_ ) ) {
+                setQuadTexture ( m_quads [ f_ ], DisplayValue::inactive_vacant );
+                setQuadAlpha ( m_quads [ f_ ], 255.0f );
+            }
+        } ), 750 ) );
     }
 
     void make_agent_move ( const DisplayValue d_ = DisplayValue::inactive_green ) noexcept {

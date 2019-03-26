@@ -56,7 +56,9 @@ struct NextMove {
     using position = Position;
 
     void reset ( ) noexcept {
-        std::memset ( this, 0, sizeof ( NextMove ) );
+        m_from = position { };
+        m_to = position { };
+        m_state = State::select;
     }
 
     [[ nodiscard ]] const position & from ( ) const noexcept {
@@ -64,6 +66,7 @@ struct NextMove {
     }
     void from ( const position & f_ ) noexcept {
         m_from = f_;
+        m_to = position { };
         m_state = State::move;
         sf::sleepForMilliseconds ( 150 ); // To deal with (in-voluntary) double-clicking, TODO: fix that in MouseState class.
     }
@@ -110,7 +113,7 @@ struct NextMove {
 
 class App {
 
-    using MadoState = Mado<4>;
+    using MadoState = Mado<5>;
 
     using uidx = typename MadoState::uidx;
     using sidx = typename MadoState::sidx;
@@ -342,7 +345,6 @@ void App::mouseEvents ( const sf::Event & event_ ) {
         if ( hex::is_valid ( hex_position.q, hex_position.r ) ) {
             if ( not ( m_play_area.agent_is_making_move ) and sf::Mouse::isButtonPressed ( sf::Mouse::Left ) ) {
                 // Selected a cicle.
-                std::cout << m_human_move << nl;
                 bool no_reset;
                 switch ( m_human_move.state ( ) ) {
                 case NextMove::State::select:
@@ -361,6 +363,7 @@ void App::mouseEvents ( const sf::Event & event_ ) {
                 if ( not ( no_reset ) ) {
                     m_human_move.reset ( );
                 }
+                std::cout << m_human_move << nl;
             }
             else {
                 // Just hovering in play area.
