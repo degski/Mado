@@ -68,10 +68,16 @@ struct Move {
     }
 
     [[ nodiscard ]] constexpr bool is_placement ( ) const noexcept {
-        return std::numeric_limits<value_type>::max ( ) == from;
+        return std::numeric_limits<value_type>::max ( ) == from and std::numeric_limits<value_type>::max ( ) != to;
     }
     [[ nodiscard ]] constexpr bool is_slide ( ) const noexcept {
-        return not ( is_placement ( ) );
+        return std::numeric_limits<value_type>::max ( ) != from and std::numeric_limits<value_type>::max ( ) != to;
+    }
+    [[ nodiscard ]] constexpr bool is_valid ( ) const noexcept {
+        return std::numeric_limits<value_type>::max ( ) != to;
+    }
+    [[ nodiscard ]] constexpr bool is_invalid ( ) const noexcept {
+        return std::numeric_limits<value_type>::max ( ) == to;
     }
 
     template<typename Stream>
