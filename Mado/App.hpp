@@ -84,6 +84,22 @@ struct NextMove {
         m_state = s_;
     }
 
+    template<typename Stream>
+    [[ maybe_unused ]] friend Stream & operator << ( Stream & out_, const NextMove & nm_ ) noexcept {
+        switch ( static_cast<int> ( m_state ) ) {
+        case 0:
+            out_ << "select [" << m_from << ' ' << m_to << "]" << nl;
+            break;
+        case 1:
+            out_ << "place  [" << m_from << ' ' << m_to << "]" << nl;
+            break;
+        case 2:
+            out_ << "move   [" << m_from << ' ' << m_to << "]" << nl;
+            break;
+        }
+        return out_;
+    }
+
     private:
 
     position m_from, m_to;

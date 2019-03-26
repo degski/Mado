@@ -456,8 +456,13 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
     }
 
     [[ nodiscard ]] bool select ( const hex & i_, const DisplayValue d_ ) noexcept {
-        m_last = board::index ( i_.q, i_.r );
-        return display_type ( d_ ) == what_type ( m_last );
+        const size_type i = board::index ( i_.q, i_.r );
+        if ( display_type ( d_ ) == what_type ( m_last ) ) {
+            m_last = i;
+            return true;
+        }
+        m_last = not_set;
+        return false;
     }
     void unselect ( ) noexcept {
         m_last = not_set;
