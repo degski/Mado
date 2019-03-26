@@ -386,10 +386,12 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
         setQuadAlpha ( * quad_, alpha_ );
     }
 
-
-
     [[ nodiscard ]] DisplayType display_type ( DisplayValue d_ ) const noexcept {
         return static_cast<DisplayType> ( static_cast<int> ( d_ ) % 3 );
+    }
+
+    [[ nodiscard ]] bool is_active ( DisplayValue d_ ) const noexcept {
+        return static_cast<int> ( d_ ) < 3;
     }
 
     [[ nodiscard ]] size_type what ( size_type i_ ) const noexcept {
@@ -413,14 +415,14 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
     public:
 
     void setTo ( const size_type t_, const DisplayValue d_ ) noexcept {
-        setQuadTexture ( m_circles [ t_ ], static_cast<int> ( d_ ) < 3 ? DisplayValue::inactive_vacant : DisplayValue::active_vacant );
+        setQuadTexture ( m_circles [ t_ ], is_active ( d_ ) ? DisplayValue::inactive_vacant : DisplayValue::active_vacant );
         setQuadTexture ( m_quads [ t_ ], d_ );
         setQuadAlpha ( m_quads [ t_ ], 0.0f );
         m_animator.emplace ( LAMBDA_EASING_START_END_DURATION ( ( [ &, t_ ] ( const float v ) noexcept { setQuadAlpha ( m_quads [ t_ ], v ); } ), sf::easing::exponentialInEasing, 0.0f, 255.0f, 500 ) );
     }
 
     void setFrom ( const size_type f_ ) noexcept {
-        setQuadTexture ( m_circles [ f_ ], DisplayValue::inactive_vacant );
+        setQuadTexture ( m_circles [ f_ ], is_active ( what_value ( f_ ) ) ? DisplayValue::inactive_vacant : DisplayValue::active_vacant );
         setQuadTexture ( m_quads [ f_ ], what_type ( f_ ) );
         setQuadAlpha ( m_quads [ f_ ], 255.0f );
         m_animator.emplace ( LAMBDA_EASING_START_END_DURATION ( ( [ &, f_ ] ( const float v ) noexcept { setQuadAlpha ( m_quads [ f_ ], v ); } ), sf::easing::exponentialInEasing, 255.0f, 0.0f, 500 ) );
@@ -494,6 +496,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
         const size_type f = board::index ( f_.q, f_.r );
         m_lock.lock ( );
         setQuadTexture ( m_quads [ f ], what_type ( f ) );
+        setQuadTexture ( m_circles [ f ], DisplayValue::inactive_vacant );
         m_lock.unlock ( );
         return false;
     }
@@ -627,7 +630,6 @@ void PlayArea<State>::init ( const sf::Vector2f & center_ ) noexcept {
             m_quads [ ++i ] = makeVertex ( p );
         }
     }
-
     // Sort m_quads lambda.
     auto quads_less = [ ] ( const auto & a, const auto & b ) {
         return ( a.v0.position.y < b.v0.position.y ) or ( a.v0.position.y == b.v0.position.y and a.v0.position.x < b.v0.position.x );
