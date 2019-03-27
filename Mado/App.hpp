@@ -346,7 +346,7 @@ void App::mouseEvents ( const sf::Event & event_ ) {
         if ( hex::is_valid ( hex_position.q, hex_position.r ) ) {
             if ( not ( m_play_area.agent_is_making_move ) and sf::Mouse::isButtonPressed ( sf::Mouse::Left ) ) {
                 // Selected a cicle.
-                bool no_reset;
+                bool no_reset = false;
                 switch ( m_human_move.state ( ) ) {
                 case NextMove::State::select:
                     if ( ( no_reset = m_play_area.select ( hex_position, PlayArea::DisplayValue::active_red ) ) )
@@ -361,10 +361,10 @@ void App::mouseEvents ( const sf::Event & event_ ) {
                         m_human_move.to ( hex_position );
                     break;
                 }
-                if ( not ( no_reset ) ) {
+                if ( not ( no_reset ) )
                     m_human_move.reset ( );
-                }
                 std::cout << m_human_move << nl;
+                m_play_area.print_state ( );
             }
             else {
                 // Just hovering in play area.

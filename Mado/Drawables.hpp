@@ -43,26 +43,13 @@
 #include <SFML/Audio.hpp>
 #include <SFML/Extensions.hpp>
 
+#include <sax/srwlock.hpp>
+
 #include "Types.hpp"
 #include "Globals.hpp"
 #include "Hexcontainer.hpp"
 
 #include "resource.h"
-
-
-class spinlock_mutex {
-    alignas ( 64 ) std::atomic_flag flag = ATOMIC_FLAG_INIT;
-    public:
-    void lock ( ) noexcept {
-        while ( flag.test_and_set ( std::memory_order_acquire ) );
-    }
-    void unlock ( ) noexcept {
-        flag.clear ( std::memory_order_release );
-    }
-    [[ nodiscard ]] bool try_lock ( ) noexcept {
-        return not ( flag.test_and_set ( std::memory_order_acquire ) );
-    }
-};
 
 
 namespace sf {
@@ -339,7 +326,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
 
     using size_type = typename board::size_type;
 
-    using play_area_lock = spinlock_mutex;
+    using play_area_lock = sax::SRWLock;
     using future_state_move = stlab::future<state_move>;
 
     static constexpr int not_set = -1;
@@ -436,6 +423,10 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
         } ), 750 ) );
     }
 
+    void print_state ( ) noexcept {
+        std::cout << m_state << nl;
+    }
+
     void make_agent_move ( const DisplayValue d_ = DisplayValue::inactive_green ) noexcept {
         m_move_lock.lock ( );
         agent_is_making_move = true;
@@ -446,7 +437,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
                 m_agent_move = m;
                 m_lock.unlock ( );
                 m_state.move_hash_winner ( m );
-                std::cout << m_state << nl;
+                print_state ( );
                 m_clock.update_next ( );
                 agent_is_making_move = false;
                 m_move_lock.unlock ( );
@@ -467,12 +458,10 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
             set_to_quad ( t, d_ );
             m_last = t;
             m_state.move_hash_winner ( state_move { t } );
-            std::cout << m_state << nl;
             m_clock.update_next ( );
             make_agent_move ( );
-            return true;
         }
-        return false;
+        return true;
     }
 
     [[ nodiscard ]] bool move ( const hex & f_, const hex & t_, const DisplayValue d_ ) noexcept {
@@ -482,7 +471,6 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
                 set_to_quad ( t, d_ );
                 m_last = t;
                 m_state.move_hash_winner ( state_move { f, t } );
-                std::cout << m_state << nl;
                 m_clock.update_next ( );
                 make_agent_move ( );
                 return true;
