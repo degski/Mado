@@ -362,11 +362,11 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
     ~PlayArea ( ) {
         // Wait for the agent to return it's move. This
         // is the only time this lock might spin.
-        if ( m_agent_move_lock.try_lock ( ) )
+        if ( m_move_lock.try_lock ( ) )
             return;
         else
             agent_is_making_move = false;
-        m_agent_move_lock.lock ( );
+        m_move_lock.lock ( );
     }
 
     private:
@@ -435,7 +435,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
     }
 
     void make_agent_move ( const DisplayValue d_ = DisplayValue::inactive_green ) noexcept {
-        m_agent_move_lock.lock ( );
+        m_move_lock.lock ( );
         agent_is_making_move = true;
         m_move_future = std::move ( stlab::async ( stlab::default_executor, [ & ] ( ) noexcept {
             return m_state.get_random_move ( );
@@ -447,7 +447,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
                 std::cout << m_state << nl;
                 m_clock.update_next ( );
                 agent_is_making_move = false;
-                m_agent_move_lock.unlock ( );
+                m_move_lock.unlock ( );
             } )
         );
     }
@@ -532,7 +532,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
         target.draw ( m_vertices, states );
     }
 
-    play_area_lock m_agent_move_lock;
+    play_area_lock m_move_lock;
 
     const float m_hori, m_vert, m_circle_diameter, m_circle_radius;
 
