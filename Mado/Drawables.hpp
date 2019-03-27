@@ -428,10 +428,8 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
         m_animator.emplace ( LAMBDA_EASING_START_END_DURATION ( ( [ &, f_ ] ( const float v ) noexcept { setQuadAlpha ( m_quads [ f_ ], v ); } ), sf::easing::exponentialInEasing, 255.0f, 0.0f, 750 ) );
         m_animator.emplace ( LAMBDA_DELAY ( ( [ &, w, f_ ] ( const float v ) noexcept {
             if ( w == what_value ( f_ ) ) { // Reset, iff not changed.
-                m_lock.lock ( );
                 setQuadTexture ( m_quads [ f_ ], DisplayValue::inactive_vacant );
                 setQuadAlpha ( m_quads [ f_ ], 255.0f );
-                m_lock.unlock ( );
             }
         } ), 750 ) );
     }
@@ -439,27 +437,18 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
     void make_agent_move ( const DisplayValue d_ = DisplayValue::inactive_green ) noexcept {
         m_agent_move_lock.lock ( );
         agent_is_making_move = true;
-        m_move_future = std::move ( stlab::async ( stlab::default_executor, [ & ] ( ) noexcept { return m_state.get_random_move ( ); } )
-            .then ( [ &, d_ ] ( state_move m ) noexcept {
-            if ( agent_is_making_move ) {
-                if ( m.is_slide ( ) ) {
-                    m_lock.lock ( );
-                    setFrom ( m.from );
-                    setTo ( m.to, d_ );
-                    m_lock.unlock ( );
-                }
-                else {
-                    m_lock.lock ( );
-                    setTo ( m.to, d_ );
-                    m_lock.unlock ( );
-                }
+        m_move_future = std::move ( stlab::async ( stlab::default_executor, [ & ] ( ) noexcept {
+            return m_state.get_random_move ( );
+        } ).then ( [ & ] ( state_move m ) noexcept {
+                m_lock.lock ( );
+                m_agent_move = m;
+                m_lock.unlock ( );
                 m_state.move_hash_winner ( m );
                 std::cout << m_state << nl;
                 m_clock.update_next ( );
                 agent_is_making_move = false;
-            }
-            m_agent_move_lock.unlock ( );
-        } )
+                m_agent_move_lock.unlock ( );
+            } )
         );
     }
 
@@ -473,9 +462,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
 
     [[ nodiscard ]] bool place ( const hex & t_, const DisplayValue d_ ) noexcept {
         if ( const size_type t = board::index ( t_.q, t_.r ); DisplayType::vacant == what_type ( t ) ) {
-            m_lock.lock ( );
             setTo ( t, d_ );
-            m_lock.unlock ( );
             m_last = t;
             m_state.move_hash_winner ( state_move { t } );
             std::cout << m_state << nl;
@@ -489,10 +476,8 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
     [[ nodiscard ]] bool move ( const hex & f_, const hex & t_, const DisplayValue d_ ) noexcept {
         if ( are_neighbors ( f_, t_ ) ) {
             if ( const size_type f = board::index ( f_.q, f_.r ), t = board::index ( t_.q, t_.r ); display_type ( d_ ) == what_type ( f ) and DisplayValue::active_vacant == what_value ( t ) ) {
-                m_lock.lock ( );
                 setFrom ( f );
                 setTo ( t, d_ );
-                m_lock.unlock ( );
                 m_last = t;
                 m_state.move_hash_winner ( state_move { f, t } );
                 std::cout << m_state << nl;
@@ -502,51 +487,52 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
             }
         }
         const size_type f = board::index ( f_.q, f_.r );
-        m_lock.lock ( );
         setQuadTexture ( m_quads [ f ], what_type ( f ) );
         setQuadTexture ( m_circles [ f ], DisplayValue::inactive_vacant );
-        m_lock.unlock ( );
         return false;
     }
 
     void make_active ( const hex & i_ ) noexcept {
         if ( const size_type i = board::index ( i_.q, i_.r ), w = what ( i ); w < 3 ) {
-            m_lock.lock ( );
             if ( not_set != m_last ) {
                 setQuadTexture ( m_quads [ m_last ], what_type ( m_last ) );
                 setQuadTexture ( m_circles [ m_last ], DisplayValue::inactive_vacant );
             }
             setQuadTexture ( m_quads [ i ], w + 3 );
             setQuadTexture ( m_circles [ i ], DisplayValue::active_vacant );
-            m_lock.unlock ( );
             m_last = i;
         }
     }
 
     void make_inactive ( ) noexcept {
         if ( not_set != m_last ) {
-            m_lock.lock ( );
             setQuadTexture ( m_quads [ m_last ], what_type ( m_last ) );
             setQuadTexture ( m_circles [ m_last ], DisplayValue::inactive_vacant );
-            m_lock.unlock ( );
             m_last = not_set;
         }
     }
 
-    virtual void draw ( sf::RenderTarget & target, sf::RenderStates states ) const {
-        // Apply the entity's transform -- combine it with the one that was passed by the caller.
-        // states.transform *= getTransform ( ); // getTransform() is defined by sf::Transformable.
-        // Apply the texture.
+    void update ( ) noexcept {
+        // Run animations.
         m_animator.run ( );
-        m_lock.lock ( );
-        states.texture = & m_texture;
-        // You may also override states.shader or states.blendMode if you want.
-        // Draw the vertex array.
-        target.draw ( m_vertices, states );
-        m_lock.unlock ( );
+        // Check if there is a move.
+        if ( m_lock.try_lock ( ) ) {
+            if ( m_agent_move.is_valid ( ) ) {
+                if ( m_agent_move.is_slide ( ) )
+                    setFrom ( m_agent_move.from );
+                setTo ( m_agent_move.to, DisplayValue::inactive_green );
+                m_agent_move.invalidate ( );
+            }
+            m_lock.unlock ( );
+        }
     }
 
-    mutable play_area_lock m_agent_move_lock;
+    virtual void draw ( sf::RenderTarget & target, sf::RenderStates states ) const {
+        states.texture = & m_texture;
+        target.draw ( m_vertices, states );
+    }
+
+    play_area_lock m_agent_move_lock;
 
     const float m_hori, m_vert, m_circle_diameter, m_circle_radius;
 
@@ -562,10 +548,11 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
 
     state_reference m_state;
     clock_reference m_clock;
-    mutable sf::CallbackAnimator m_animator;
+    sf::CallbackAnimator m_animator;
 
-    mutable play_area_lock m_lock;
+    play_area_lock m_lock;
     stlab::future<void> m_move_future;
+    state_move m_agent_move;
     sf::VertexArray m_vertices;
     sf::Quad * m_circles, * m_quads;
 };

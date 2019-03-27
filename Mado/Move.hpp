@@ -80,6 +80,10 @@ struct Move {
         return std::numeric_limits<value_type>::max ( ) == to;
     }
 
+    void invalidate ( ) noexcept {
+        to = std::numeric_limits<value_type>::max ( );
+    }
+
     template<typename Stream>
     [[ maybe_unused ]] friend Stream & operator << ( Stream & out_, const Move & m_ ) noexcept {
         if ( std::numeric_limits<value_type>::max ( ) == m_.from )

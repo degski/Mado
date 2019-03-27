@@ -113,7 +113,7 @@ struct NextMove {
 
 class App {
 
-    using MadoState = Mado<5>;
+    using MadoState = Mado<4>;
 
     using uidx = typename MadoState::uidx;
     using sidx = typename MadoState::sidx;
@@ -320,6 +320,7 @@ bool App::runStartupAnimation ( ) noexcept {
 
 
 void App::updateWindow ( ) noexcept {
+    m_play_area.update ( );
     m_window.clear ( sf::Color { 10u, 10u, 10u, 255u } );
     m_window.draw ( m_taskbar );
     m_window.draw ( m_play_area );
