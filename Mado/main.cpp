@@ -55,10 +55,10 @@
 #include <plf/plf_nanotimer.h>
 
 // #include "../../KD-Tree/KD-Tree/sorted_vector_set.hpp"
-// #include "../../MCTSSearchTree/include/flat_search_tree.hpp"
+#include "../../MCTSSearchTree/include/flat_search_tree.hpp"
 
 
-#if 1
+#if 0
 
 #include "App.hpp"
 
@@ -153,7 +153,7 @@ int main ( ) {
             keep.pace ( );
         }
         // Regular game loop.
-        keep.reset ( 12 );
+        keep.reset ( 20 );
         while ( app_uptr->isWindowOpen ( ) ) {
             while ( app_uptr->pollWindowEvent ( event ) ) {
                 if ( sf::Event::LostFocus == event.type ) {
@@ -212,6 +212,33 @@ int main7686787 ( ) {
         v = 1;
 
     std::cout << board << nl;
+
+    return EXIT_SUCCESS;
+}
+
+
+#include "Mado.hpp"
+
+// 3 >  62 - 37
+// 4 >  96 - 61
+// 5 > 141 - 91
+
+int main ( ) {
+
+    int size = 0;
+    Mado<3> state;
+
+    for ( int i = 0; i < 100; ++i ) {
+        while ( true ) {
+            auto const m = state.get_random_move ( & size );
+            if ( state.terminal ( ) )
+                break;
+            state.move_winner ( m );
+        }
+        state.reset ( );
+    }
+
+    std::cout << size << nl;
 
     return EXIT_SUCCESS;
 }

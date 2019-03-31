@@ -264,6 +264,10 @@ struct HexContainer : public HexBase<R, zero_base> {
 
     HexContainer ( ) noexcept : hex_base { } { }
 
+    void reset ( ) noexcept {
+        std::fill ( begin ( ), end ( ), value_type { } );
+    }
+
     // Data access.
 
     [[ nodiscard ]] constexpr const_reference at ( const size_type q_, const size_type r_ ) const noexcept {

@@ -222,6 +222,7 @@
     <ClInclude Include="Drawables.hpp" />
     <ClInclude Include="Hexcontainer.hpp" />
     <ClInclude Include="Mado.hpp" />
+    <ClInclude Include="Mcts.hpp" />
     <ClInclude Include="Move.hpp" />
     <ClInclude Include="Player.hpp" />
     <ClInclude Include="Types.hpp" />

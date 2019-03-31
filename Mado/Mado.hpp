@@ -89,6 +89,13 @@ struct Mado {
     Mado ( ) noexcept {
     }
 
+    void reset ( ) noexcept {
+        m_board.reset ( );
+        m_zobrist_hash = 0xb735a0f5839e4e22;
+        m_slides = 0;
+        m_player_to_move = value::human;
+        m_winner = value::invalid;
+    }
 
     // From SplitMix64, the mixer.
     [[ nodiscard ]] static constexpr std::uint64_t sm_mix64 ( std::uint64_t k_ ) noexcept {
@@ -246,17 +253,22 @@ struct Mado {
         return false;
     }
 
-    [[ nodiscard ]] move get_random_move ( ) noexcept {
-        sf::sleep ( sf::milliseconds ( sax::uniform_int_distribution<size_type> ( 1'000, 3'000 ) ( Rng::gen ( ) ) ) );
-        static std::vector<move> available_moves ( ( board::size ( ) * 3 ) / 2 );
+    template<typename T>
+    [[ nodiscard ]] move get_random_move ( T * maxsize ) noexcept {
+        // sf::sleep ( sf::milliseconds ( sax::uniform_int_distribution<size_type> ( 1'000, 3'000 ) ( Rng::gen ( ) ) ) );
+        static std::vector<move> available_moves ( board::size ( ) * 2 );
         available_moves.clear ( );
         if ( moves ( & available_moves ) ) {
             // std::cout << "no moves available " << std::dec << available_moves.size ( ) << nl << nl;
+            if ( available_moves.size ( ) > * maxsize )
+                * maxsize = available_moves.size ( );
             return available_moves [ sax::uniform_int_distribution<size_type> ( 0, available_moves.size ( ) - 1 ) ( Rng::gen ( ) ) ];
         }
         else {
-            std::cout << "game ended" << nl << nl;
-            std::exit ( EXIT_SUCCESS );
+            // std::cout << "game ended" << nl << nl;
+            // std::cout << * maxsize << nl;
+            // std::exit ( EXIT_SUCCESS );
+            return move { };
         }
     }
 
