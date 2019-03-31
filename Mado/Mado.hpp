@@ -164,14 +164,14 @@ struct Mado {
     private:
 
     template<typename IdxType>
-    [[ nodiscard ]] bool is_surrounded ( const IdxType idx_ ) const noexcept {
+    [[ nodiscard ]] inline bool is_surrounded ( const IdxType idx_ ) const noexcept {
         for ( const auto neighbor_of_idx : board::neighbors [ idx_ ] )
             if ( m_board [ neighbor_of_idx ].is_vacant ( ) )
                 return false;
         return true;
     }
     template<typename IdxType>
-    void find_surrounded_neighbor ( surrounded_player_vector & s_, IdxType && idx_ ) const noexcept {
+    void find_surrounded_neighbor ( surrounded_player_vector & s_, const IdxType idx_ ) const noexcept {
         if ( m_board [ idx_ ].occupied ( ) and is_surrounded ( idx_ ) )
             s_.push_back ( m_board [ idx_ ] );
     }
