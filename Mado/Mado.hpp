@@ -231,7 +231,7 @@ struct Mado {
         // Mcts class takes/has ownership.
         if ( nonterminal ( ) ) {
             moves_->clear ( );
-            for ( typename move::value_type i = 0; i < static_cast<typename move::value_type> ( board::size ( ) ); ++i ) {
+            for ( int i = 0; i < static_cast<int> ( board::size ( ) ); ++i ) {
                 // Find places.
                 if ( m_board [ i ].is_vacant ( ) ) {
                     moves_->emplace_back ( i );
@@ -239,7 +239,7 @@ struct Mado {
                 }
                 // Find slides.
                 if ( m_player_to_move == m_board [ i ] ) {
-                    for ( typename move::value_type to : board::neighbors [ i ] )
+                    for ( auto const to : board::neighbors [ i ] )
                         if ( m_board [ to ].is_vacant ( ) )
                             moves_->emplace_back ( i, to );
                 }
