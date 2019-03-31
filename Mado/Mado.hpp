@@ -170,19 +170,15 @@ struct Mado {
                 return false;
         return true;
     }
-    template<typename IdxType>
-    void find_surrounded_neighbor ( surrounded_player_vector & s_, const IdxType idx_ ) const noexcept {
-        if ( m_board [ idx_ ].occupied ( ) and is_surrounded ( idx_ ) )
-            s_.push_back ( m_board [ idx_ ] );
-    }
 
     public:
 
     // Return all the surrounded stones in s_ (after a place/slide).
     template<typename IdxType>
     void find_surrounded_neighbors ( surrounded_player_vector & s_, const IdxType idx_ ) const noexcept {
-        for ( auto && i : board::neighbors [ idx_ ] )
-            find_surrounded_neighbor ( s_, i );
+        for ( auto const idx : board::neighbors [ idx_ ] )
+            if ( m_board [ idx ].occupied ( ) and is_surrounded ( idx ) )
+                s_.push_back ( m_board [ idx ] );
     }
 
     void winner ( ) noexcept {
