@@ -90,7 +90,7 @@ struct Player {
 
     template<typename Rng>
     [[ nodiscard ]] static Type random ( ) noexcept {
-        return bernoulli ( ) ? Type::agent : Type::human;
+        return Rng::bernoulli ( ) ? Type::agent : Type::human;
     }
 
     [[ nodiscard ]] bool vacant ( ) const noexcept {

@@ -30,6 +30,7 @@
 #include <cstdlib>
 
 #include <array>
+#include <execution>
 #include <sax/iostream.hpp>
 #include <iterator>
 #include <type_traits>
@@ -265,7 +266,7 @@ struct HexContainer : public HexBase<R, zero_base> {
     HexContainer ( ) noexcept : hex_base { } { }
 
     void reset ( ) noexcept {
-        std::fill ( begin ( ), end ( ), value_type { } );
+        std::fill ( std::execution::par_unseq, begin ( ), end ( ), value_type { } );
     }
 
     // Data access.

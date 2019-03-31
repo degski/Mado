@@ -219,16 +219,22 @@ int main7686787 ( ) {
 
 #include "Mado.hpp"
 
-// 3 >  62 - 37
-// 4 >  96 - 61
-// 5 > 141 - 91
+// 3 >  67 - 37, 1.76
+// 4 > 105 - 61, 1.72
+// 5 > 151 - 91, 1.66
+
+// -fsanitize=address
 
 int main ( ) {
 
     int size = 0;
-    Mado<3> state;
+    Mado<5> state;
 
-    for ( int i = 0; i < 100; ++i ) {
+    plf::nanotimer timer;
+
+    timer.start ( );
+
+    for ( int i = 0; i < 10'000; ++i ) {
         while ( true ) {
             auto const m = state.get_random_move ( & size );
             if ( state.terminal ( ) )
@@ -237,6 +243,8 @@ int main ( ) {
         }
         state.reset ( );
     }
+
+    std::cout << timer.get_elapsed_ms ( ) << " ms" << nl;
 
     std::cout << size << nl;
 

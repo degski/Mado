@@ -231,7 +231,7 @@ struct Mado {
         m_player_to_move.next ( );
     }
 
-    [[ nodiscard ]] bool moves ( std::vector<move> * moves_ ) const noexcept {
+    [[ nodiscard ]] bool availableMoves ( std::vector<move> * moves_ ) const noexcept {
         // Mcts class takes/has ownership.
         if ( nonterminal ( ) ) {
             moves_->clear ( );
@@ -258,7 +258,7 @@ struct Mado {
         // sf::sleep ( sf::milliseconds ( sax::uniform_int_distribution<size_type> ( 1'000, 3'000 ) ( Rng::gen ( ) ) ) );
         static std::vector<move> available_moves ( board::size ( ) * 2 );
         available_moves.clear ( );
-        if ( moves ( & available_moves ) ) {
+        if ( availableMoves ( & available_moves ) ) {
             // std::cout << "no moves available " << std::dec << available_moves.size ( ) << nl << nl;
             if ( available_moves.size ( ) > * maxsize )
                 * maxsize = available_moves.size ( );
