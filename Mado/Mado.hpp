@@ -227,32 +227,30 @@ struct Mado {
         m_player_to_move.next ( );
     }
 
-    [[ nodiscard ]] bool availableMoves ( std::vector<move> * moves_ ) const noexcept {
+    template<typename MovesContainer>
+    [[ nodiscard ]] bool availableMoves ( MovesContainer * moves_ ) const noexcept {
         // Mcts class takes/has ownership.
-        if ( nonterminal ( ) ) {
-            moves_->clear ( );
-            for ( int i = 0; i < static_cast<int> ( board::size ( ) ); ++i ) {
-                // Find places.
-                if ( m_board [ i ].is_vacant ( ) ) {
-                    moves_->emplace_back ( i );
-                    continue;
-                }
-                // Find slides.
-                if ( m_player_to_move == m_board [ i ] ) {
-                    for ( auto const to : board::neighbors [ i ] )
-                        if ( m_board [ to ].is_vacant ( ) )
-                            moves_->emplace_back ( i, to );
-                }
+        for ( int i = 0; i < static_cast<int> ( board::size ( ) ); ++i ) {
+            // Find places.
+            if ( m_board [ i ].is_vacant ( ) ) {
+                moves_->emplace_back ( i );
+                continue;
             }
-            return moves_->size ( );
+            // Find slides.
+            if ( m_player_to_move == m_board [ i ] ) {
+                for ( auto const to : board::neighbors [ i ] )
+                    if ( m_board [ to ].is_vacant ( ) )
+                        moves_->emplace_back ( i, to );
+            }
         }
-        return false;
+        return moves_->size ( );
     }
 
     template<typename T>
     [[ nodiscard ]] move get_random_move ( T * maxsize ) noexcept {
         // sf::sleep ( sf::milliseconds ( sax::uniform_int_distribution<size_type> ( 1'000, 3'000 ) ( Rng::gen ( ) ) ) );
-        static std::vector<move> available_moves ( board::size ( ) * 2 );
+        // static std::vector<move> available_moves ( board::size ( ) * 2 );
+        static std::experimental::fixed_capacity_vector<move, board::size ( ) * 2> available_moves;
         available_moves.clear ( );
         if ( availableMoves ( & available_moves ) ) {
             // std::cout << "no moves available " << std::dec << available_moves.size ( ) << nl << nl;

@@ -219,6 +219,14 @@ int main7686787 ( ) {
 
 #include "Mado.hpp"
 
+struct Hash64 {
+    size_t operator()( uint64_t k ) const { return ( k ^ 14695981039346656037ULL ) * 1099511628211ULL; }
+};
+
+struct Hash32 {
+    size_t operator()( uint32_t k ) const { return ( k ^ 2166136261U ) * 16777619UL; }
+};
+
 // 3 >  68 - 37, 1.84
 // 4 > 107 - 61, 1.75
 // 5 > 155 - 91, 1.70
@@ -228,13 +236,13 @@ int main7686787 ( ) {
 int main ( ) {
 
     int size = 0;
-    Mado<3> state;
+    Mado<5> state;
 
     plf::nanotimer timer;
 
     timer.start ( );
 
-    for ( int i = 0; i < 100'000'000; ++i ) {
+    for ( int i = 0; i < 10'000; ++i ) {
         while ( true ) {
             auto const m = state.get_random_move ( & size );
             if ( state.terminal ( ) )
