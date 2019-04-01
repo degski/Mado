@@ -58,7 +58,7 @@
 #include "../../MCTSSearchTree/include/flat_search_tree.hpp"
 
 
-#if 0
+#if 1
 
 #include "App.hpp"
 
@@ -244,7 +244,7 @@ int main ( ) {
 
     for ( int i = 0; i < 10'000; ++i ) {
         while ( true ) {
-            auto const m = state.get_random_move ( & size );
+            auto const m = state.get_random_move (  );
             if ( state.terminal ( ) )
                 break;
             state.move_winner ( m );

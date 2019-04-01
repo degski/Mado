@@ -68,7 +68,6 @@ struct NextMove {
         m_from = f_;
         m_to = position { };
         m_state = State::move;
-        sf::sleepForMilliseconds ( 150 ); // To deal with (in-voluntary) double-clicking, TODO: fix that in MouseState class.
     }
 
     [[ nodiscard ]] const position & to ( ) const noexcept {
@@ -77,7 +76,6 @@ struct NextMove {
     void to ( const position & t_ ) noexcept {
         m_to = t_;
         m_state = State::select;
-        sf::sleepForMilliseconds ( 150 );
     }
 
     [[ nodiscard ]] State state ( ) const noexcept {
