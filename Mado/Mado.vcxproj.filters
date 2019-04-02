@@ -36,9 +36,6 @@
     <ClInclude Include="Player.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Types.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="App.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>

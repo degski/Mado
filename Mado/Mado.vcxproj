@@ -225,7 +225,6 @@
     <ClInclude Include="Mcts.hpp" />
     <ClInclude Include="Move.hpp" />
     <ClInclude Include="Player.hpp" />
-    <ClInclude Include="Types.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Mado.rc" />

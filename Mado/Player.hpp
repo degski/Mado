@@ -34,17 +34,18 @@
 #include <cereal/cereal.hpp>
 #include <cereal/archives/binary.hpp>
 
-#include "Types.hpp"
 #include "Globals.hpp"
+#include "Hexcontainer.hpp"
 
 
-template<int S>
+template<int R>
 struct Player {
 
     private:
 
     using underlying_t = std::int8_t;
-    using sidx = sidx<S>;
+    using hex = Hex<R, true>;
+    using sidx = typename hex::idx_type;
 
     public:
 

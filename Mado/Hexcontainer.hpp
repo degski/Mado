@@ -39,9 +39,6 @@
 #include <experimental/fixed_capacity_vector>
 
 
-#include "Types.hpp"
-
-
 template<int R, bool zero_base = true>
 struct RadiusBase {
 
@@ -101,7 +98,7 @@ struct RadiusBase {
 
     [[ nodiscard ]] static constexpr bool is_invalid ( const size_type q_, const size_type r_ ) noexcept {
         auto abs = [ ] ( auto a ) noexcept { return a > decltype ( a ) { 0 } ? a : -a; };
-        return abs ( q_ - ( zero_base ? 0 : radius ( ) ) ) > radius ( ) or abs ( r_ - ( zero_base ? 0 : radius ( ) ) ) > radius ( ) or abs ( -q_ - r_ + ( 2 * ( zero_base ? 0 : radius ( ) ) ) ) > radius ( );
+        return abs ( q_ - ( zero_base ? 0 : radius ( ) ) ) > radius ( ) or abs ( r_ - ( zero_base ? 0 : radius ( ) ) ) > radius ( ) or abs ( static_cast<int> ( -q_ ) - static_cast<int> ( r_ ) + ( 2 * static_cast<int> ( zero_base ? 0 : radius ( ) ) ) ) > radius ( );
     }
     [[ nodiscard ]] static constexpr bool is_valid ( const size_type q_, const size_type r_ ) noexcept {
         return not ( is_invalid ( q_, r_ ) );
@@ -113,7 +110,8 @@ template<int R, bool zero_base>
 struct Hex : public RadiusBase<R, zero_base> {
 
     using rad = RadiusBase<R, zero_base>;
-    using value_type = sidx<R>;
+    using idx_type = typename rad::idx_type;
+    using value_type = idx_type;
     using size_type = typename rad::size_type;
 
     using rad::radius;
@@ -229,6 +227,7 @@ template<typename Type, int R, bool zero_base>
 struct HexContainer : public HexBase<R, zero_base> {
 
     using rad = RadiusBase<R, zero_base>;
+    using idx_type = typename rad::idx_type;
     using hex = Hex<R, zero_base>;
     using hex_base = HexBase<R, zero_base>;
 

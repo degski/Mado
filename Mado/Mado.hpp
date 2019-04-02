@@ -47,7 +47,6 @@
 
 #include <sax/stl.hpp>
 
-#include "Types.hpp"
 #include "Player.hpp"
 #include "Hexcontainer.hpp"
 #include "Move.hpp"
@@ -57,9 +56,7 @@ template<int R>
 struct Mado {
 
     using hex = Hex<R, true>;
-
-    using uidx = uidx<R>;
-    using sidx = sidx<R>;
+    using sidx = typename hex::idx_type;
 
     using move = Move<R>;
 
@@ -114,7 +111,7 @@ struct Mado {
         return k_ ^ ( k_ >> 33 );
     }
 
-    [[ nodiscard ]] static constexpr zobrist_hash hash ( value_type p_, uidx i_ ) noexcept {
+    [[ nodiscard ]] static constexpr zobrist_hash hash ( value_type p_, const sidx i_ ) noexcept {
         return iu_mix64 ( static_cast<std::uint64_t> ( p_.as_index ( ) ) ^ static_cast<std::uint64_t> ( i_ ) );
     }
 
@@ -285,18 +282,6 @@ struct Mado {
 
     [[ nodiscard ]] move lastMove ( ) const noexcept {
         return m_last_move;
-    }
-
-    // Input - output, just for dev.
-
-    void set ( uidx x_, value_type v_ ) noexcept {
-        m_board [ x_ ] = v_;
-    }
-    void set ( hex & h_, value_type v_ ) noexcept {
-        m_board [ hex_to_idx ( h_ ) ] = v_;
-    }
-    void set ( sidx q_, sidx r_, value_type v_ ) noexcept {
-        m_board [ hex_to_idx ( q_, r_ ) ] = v_;
     }
 
     template<typename Stream>

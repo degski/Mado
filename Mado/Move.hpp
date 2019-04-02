@@ -34,28 +34,29 @@
 #include <cereal/cereal.hpp>
 #include <cereal/archives/binary.hpp>
 
-#include "Types.hpp"
+#include "Hexcontainer.hpp"
 
 
-template<int S>
+template<int R>
 struct Move {
 
-    using value_type = uidx<S>;
+    using hex = Hex<R, true>;
+    using value_type = typename hex::idx_type;
 
     enum class Type : value_type { place = 0, slide = 1 };
 
     value_type from, to;
 
     constexpr Move ( ) noexcept :
-        from { std::move ( std::numeric_limits<value_type>::max ( ) ) },
-        to { std::move ( std::numeric_limits<value_type>::max ( ) ) } {
+        from { std::move ( std::numeric_limits<value_type>::lowest ( ) ) },
+        to { std::move ( std::numeric_limits<value_type>::lowest ( ) ) } {
     }
     constexpr Move ( const value_type & to_ ) noexcept :
-        from { std::move ( std::numeric_limits<value_type>::max ( ) ) },
+        from { std::move ( std::numeric_limits<value_type>::lowest ( ) ) },
         to { to_ } {
     }
     constexpr Move ( value_type && to_ ) noexcept :
-        from { std::move ( std::numeric_limits<value_type>::max ( ) ) },
+        from { std::move ( std::numeric_limits<value_type>::lowest ( ) ) },
         to { std::move ( to_ ) } {
     }
     constexpr Move ( const value_type & from_, const value_type & to_ ) noexcept :
@@ -68,25 +69,25 @@ struct Move {
     }
 
     [[ nodiscard ]] constexpr bool is_placement ( ) const noexcept {
-        return std::numeric_limits<value_type>::max ( ) != to and std::numeric_limits<value_type>::max ( ) == from;
+        return std::numeric_limits<value_type>::lowest ( ) != to and std::numeric_limits<value_type>::lowest ( ) == from;
     }
     [[ nodiscard ]] constexpr bool is_slide ( ) const noexcept {
-        return std::numeric_limits<value_type>::max ( ) != to and std::numeric_limits<value_type>::max ( ) != from;
+        return std::numeric_limits<value_type>::lowest ( ) != to and std::numeric_limits<value_type>::lowest ( ) != from;
     }
     [[ nodiscard ]] constexpr bool is_valid ( ) const noexcept {
-        return std::numeric_limits<value_type>::max ( ) != to;
+        return std::numeric_limits<value_type>::lowest ( ) != to;
     }
     [[ nodiscard ]] constexpr bool is_invalid ( ) const noexcept {
-        return std::numeric_limits<value_type>::max ( ) == to;
+        return std::numeric_limits<value_type>::lowest ( ) == to;
     }
 
     void invalidate ( ) noexcept {
-        to = std::numeric_limits<value_type>::max ( );
+        to = std::numeric_limits<value_type>::lowest ( );
     }
 
     template<typename Stream>
     [[ maybe_unused ]] friend Stream & operator << ( Stream & out_, const Move & m_ ) noexcept {
-        if ( std::numeric_limits<value_type>::max ( ) == m_.from )
+        if ( std::numeric_limits<value_type>::lowest ( ) == m_.from )
             std::cout << '<' << static_cast<std::uint64_t> ( m_.to ) << '>';
         else
             std::cout << '<' << static_cast<std::uint64_t> ( m_.from ) << ' ' << static_cast<std::uint64_t> ( m_.to ) << '>';
@@ -104,5 +105,5 @@ struct Move {
     }
 };
 
-template<std::size_t S>
-using Moves = std::vector<Move<S>>;
+template<std::size_t R>
+using Moves = std::vector<Move<R>>;

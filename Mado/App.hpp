@@ -39,7 +39,6 @@
 
 #include <fsmlite/fsm.hpp>
 
-#include "Types.hpp"
 #include "Globals.hpp"
 #include "Mado.hpp"
 #include "Drawables.hpp"
@@ -113,7 +112,6 @@ class App {
 
     using MadoState = Mado<4>;
 
-    using uidx = typename MadoState::uidx;
     using sidx = typename MadoState::sidx;
     using hex = typename MadoState::hex;
     using PlayArea = PlayArea<MadoState>;
@@ -159,7 +157,7 @@ private:
         return static_cast<T> ( static_cast<int> ( x - std::numeric_limits<sidx>::min ( ) ) + std::numeric_limits<sidx>::min ( ) );
     }
 
-    [[ nodiscard ]] uidx pointToIdx ( const sf::Vector2f & p ) const noexcept;
+    [[ nodiscard ]] sidx pointToIdx ( const sf::Vector2f & p ) const noexcept;
     [[ nodiscard ]] hex pointToHex ( sf::Vector2f p_ ) const noexcept;
     [[ nodiscard ]] bool playAreaContains ( sf::Vector2f p_ ) const noexcept;
 
@@ -225,7 +223,7 @@ public:
 //  https://stackoverflow.com/questions/22128872/simple-c-sfml-program-high-cpu-usage
 
 
-[[ nodiscard ]] App::uidx App::pointToIdx ( const sf::Vector2f & p_ ) const noexcept {
+[[ nodiscard ]] App::sidx App::pointToIdx ( const sf::Vector2f & p_ ) const noexcept {
     return 0; // MadoState::hex_to_idx ( pointToHex ( p_ ) );
 }
 

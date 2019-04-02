@@ -45,7 +45,6 @@
 
 #include <sax/srwlock.hpp>
 
-#include "Types.hpp"
 #include "Globals.hpp"
 #include "Hexcontainer.hpp"
 
