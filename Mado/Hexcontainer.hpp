@@ -97,8 +97,8 @@ struct RadiusBase {
     }
 
     [[ nodiscard ]] static constexpr bool is_invalid ( const size_type q_, const size_type r_ ) noexcept {
-        auto abs = [ ] ( auto a ) noexcept { return a > decltype ( a ) { 0 } ? a : -a; };
-        return abs ( q_ - ( zero_base ? 0 : radius ( ) ) ) > radius ( ) or abs ( r_ - ( zero_base ? 0 : radius ( ) ) ) > radius ( ) or abs ( static_cast<int> ( -q_ ) - static_cast<int> ( r_ ) + ( 2 * static_cast<int> ( zero_base ? 0 : radius ( ) ) ) ) > radius ( );
+        auto abs = [ ] ( auto const a ) noexcept { return a > decltype ( a ) { 0 } ? a : -a; };
+        return abs ( q_ - static_cast<size_type> ( zero_base ? 0 : radius ( ) ) ) > static_cast<size_type> ( radius ( ) ) or abs ( r_ - static_cast<size_type> ( zero_base ? 0 : radius ( ) ) ) > static_cast<size_type> ( radius ( ) ) or abs ( -q_ - r_ + ( 2 * static_cast<size_type> ( zero_base ? 0 : radius ( ) ) ) ) > static_cast<size_type> ( radius ( ) );
     }
     [[ nodiscard ]] static constexpr bool is_valid ( const size_type q_, const size_type r_ ) noexcept {
         return not ( is_invalid ( q_, r_ ) );
