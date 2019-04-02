@@ -149,6 +149,7 @@
       <DebugInformationFormat>OldStyle</DebugInformationFormat>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <FloatingPointModel>Fast</FloatingPointModel>
+      <AdditionalOptions> -Xclang -fconstexpr-steps -Xclang 1000000 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -198,7 +199,7 @@
       <PrecompiledHeaderOutputFile />
       <DebugInformationFormat>None</DebugInformationFormat>
       <FloatingPointModel>Fast</FloatingPointModel>
-      <AdditionalOptions>-fsanitize=address %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>-fsanitize=address -Xclang -fconstexpr-steps -Xclang 10000000 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
