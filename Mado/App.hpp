@@ -112,7 +112,7 @@ class App {
 
     using MadoState = Mado<4>;
 
-    using sidx = typename MadoState::sidx;
+    using idx_type = typename MadoState::idx_type;
     using hex = typename MadoState::hex;
     using PlayArea = PlayArea<MadoState>;
     using NextMove = NextMove<MadoState, hex>;
@@ -154,10 +154,10 @@ private:
 
     template<typename T>
     [[ nodiscard ]] inline T floorf ( float x ) const noexcept {
-        return static_cast<T> ( static_cast<int> ( x - std::numeric_limits<sidx>::min ( ) ) + std::numeric_limits<sidx>::min ( ) );
+        return static_cast<T> ( static_cast<int> ( x - std::numeric_limits<idx_type>::min ( ) ) + std::numeric_limits<idx_type>::min ( ) );
     }
 
-    [[ nodiscard ]] sidx pointToIdx ( const sf::Vector2f & p ) const noexcept;
+    [[ nodiscard ]] idx_type pointToIdx ( const sf::Vector2f & p ) const noexcept;
     [[ nodiscard ]] hex pointToHex ( sf::Vector2f p_ ) const noexcept;
     [[ nodiscard ]] bool playAreaContains ( sf::Vector2f p_ ) const noexcept;
 
@@ -223,7 +223,7 @@ public:
 //  https://stackoverflow.com/questions/22128872/simple-c-sfml-program-high-cpu-usage
 
 
-[[ nodiscard ]] App::sidx App::pointToIdx ( const sf::Vector2f & p_ ) const noexcept {
+[[ nodiscard ]] App::idx_type App::pointToIdx ( const sf::Vector2f & p_ ) const noexcept {
     return 0; // MadoState::hex_to_idx ( pointToHex ( p_ ) );
 }
 

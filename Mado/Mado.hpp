@@ -56,7 +56,7 @@ template<int R>
 struct Mado {
 
     using hex = Hex<R, true>;
-    using sidx = typename hex::idx_type;
+    using idx_type = typename hex::idx_type;
 
     using move = Move<R>;
 
@@ -111,7 +111,7 @@ struct Mado {
         return k_ ^ ( k_ >> 33 );
     }
 
-    [[ nodiscard ]] static constexpr zobrist_hash hash ( value_type p_, const sidx i_ ) noexcept {
+    [[ nodiscard ]] static constexpr zobrist_hash hash ( value_type p_, const idx_type i_ ) noexcept {
         return iu_mix64 ( static_cast<std::uint64_t> ( p_.as_index ( ) ) ^ static_cast<std::uint64_t> ( i_ ) );
     }
 

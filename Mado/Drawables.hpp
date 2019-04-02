@@ -337,7 +337,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
     // first sf::Vertex of the sf::Quad is a multiple of the DisplayValue, as per above, i.e. the
     // texCoords store the information as to which sub-texture is referenced.
 
-    using sidx = typename State::sidx;
+    using idx_type = typename State::idx_type;
     using hex = typename State::hex;
 
     [[ nodiscard ]] sf::Quad make_vertex ( const sf::Vector2f & p_ ) const noexcept;

@@ -43,13 +43,11 @@ struct Player {
 
     private:
 
-    using underlying_t = std::int8_t;
-    using hex = Hex<R, true>;
-    using sidx = typename hex::idx_type;
+    using idx_type = typename Hex<R, true>::idx_type;
 
     public:
 
-    enum class Type : underlying_t { invalid = -2, agent = -1, vacant = 0, human = 1 }; // Keep numbering this way, vacant **has** to be 0.
+    enum class Type : idx_type { invalid = -2, agent = -1, vacant = 0, human = 1 }; // Keep numbering this way, vacant **has** to be 0.
 
     Type value = Type::vacant;
 
@@ -70,7 +68,7 @@ struct Player {
     }
 
     [[ nodiscard ]] Type opponent ( ) const noexcept {
-        return static_cast<Type> ( -static_cast<underlying_t> ( value ) );
+        return static_cast<Type> ( -static_cast<idx_type> ( value ) );
     }
 
     void next ( ) noexcept {
@@ -81,11 +79,11 @@ struct Player {
         return value;
     }
 
-    [[ nodiscard ]] sidx as_index ( ) const noexcept {
-        return static_cast<sidx> ( value );
+    [[ nodiscard ]] idx_type as_index ( ) const noexcept {
+        return static_cast<idx_type> ( value );
     }
 
-    [[ nodiscard ]] sidx as_01index ( ) const noexcept {
+    [[ nodiscard ]] idx_type as_01index ( ) const noexcept {
         return ( as_index ( ) + 1 ) / 2;
     }
 

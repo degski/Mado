@@ -40,8 +40,7 @@
 template<int R>
 struct Move {
 
-    using hex = Hex<R, true>;
-    using value_type = typename hex::idx_type;
+    using value_type = typename Hex<R, true>::idx_type;
 
     enum class Type : value_type { place = 0, slide = 1 };
 
