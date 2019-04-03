@@ -82,6 +82,14 @@ struct Mado {
     value_type m_player_to_move = value::human; // value_type::random ( ),
     value_type m_winner = value::invalid;
 
+    std::array<std::int8_t, board::size ( )> m_occupied_neighbor_count = occupied_neighbor_count ( );
+
+    constexpr std::array<std::int8_t, board::size ( )> occupied_neighbor_count ( ) noexcept {
+        std::array<std::int8_t, board::size ( )> onc;
+        for ( int i = 0; i < static_cast< int > ( board::size ( ) ); ++i )
+            onc [ i ] = static_cast<std::int8_t> ( 6 - board::neighbors.size ( ) );
+        return onc;
+    }
 
     Mado ( ) noexcept {
     }
@@ -92,6 +100,7 @@ struct Mado {
         m_slides = 0;
         m_player_to_move = value::human;
         m_winner = value::invalid;
+        m_occupied_neighbor_count = occupied_neighbor_count ( );
     }
 
     // From SplitMix64, the mixer.
@@ -127,6 +136,15 @@ struct Mado {
     }
 
 
+    void set_to_neighbors ( const idx_type i_ ) noexcept {
+        for ( auto const i : board::neighbors [ i_ ] )
+            ++m_occupied_neighbor_count [ i ];
+    }
+    void set_from_neighbors ( const idx_type i_ ) noexcept {
+        for ( auto const i : board::neighbors [ i_ ] )
+            --m_occupied_neighbor_count [ i ];
+    }
+
     void move_hash_impl ( const move & move_ ) noexcept {
         if ( move_.is_placement ( ) ) { // Place.
             if ( m_slides )
@@ -139,12 +157,14 @@ struct Mado {
             m_zobrist_hash ^= mm_mix64 ( static_cast<std::uint64_t> ( ++m_slides ) );
             m_zobrist_hash ^= hash ( m_player_to_move, move_.from );
             m_board [ move_.from ] = value::vacant;
+            set_from_neighbors ( move_.from );
         }
         m_board [ move_.to ] = m_player_to_move;
         m_zobrist_hash ^= hash ( m_player_to_move, move_.to );
         // Alternatingly hash-in and hash-out this value,
         // to add-in the current player.
         m_zobrist_hash ^= 0xa9063818575b53b7;
+        set_to_neighbors ( move_.to );
     }
 
     void move_impl ( const move & move_ ) noexcept {
@@ -154,8 +174,10 @@ struct Mado {
         else { // Slide.
             ++m_slides;
             m_board [ move_.from ] = value::vacant;
+            set_from_neighbors ( move_.from );
         }
         m_board [ move_.to ] = m_player_to_move;
+        set_to_neighbors ( move_.to );
     }
 
     private:
@@ -243,7 +265,6 @@ struct Mado {
         return moves_->size ( );
     }
 
-    // template<typename T>
     [[ nodiscard ]] move get_random_move ( ) noexcept {
         sf::sleep ( sf::milliseconds ( sax::uniform_int_distribution<size_type> ( 1'000, 3'000 ) ( Rng::gen ( ) ) ) );
         // std::vector<move> available_moves;
@@ -252,14 +273,14 @@ struct Mado {
         available_moves.clear ( );
         if ( availableMoves ( & available_moves ) ) {
             // std::cout << "no moves available " << std::dec << available_moves.size ( ) << nl << nl;
-            //if ( available_moves.size ( ) > * maxsize )
+            // if ( available_moves.size ( ) > * maxsize )
                // * maxsize = available_moves.size ( );
             return available_moves [ sax::uniform_int_distribution<size_type> ( 0, available_moves.size ( ) - 1 ) ( Rng::gen ( ) ) ];
         }
         else {
-            std::cout << "game ended" << nl << nl;
+            // std::cout << "game ended" << nl << nl;
             // std::cout << * maxsize << nl;
-            std::exit ( EXIT_SUCCESS );
+            // std::exit ( EXIT_SUCCESS );
             return move { };
         }
     }
