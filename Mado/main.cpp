@@ -227,26 +227,24 @@ struct Hash32 {
     size_t operator()( uint32_t k ) const { return ( k ^ 2166136261U ) * 16777619UL; }
 };
 
-// 3 >  68 -  37, 1.84
-// 4 > 107 -  61, 1.75
-// 5 > 155 -  91, 1.70
-// 6 > 204 - 127, 1.61
-// 7 > 267 - 169, 1.58
+// 3 >  68 - 37, 1.84
+// 4 > 107 - 61, 1.75
+// 5 > 155 - 91, 1.70
 
 // -fsanitize=address
 
 int main ( ) {
 
     int size = 0;
-    Mado<3> state;
+    Mado<5> state;
 
     plf::nanotimer timer;
 
     timer.start ( );
 
-    for ( int i = 0; i < 20'000'000; ++i ) {
+    for ( int i = 0; i < 10'000; ++i ) {
         while ( true ) {
-            auto const m = state.get_random_move ( & size );
+            auto const m = state.get_random_move (  );
             if ( state.terminal ( ) )
                 break;
             state.move_winner ( m );
@@ -254,7 +252,7 @@ int main ( ) {
         state.reset ( );
     }
 
-    std::cout << ( int ) ( timer.get_elapsed_ms ( ) / 1'000 ) << " secs" << nl;
+    std::cout << ( timer.get_elapsed_ms ( ) / 1'000 ) << " secs" << nl;
 
     std::cout << size << nl;
 
