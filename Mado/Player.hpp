@@ -60,6 +60,13 @@ struct Player {
         value ( std::move ( p_ ) ) {
     }
 
+    [[ nodiscard ]] bool is_vacant ( ) const noexcept {
+        return not ( static_cast<bool> ( value ) );
+    }
+    [[ nodiscard ]] bool is_not_vacant ( ) const noexcept {
+        return static_cast<bool> ( value );
+    }
+
     [[ nodiscard ]] Type opponent ( ) const noexcept {
         return static_cast<Type> ( -static_cast<idx_type> ( value ) );
     }

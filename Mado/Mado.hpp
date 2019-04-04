@@ -163,7 +163,7 @@ struct Mado {
     template<typename IdxType>
     [[ nodiscard ]] inline bool is_surrounded ( const IdxType idx_ ) const noexcept {
         for ( const auto neighbor_of_idx : board::neighbors [ idx_ ] )
-            if ( m_board [ neighbor_of_idx ].vacant ( ) )
+            if ( m_board [ neighbor_of_idx ].is_vacant ( ) )
                 return false;
         return true;
     }
@@ -229,14 +229,14 @@ struct Mado {
         // Mcts class takes/has ownership.
         for ( int i = 0; i < static_cast<int> ( board::size ( ) ); ++i ) {
             // Find places.
-            if ( m_board [ i ].vacant ( ) ) {
+            if ( m_board [ i ].is_vacant ( ) ) {
                 moves_->emplace_back ( i );
                 continue;
             }
             // Find slides.
             if ( m_player_to_move == m_board [ i ] ) {
                 for ( auto const to : board::neighbors [ i ] )
-                    if ( m_board [ to ].vacant ( ) )
+                    if ( m_board [ to ].is_vacant ( ) )
                         moves_->emplace_back ( i, to );
             }
         }
