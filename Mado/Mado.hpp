@@ -100,7 +100,7 @@ struct Mado {
         m_slides = 0;
         m_player_to_move = value::human;
         m_winner = value::invalid;
-        // m_occupied_neighbor_count = occupied_neighbor_count ( );
+        m_occupied_neighbor_count = occupied_neighbor_count ( );
     }
 
     // From SplitMix64, the mixer.
@@ -138,7 +138,7 @@ struct Mado {
 
     void set_to_neighbors ( const idx_type i_ ) noexcept {
         for ( auto const i : board::neighbors [ i_ ] ) {
-            if ( 6 == ++m_occupied_neighbor_count [ i ] and m_board [ i ].occupied ( ) )
+            if ( 6 == ++m_occupied_neighbor_count [ i ] )
                 m_winner = m_board [ i ].opponent ( );
         }
     }
@@ -159,14 +159,14 @@ struct Mado {
             m_zobrist_hash ^= mm_mix64 ( static_cast<std::uint64_t> ( ++m_slides ) );
             m_zobrist_hash ^= hash ( m_player_to_move, move_.from );
             m_board [ move_.from ] = value::vacant;
-            // set_from_neighbors ( move_.from );
+            set_from_neighbors ( move_.from );
         }
         m_board [ move_.to ] = m_player_to_move;
         m_zobrist_hash ^= hash ( m_player_to_move, move_.to );
         // Alternatingly hash-in and hash-out this value,
         // to add-in the current player.
         m_zobrist_hash ^= 0xa9063818575b53b7;
-        // set_to_neighbors ( move_.to );
+        set_to_neighbors ( move_.to );
     }
 
     void move_impl ( const move & move_ ) noexcept {
@@ -176,10 +176,10 @@ struct Mado {
         else { // Slide.
             ++m_slides;
             m_board [ move_.from ] = value::vacant;
-            // set_from_neighbors ( move_.from );
+            set_from_neighbors ( move_.from );
         }
         m_board [ move_.to ] = m_player_to_move;
-        // set_to_neighbors ( move_.to );
+        set_to_neighbors ( move_.to );
     }
 
     private:
@@ -187,7 +187,7 @@ struct Mado {
     template<typename IdxType>
     [[ nodiscard ]] inline bool is_surrounded ( const IdxType idx_ ) const noexcept {
         for ( const auto neighbor_of_idx : board::neighbors [ idx_ ] )
-            if ( m_board [ neighbor_of_idx ].vacant ( ) )
+            if ( m_board [ neighbor_of_idx ].is_vacant ( ) )
                 return false;
         return true;
     }
@@ -251,27 +251,24 @@ struct Mado {
     template<typename MovesContainerPtr>
     [[ nodiscard ]] bool availableMoves ( MovesContainerPtr moves_ ) const noexcept {
         // Mcts class takes/has ownership.
-        if ( nonterminal ( ) ) {
-            for ( int i = 0; i < static_cast< int > ( board::size ( ) ); ++i ) {
-                // Find places.
-                if ( m_board [ i ].vacant ( ) ) {
-                    moves_->emplace_back ( i );
-                    continue;
-                }
-                // Find slides.
-                if ( m_player_to_move == m_board [ i ] ) {
-                    for ( auto const to : board::neighbors [ i ] )
-                        if ( m_board [ to ].vacant ( ) )
-                            moves_->emplace_back ( i, to );
-                }
+        for ( int i = 0; i < static_cast<int> ( board::size ( ) ); ++i ) {
+            // Find places.
+            if ( m_board [ i ].is_vacant ( ) ) {
+                moves_->emplace_back ( i );
+                continue;
             }
-            return moves_->size ( );
+            // Find slides.
+            if ( m_player_to_move == m_board [ i ] ) {
+                for ( auto const to : board::neighbors [ i ] )
+                    if ( m_board [ to ].is_vacant ( ) )
+                        moves_->emplace_back ( i, to );
+            }
         }
-        return false;
+        return moves_->size ( );
     }
 
     [[ nodiscard ]] move get_random_move ( ) noexcept {
-        // sf::sleep ( sf::milliseconds ( sax::uniform_int_distribution<size_type> ( 1'000, 3'000 ) ( Rng::gen ( ) ) ) );
+        sf::sleep ( sf::milliseconds ( sax::uniform_int_distribution<size_type> ( 1'000, 3'000 ) ( Rng::gen ( ) ) ) );
         // std::vector<move> available_moves;
         // available_moves.reserve ( board::size ( ) * 2 );
         static std::experimental::fixed_capacity_vector<move, board::size ( ) * 2> available_moves;
@@ -283,7 +280,7 @@ struct Mado {
             return available_moves [ sax::uniform_int_distribution<size_type> ( 0, available_moves.size ( ) - 1 ) ( Rng::gen ( ) ) ];
         }
         else {
-            // std::cout << "game ended" << nl << nl;
+            std::cout << "game ended" << nl << nl;
             // std::cout << * maxsize << nl;
             // std::exit ( EXIT_SUCCESS );
             return move { };

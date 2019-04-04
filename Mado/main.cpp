@@ -58,7 +58,7 @@
 #include "../../MCTSSearchTree/include/flat_search_tree.hpp"
 
 
-#if 0
+#if 1
 
 #include "App.hpp"
 
@@ -237,15 +237,16 @@ struct Hash32 {
 
 int main ( ) {
 
-    Mado<5> state;
+    int size = 0;
+    Mado<3> state;
 
     plf::nanotimer timer;
 
     timer.start ( );
 
-    for ( int i = 0; i < 10'000; ++i ) {
+    for ( int i = 0; i < 20'000'000; ++i ) {
         while ( true ) {
-            auto const m = state.get_random_move ( );
+            auto const m = state.get_random_move ( & size );
             if ( state.terminal ( ) )
                 break;
             state.move_winner ( m );
@@ -253,7 +254,9 @@ int main ( ) {
         state.reset ( );
     }
 
-    std::cout << ( int ) ( timer.get_elapsed_ms ( ) ) << " msecs" << nl;
+    std::cout << ( int ) ( timer.get_elapsed_ms ( ) / 1'000 ) << " secs" << nl;
+
+    std::cout << size << nl;
 
     return EXIT_SUCCESS;
 }
