@@ -86,8 +86,8 @@ struct Mado {
 
     constexpr std::array<std::int8_t, board::size ( )> occupied_neighbor_count ( ) noexcept {
         std::array<std::int8_t, board::size ( )> onc;
-        for ( int i = 0; i < static_cast<int> ( board::size ( ) ); ++i )
-            onc [ i ] = static_cast<std::int8_t> ( 6 - board::neighbors [ i ].size ( ) );
+        for ( int i = 0; i < static_cast< int > ( board::size ( ) ); ++i )
+            onc [ i ] = static_cast<std::int8_t> ( 6 - board::neighbors.size ( ) );
         return onc;
     }
 
@@ -137,10 +137,8 @@ struct Mado {
 
 
     void set_to_neighbors ( const idx_type i_ ) noexcept {
-        for ( auto const i : board::neighbors [ i_ ] ) {
-            if ( 6 == ++m_occupied_neighbor_count [ i ] )
-                m_winner = m_board [ i ].opponent ( );
-        }
+        for ( auto const i : board::neighbors [ i_ ] )
+            ++m_occupied_neighbor_count [ i ];
     }
     void set_from_neighbors ( const idx_type i_ ) noexcept {
         for ( auto const i : board::neighbors [ i_ ] )
@@ -280,7 +278,7 @@ struct Mado {
             return available_moves [ sax::uniform_int_distribution<size_type> ( 0, available_moves.size ( ) - 1 ) ( Rng::gen ( ) ) ];
         }
         else {
-            std::cout << "game ended" << nl << nl;
+            // std::cout << "game ended" << nl << nl;
             // std::cout << * maxsize << nl;
             // std::exit ( EXIT_SUCCESS );
             return move { };
