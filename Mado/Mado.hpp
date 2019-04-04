@@ -162,8 +162,8 @@ struct Mado {
 
     template<typename IdxType>
     [[ nodiscard ]] inline bool is_surrounded ( const IdxType idx_ ) const noexcept {
-        for ( const auto neighbor_of_idx : board::neighbors [ idx_ ] )
-            if ( m_board [ neighbor_of_idx ].is_vacant ( ) )
+        for ( auto const neighbor_of_idx : board::neighbors [ idx_ ] )
+            if ( m_board [ neighbor_of_idx ].vacant ( ) )
                 return false;
         return true;
     }
@@ -194,13 +194,34 @@ struct Mado {
         // the game!
         if ( is_surrounded ( m_last_move.to ) ) {
             m_winner = m_player_to_move.opponent ( );
+            std::cout << "winner 1 " << m_winner << nl;
             return;
         }
+
+        for ( auto const idx : board::neighbors [ m_last_move.to ] ) {
+            if ( m_board [ idx ].occupied ( ) and is_surrounded ( idx ) ) {
+                if ( m_player_to_move == m_board [ idx ] ) {
+                    m_winner = m_player_to_move.opponent ( );
+                    std::cout << "winner 2 " << m_winner << nl;
+                    return;
+                }
+                // Continue to verify that the curent player did not surround himself,
+                // in which case he loses, even if the current player surrounded the
+                // opponent at the same time.
+                m_winner = m_player_to_move;
+                std::cout << "winner 3 " << m_winner << nl;
+            }
+        }
+
+        /*
+
         surrounded_player_vector surrounded_players;
         find_surrounded_neighbors ( surrounded_players, m_last_move.to );
         if ( surrounded_players.size ( ) )
             // Iff one location is surrounded, iff it's not the current player, the current player wins.
             m_winner = ( std::end ( surrounded_players ) == std::find ( std::begin ( surrounded_players ), std::end ( surrounded_players ), m_player_to_move ) ? m_player_to_move : m_player_to_move.opponent ( ) );
+
+        */
     }
 
     void move_hash ( const move & move_ ) noexcept {
@@ -229,14 +250,14 @@ struct Mado {
         // Mcts class takes/has ownership.
         for ( int i = 0; i < static_cast<int> ( board::size ( ) ); ++i ) {
             // Find places.
-            if ( m_board [ i ].is_vacant ( ) ) {
+            if ( m_board [ i ].vacant ( ) ) {
                 moves_->emplace_back ( i );
                 continue;
             }
             // Find slides.
             if ( m_player_to_move == m_board [ i ] ) {
                 for ( auto const to : board::neighbors [ i ] )
-                    if ( m_board [ to ].is_vacant ( ) )
+                    if ( m_board [ to ].vacant ( ) )
                         moves_->emplace_back ( i, to );
             }
         }
@@ -245,10 +266,10 @@ struct Mado {
 
 
     [[ nodiscard ]] move get_random_move ( ) noexcept {
-        sf::sleep ( sf::milliseconds ( sax::uniform_int_distribution<size_type> ( 1'000, 3'000 ) ( Rng::gen ( ) ) ) );
+        sf::sleep ( sf::milliseconds ( sax::uniform_int_distribution<size_type> ( 500, 1'500 ) ( Rng::gen ( ) ) ) );
         static std::experimental::fixed_capacity_vector<move, board::size ( ) * 2> available_moves;
         available_moves.clear ( );
-        if ( availableMoves ( & available_moves ) ) {
+        if ( nonterminal ( ) and availableMoves ( & available_moves ) ) {
             return available_moves [ sax::uniform_int_distribution<size_type> ( 0, available_moves.size ( ) - 1 ) ( Rng::gen ( ) ) ];
         }
         else {

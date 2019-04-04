@@ -235,7 +235,6 @@ struct Hash32 {
 
 int main ( ) {
 
-    int size = 0;
     Mado<5> state;
 
     plf::nanotimer timer;
@@ -252,9 +251,7 @@ int main ( ) {
         state.reset ( );
     }
 
-    std::cout << ( timer.get_elapsed_ms ( ) / 1'000 ) << " secs" << nl;
-
-    std::cout << size << nl;
+    std::cout << ( int ) ( timer.get_elapsed_ms ( ) ) << " msecs" << nl;
 
     return EXIT_SUCCESS;
 }
