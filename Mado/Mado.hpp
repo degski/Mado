@@ -243,23 +243,17 @@ struct Mado {
         return moves_->size ( );
     }
 
-    // template<typename T>
+
     [[ nodiscard ]] move get_random_move ( ) noexcept {
         sf::sleep ( sf::milliseconds ( sax::uniform_int_distribution<size_type> ( 1'000, 3'000 ) ( Rng::gen ( ) ) ) );
-        // std::vector<move> available_moves;
-        // available_moves.reserve ( board::size ( ) * 2 );
         static std::experimental::fixed_capacity_vector<move, board::size ( ) * 2> available_moves;
         available_moves.clear ( );
-        if ( availableMoves ( & available_moves ) ) {
-            // std::cout << "no moves available " << std::dec << available_moves.size ( ) << nl << nl;
-            //if ( available_moves.size ( ) > * maxsize )
-               // * maxsize = available_moves.size ( );
+        if ( nonterminal ( ) and availableMoves ( & available_moves ) ) {
             return available_moves [ sax::uniform_int_distribution<size_type> ( 0, available_moves.size ( ) - 1 ) ( Rng::gen ( ) ) ];
         }
         else {
             std::cout << "game ended" << nl << nl;
-            // std::cout << * maxsize << nl;
-            std::exit ( EXIT_SUCCESS );
+            // std::exit ( EXIT_SUCCESS );
             return move { };
         }
     }
