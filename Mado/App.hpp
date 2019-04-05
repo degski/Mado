@@ -111,7 +111,7 @@ struct NextMove {
 
 class App {
 
-    using MadoState = Mado<3>;
+    using MadoState = Mado<4>;
 
     using idx_type = typename MadoState::idx_type;
     using hex = typename MadoState::hex;
@@ -307,7 +307,7 @@ App::App ( ) :
         m_overlay_text.setFillColor ( sf::Color { 178u, 178u, 178u, static_cast<sf::Uint8> ( std::clamp ( v - 185.0f, 0.0f, 60.0f ) ) } );
     };
     // Start animation.
-    m_animator.emplace ( LAMBDA_EASING_START_END_DURATION ( update_overlay_alpha, sf::easing::exponentialInEasing, 255.0f, 0.0f, 1'000 ) );
+    m_animator.emplace ( LAMBDA_EASING_START_END_DURATION ( update_overlay_alpha, sf::easing::exponentialInEasing, 255.0f, 0.0f, 1'200 ) );
 
     m_window.requestFocus ( );
 }
@@ -432,29 +432,3 @@ void App::mouseEvents ( const sf::Event & event_ ) {
         m_human_move.reset ( );
     }
 }
-
-
-#if 0
-
-void App::doAgentMctsMove ( ) noexcept {
-
-    const Move agent_move = mcts::Mcts<os::OskaState>::compute ( m_state );
-
-    if ( agent_move not_eq Move::invalid ) {
-
-        if ( agent_move.isCapture ( ) ) {
-
-            m_agent_stone_captor.start ( agent_move.captured ( ), 0.4f, sf::milliseconds ( 350 ) );
-        }
-
-        m_agent_stone_mover.start ( agent_move, 0.25f );
-        m_state.doMove ( agent_move );
-
-        return;
-    }
-
-    std::cout << "Invalid mcts move.\n";
-    exit ( EXIT_FAILURE );
-}
-
-#endif
