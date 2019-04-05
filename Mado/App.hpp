@@ -29,6 +29,7 @@
 #include <cstdlib>
 #include <cstring>
 
+#include <algorithm>
 #include <array>
 #include <vector>
 
@@ -205,6 +206,7 @@ public:
     }
 
     sf::RectangleShape m_overlay;
+    sf::Text m_overlay_text;
 
     bool runStartupAnimation ( ) noexcept;
     void updateWindow ( ) noexcept;
@@ -287,12 +289,24 @@ App::App ( ) :
     m_music.play ( );
     // Player to move.
     // m_player_to_move.what = display::in_active_green;
-    // Ge started.
-    m_mouse.initialize ( m_window );
+    // Setup animation.
     m_animator.reserve ( 32 );
     m_overlay.setSize ( sf::Vector2f { m_window_width, m_window_height } );
-    auto update_overlay_alpha = [ this ] ( const float v ) { m_overlay.setFillColor ( sf::Color { 10u, 10u, 10u, static_cast< sf::Uint8 > ( v ) } ); };
-    m_animator.emplace ( LAMBDA_EASING_START_END_DURATION ( update_overlay_alpha, sf::easing::exponentialInEasing, 255.0f, 0.0f, 600 ) );
+    m_overlay_text.setFont ( m_font_mono );
+    m_overlay_text.setCharacterSize ( 72u );
+    m_overlay_text.setString ( "m a d o" );
+    m_overlay_text.setColor ( sf::Color { 178u, 178u, 178u, 255u } );
+    sf::centreOrigin ( m_overlay_text );
+    m_overlay_text.setPosition ( sf::Vector2f { m_window_width / 2.0f, m_window_height / 3.0f } );
+    auto update_overlay_alpha = [ this ] ( const float v ) {
+        m_overlay.setFillColor ( sf::Color { 10u, 10u, 10u, static_cast<sf::Uint8> ( v ) } );
+        m_overlay_text.setFillColor ( sf::Color { 178u, 178u, 178u, static_cast<sf::Uint8> ( std::clamp ( v - 185.0f, 0.0f, 60.0f ) ) } );
+    };
+    // Get started.
+    m_mouse.initialize ( m_window );
+    // Start animation.
+    m_animator.emplace ( LAMBDA_EASING_START_END_DURATION ( update_overlay_alpha, sf::easing::exponentialInEasing, 255.0f, 0.0f, 1'000 ) );
+    // Focus window.
     m_window.requestFocus ( );
 }
 
@@ -310,6 +324,7 @@ bool App::runStartupAnimation ( ) noexcept {
     m_window.clear ( sf::Color { 10u, 10u, 10u, 255u } );
     m_window.draw ( m_play_area );
     m_window.draw ( m_overlay );
+    m_window.draw ( m_overlay_text );
     m_window.display ( );
     return m_animator.size ( );
 }
