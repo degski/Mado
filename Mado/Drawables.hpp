@@ -208,9 +208,9 @@ struct GameClock : public sf::Drawable, public sf::Transformable {
 
     void init ( sf::Text & text_ ) const noexcept {
         text_.setFont ( m_font_numbers );
-        text_.setCharacterSize ( 24u );
+        text_.setCharacterSize ( 24 );
         text_.setString ( "00:00" );
-        text_.setColor ( sf::Color { 178u, 178u, 178u, 255u } );
+        text_.setColor ( sf::Color { 178, 178, 178, 255 } );
         sf::centreOrigin ( text_ );
     }
 
@@ -439,8 +439,10 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
                 } )
             );
         }
-        std::cout << "game ended, winner " << m_state.winner ( ) << nl << nl;
-        std::exit ( EXIT_SUCCESS );
+        else {
+            std::cout << "game ended, winner " << m_state.winner ( ) << nl << nl;
+            std::exit ( EXIT_SUCCESS );
+        }
     }
 
     [[ nodiscard ]] bool select ( const hex & i_, const DisplayValue d_ ) noexcept {
