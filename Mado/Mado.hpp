@@ -190,19 +190,16 @@ struct Mado {
         // the game!
         if ( is_surrounded ( m_last_move.to ) ) {
             m_winner = m_player_to_move.opponent ( );
-            std::cout << "winner 1 " << m_winner << nl << nl;
             return;
         }
         for ( auto const neighbor : board::neighbors [ m_last_move.to ] ) {
             if ( m_board [ neighbor ].occupied ( ) and is_surrounded ( neighbor ) ) {
                 if ( m_player_to_move == m_board [ neighbor ] ) {
                     m_winner = m_player_to_move.opponent ( );
-                    std::cout << "winner 2 " << m_winner << nl << nl;
                     return;
                 }
                 // Continue to verify that the current player did not surround himself.
                 m_winner = m_player_to_move;
-                std::cout << "winner 3 " << m_winner << nl << nl;
             }
         }
     }
@@ -256,14 +253,14 @@ struct Mado {
 
 
     [[ nodiscard ]] move get_random_move ( ) noexcept {
-        // sf::sleep ( sf::milliseconds ( sax::uniform_int_distribution<size_type> ( 500, 1'500 ) ( Rng::gen ( ) ) ) );
+        sf::sleep ( sf::milliseconds ( sax::uniform_int_distribution<size_type> ( 500, 1'500 ) ( Rng::gen ( ) ) ) );
         static std::experimental::fixed_capacity_vector<move, board::size ( ) * 2> available_moves;
         available_moves.clear ( );
         if ( nonterminal ( ) and availableMoves ( & available_moves ) ) {
             return available_moves [ sax::uniform_int_distribution<size_type> ( 0, available_moves.size ( ) - 1 ) ( Rng::gen ( ) ) ];
         }
         else {
-            std::cout << "game ended" << nl << nl;
+            std::cout << "game ended, winner " << m_winner << nl << nl;
             std::exit ( EXIT_SUCCESS );
             return move { };
         }
