@@ -222,12 +222,16 @@ struct Mado {
     }
 
     void move_hash_winner ( const move & move_ ) noexcept {
-        m_move_lock.lock ( );
         m_last_move = move_;
         move_hash_impl ( move_ );
         winner ( );
         std::cout << *this << nl;
         m_player_to_move.next ( );
+    }
+
+    void locked_move_hash_winner ( const move & move_ ) noexcept {
+        m_move_lock.lock ( );
+        move_hash_winner ( move_ );
         m_move_lock.unlock ( );
     }
 
