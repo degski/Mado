@@ -423,56 +423,77 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
     }
 
     void make_agent_move ( const DisplayValue d_ = DisplayValue::inactive_green ) noexcept {
-        m_move_lock.lock ( );
-        agent_is_making_move = true;
-        m_move_future = std::move ( stlab::async ( stlab::default_executor, [ & ] ( ) noexcept {
-            return m_state.get_random_move ( );
-        } ).then ( [ & ] ( state_move m ) noexcept {
-                m_lock.lock ( );
-                m_agent_move = m;
-                m_lock.unlock ( );
-                m_state.move_hash_winner ( m );
-                m_clock.update_next ( );
-                agent_is_making_move = false;
-                m_move_lock.unlock ( );
-            } )
-        );
+        if ( m_state.nonterminal ( ) ) {
+            m_move_lock.lock ( );
+            agent_is_making_move = true;
+            m_move_future = std::move ( stlab::async ( stlab::default_executor, [ & ] ( ) noexcept {
+                return m_state.get_random_move ( );
+            } ).then ( [ & ] ( state_move m ) noexcept {
+                    m_lock.lock ( );
+                    m_agent_move = m;
+                    m_lock.unlock ( );
+                    m_state.move_hash_winner ( m );
+                    m_clock.update_next ( );
+                    agent_is_making_move = false;
+                    m_move_lock.unlock ( );
+                } )
+            );
+        }
+        else {
+            std::cout << "game ended, winner " << m_state.winner ( ) << nl << nl;
+            std::exit ( EXIT_SUCCESS );
+        }
     }
 
     [[ nodiscard ]] bool select ( const hex & i_, const DisplayValue d_ ) noexcept {
-        m_last = board::index ( i_.q, i_.r );
-        return display_type ( d_ ) == what_type ( m_last );
+        if ( m_state.nonterminal ( ) ) {
+            m_last = board::index ( i_.q, i_.r );
+            return display_type ( d_ ) == what_type ( m_last );
+        }
+        std::cout << "game ended, winner " << m_state.winner ( ) << nl << nl;
+        std::exit ( EXIT_SUCCESS );
+        return false;
     }
     void unselect ( ) noexcept {
         m_last = not_set;
     }
 
     [[ nodiscard ]] bool place ( const hex & t_, const DisplayValue d_ ) noexcept {
-        if ( const size_type t = board::index ( t_.q, t_.r ); DisplayType::vacant == what_type ( t ) ) {
-            set_to_quad ( t, d_ );
-            m_last = t;
-            m_state.move_hash_winner ( state_move { t } );
-            m_clock.update_next ( );
-            make_agent_move ( );
+        if ( m_state.nonterminal ( ) ) {
+            if ( const size_type t = board::index ( t_.q, t_.r ); DisplayType::vacant == what_type ( t ) ) {
+                set_to_quad ( t, d_ );
+                m_last = t;
+                m_state.move_hash_winner ( state_move { t } );
+                m_clock.update_next ( );
+                make_agent_move ( );
+            }
+            return true;
         }
-        return true;
+        std::cout << "game ended, winner " << m_state.winner ( ) << nl << nl;
+        std::exit ( EXIT_SUCCESS );
+        return false;
     }
 
     [[ nodiscard ]] bool move ( const hex & f_, const hex & t_, const DisplayValue d_ ) noexcept {
-        if ( are_neighbors ( f_, t_ ) ) {
-            if ( const size_type f = board::index ( f_.q, f_.r ), t = board::index ( t_.q, t_.r ); display_type ( d_ ) == what_type ( f ) and DisplayValue::active_vacant == what_value ( t ) ) {
-                set_from_quad ( f );
-                set_to_quad ( t, d_ );
-                m_last = t;
-                m_state.move_hash_winner ( state_move { f, t } );
-                m_clock.update_next ( );
-                make_agent_move ( );
-                return true;
+        if ( m_state.nonterminal ( ) ) {
+            if ( are_neighbors ( f_, t_ ) ) {
+                if ( const size_type f = board::index ( f_.q, f_.r ), t = board::index ( t_.q, t_.r ); display_type ( d_ ) == what_type ( f ) and DisplayValue::active_vacant == what_value ( t ) ) {
+                    set_from_quad ( f );
+                    set_to_quad ( t, d_ );
+                    m_last = t;
+                    m_state.move_hash_winner ( state_move { f, t } );
+                    m_clock.update_next ( );
+                    make_agent_move ( );
+                    return true;
+                }
             }
+            const size_type f = board::index ( f_.q, f_.r );
+            set_quad_texture ( m_quads [ f ], what_type ( f ) );
+            set_quad_texture ( m_circles [ f ], DisplayValue::inactive_vacant );
+            return false;
         }
-        const size_type f = board::index ( f_.q, f_.r );
-        set_quad_texture ( m_quads [ f ], what_type ( f ) );
-        set_quad_texture ( m_circles [ f ], DisplayValue::inactive_vacant );
+        std::cout << "game ended, winner " << m_state.winner ( ) << nl << nl;
+        std::exit ( EXIT_SUCCESS );
         return false;
     }
 

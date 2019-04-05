@@ -174,7 +174,7 @@ struct Mado {
 
     public:
 
-    void winner ( ) noexcept {
+    void checkForWinner ( ) noexcept {
         // To be called before the player swap, but after m_player_to_move made his move.
         // If both players slide three turns in a row (three slides for each player makes
         // six total), the game is a draw.
@@ -214,14 +214,14 @@ struct Mado {
     void move_winner ( const move & move_ ) noexcept {
         m_last_move = move_;
         move_impl ( move_ );
-        winner ( );
+        checkForWinner ( );
         m_player_to_move.next ( );
     }
 
     void move_hash_winner ( const move & move_ ) noexcept {
         m_last_move = move_;
         move_hash_impl ( move_ );
-        winner ( );
+        checkForWinner ( );
         std::cout << *this << nl;
         m_player_to_move.next ( );
     }
@@ -260,14 +260,12 @@ struct Mado {
             return available_moves [ sax::uniform_int_distribution<size_type> ( 0, available_moves.size ( ) - 1 ) ( Rng::gen ( ) ) ];
         }
         else {
-            std::cout << "game ended, winner " << m_winner << nl << nl;
-            std::exit ( EXIT_SUCCESS );
             return move { };
         }
     }
 
     [[ nodiscard ]] std::optional<value_type> ended ( ) const noexcept {
-        return m_winner.value == value::invalid ? std::optional<value_type> { } : std::optional<value_type> { m_winner };
+        return m_winner.invalid ( ) ? std::optional<value_type> { } : std::optional<value_type> { m_winner };
     }
 
     [[ nodiscard ]] float result ( const value_type player_just_moved_ ) const noexcept {
@@ -276,10 +274,14 @@ struct Mado {
     }
 
     [[ nodiscard ]] bool terminal ( ) const noexcept {
-        return value::invalid != m_winner.value;
+        return m_winner.valid ( );
     }
     [[ nodiscard ]] bool nonterminal ( ) const noexcept {
-        return value::invalid == m_winner.value;
+        return m_winner.invalid ( );
+    }
+
+    [[ nodiscard ]] value_type winner ( ) const noexcept {
+        return m_winner;
     }
 
     [[ nodiscard ]] move lastMove ( ) const noexcept {

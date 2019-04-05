@@ -85,6 +85,12 @@ struct Player {
         return Rng::bernoulli ( ) ? Type::agent : Type::human;
     }
 
+    [[ nodiscard ]] bool valid ( ) const noexcept {
+        return Type::invalid != value;
+    }
+    [[ nodiscard ]] bool invalid ( ) const noexcept {
+        return Type::invalid == value;
+    }
     [[ nodiscard ]] bool vacant ( ) const noexcept {
         return Type::vacant == value;
     }

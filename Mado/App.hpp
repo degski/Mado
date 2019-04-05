@@ -359,8 +359,6 @@ void App::mouseEvents ( const sf::Event & event_ ) {
                 }
                 if ( not ( no_reset ) )
                     m_human_move.reset ( );
-                // std::cout << m_human_move << nl;
-                // m_play_area.print_state ( );
             }
             else {
                 // Just hovering in play area.
