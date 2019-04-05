@@ -45,6 +45,7 @@
 #include <cereal/cereal.hpp>
 #include <cereal/archives/binary.hpp>
 
+#include <sax/srwlock.hpp>
 #include <sax/stl.hpp>
 
 #include "Player.hpp"
@@ -72,6 +73,8 @@ struct Mado {
 
     using surrounded_player_vector = std::experimental::fixed_capacity_vector<value_type, 6>;
 
+    using move_lock = sax::SRWLock;
+
     board m_board;
     zobrist_hash m_zobrist_hash = 0xb735a0f5839e4e22; // Hash of the current m_board, some random initial value;
 
@@ -82,6 +85,7 @@ struct Mado {
     value_type m_player_to_move = value::human; // value_type::random ( ),
     value_type m_winner = value::invalid;
 
+    move_lock m_move_lock;
 
     Mado ( ) noexcept {
     }
@@ -162,21 +166,13 @@ struct Mado {
 
     template<typename IdxType>
     [[ nodiscard ]] inline bool is_surrounded ( const IdxType idx_ ) const noexcept {
-        for ( auto const neighbor_of_idx : board::neighbors [ idx_ ] )
-            if ( m_board [ neighbor_of_idx ].vacant ( ) )
+        for ( auto const neighbor : board::neighbors [ idx_ ] )
+            if ( m_board [ neighbor ].vacant ( ) )
                 return false;
         return true;
     }
 
     public:
-
-    // Return all the surrounded stones in s_ (after a place/slide).
-    template<typename IdxType>
-    void find_surrounded_neighbors ( surrounded_player_vector & s_, const IdxType idx_ ) const noexcept {
-        for ( auto const idx : board::neighbors [ idx_ ] )
-            if ( m_board [ idx ].occupied ( ) and is_surrounded ( idx ) )
-                s_.push_back ( m_board [ idx ] );
-    }
 
     void winner ( ) noexcept {
         // To be called before the player swap, but after m_player_to_move made his move.
@@ -186,49 +182,36 @@ struct Mado {
             m_winner = value::vacant;
             return;
         }
-        // The object of the game is to surround any ONE of your opponent's stones.  You
+        // The object of the game is to surround any one of your opponent's stones. You
         // surround a stone by filling in the spaces around it - a stone can be surrounded
         // by any combination of your stones, your opponent's stones and the edge of the
-        // board.But be careful; if one of your stones is surrounded on your own turn
-        // ( even if you surround one of your opponent's stones at the same time), you lose
+        // board. But be careful; if one of your stones is surrounded on your own turn
+        // (even if you surround one of your opponent's stones at the same time), you lose
         // the game!
         if ( is_surrounded ( m_last_move.to ) ) {
             m_winner = m_player_to_move.opponent ( );
-            std::cout << "winner 1 " << m_winner << nl;
+            std::cout << "winner 1 " << m_winner << nl << nl;
             return;
         }
-
-        for ( auto const idx : board::neighbors [ m_last_move.to ] ) {
-            if ( m_board [ idx ].occupied ( ) and is_surrounded ( idx ) ) {
-                if ( m_player_to_move == m_board [ idx ] ) {
+        for ( auto const neighbor : board::neighbors [ m_last_move.to ] ) {
+            if ( m_board [ neighbor ].occupied ( ) and is_surrounded ( neighbor ) ) {
+                if ( m_player_to_move == m_board [ neighbor ] ) {
                     m_winner = m_player_to_move.opponent ( );
-                    std::cout << "winner 2 " << m_winner << nl;
+                    std::cout << "winner 2 " << m_winner << nl << nl;
                     return;
                 }
-                // Continue to verify that the curent player did not surround himself,
-                // in which case he loses, even if the current player surrounded the
-                // opponent at the same time.
+                // Continue to verify that the current player did not surround himself.
                 m_winner = m_player_to_move;
-                std::cout << "winner 3 " << m_winner << nl;
+                std::cout << "winner 3 " << m_winner << nl << nl;
             }
         }
-
-        /*
-
-        surrounded_player_vector surrounded_players;
-        find_surrounded_neighbors ( surrounded_players, m_last_move.to );
-        if ( surrounded_players.size ( ) )
-            // Iff one location is surrounded, iff it's not the current player, the current player wins.
-            m_winner = ( std::end ( surrounded_players ) == std::find ( std::begin ( surrounded_players ), std::end ( surrounded_players ), m_player_to_move ) ? m_player_to_move : m_player_to_move.opponent ( ) );
-
-        */
     }
 
     void move_hash ( const move & move_ ) noexcept {
         m_last_move = move_;
         move_hash_impl ( move_ );
+        // std::cout << *this << nl;
         m_player_to_move.next ( );
-        std::cout << * this << nl;
     }
 
     void move_winner ( const move & move_ ) noexcept {
@@ -239,10 +222,13 @@ struct Mado {
     }
 
     void move_hash_winner ( const move & move_ ) noexcept {
+        m_move_lock.lock ( );
         m_last_move = move_;
         move_hash_impl ( move_ );
         winner ( );
+        std::cout << *this << nl;
         m_player_to_move.next ( );
+        m_move_lock.unlock ( );
     }
 
     template<typename MovesContainerPtr>
@@ -266,7 +252,7 @@ struct Mado {
 
 
     [[ nodiscard ]] move get_random_move ( ) noexcept {
-        sf::sleep ( sf::milliseconds ( sax::uniform_int_distribution<size_type> ( 500, 1'500 ) ( Rng::gen ( ) ) ) );
+        // sf::sleep ( sf::milliseconds ( sax::uniform_int_distribution<size_type> ( 500, 1'500 ) ( Rng::gen ( ) ) ) );
         static std::experimental::fixed_capacity_vector<move, board::size ( ) * 2> available_moves;
         available_moves.clear ( );
         if ( nonterminal ( ) and availableMoves ( & available_moves ) ) {

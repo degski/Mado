@@ -422,10 +422,6 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
         } ), 750 ) );
     }
 
-    void print_state ( ) noexcept {
-        std::cout << m_state << nl;
-    }
-
     void make_agent_move ( const DisplayValue d_ = DisplayValue::inactive_green ) noexcept {
         m_move_lock.lock ( );
         agent_is_making_move = true;
@@ -436,7 +432,6 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
                 m_agent_move = m;
                 m_lock.unlock ( );
                 m_state.move_hash_winner ( m );
-                print_state ( );
                 m_clock.update_next ( );
                 agent_is_making_move = false;
                 m_move_lock.unlock ( );

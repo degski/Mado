@@ -110,7 +110,7 @@ struct NextMove {
 
 class App {
 
-    using MadoState = Mado<4>;
+    using MadoState = Mado<3>;
 
     using idx_type = typename MadoState::idx_type;
     using hex = typename MadoState::hex;
@@ -359,8 +359,8 @@ void App::mouseEvents ( const sf::Event & event_ ) {
                 }
                 if ( not ( no_reset ) )
                     m_human_move.reset ( );
-                std::cout << m_human_move << nl;
-                m_play_area.print_state ( );
+                // std::cout << m_human_move << nl;
+                // m_play_area.print_state ( );
             }
             else {
                 // Just hovering in play area.
