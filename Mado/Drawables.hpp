@@ -441,6 +441,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
         }
         else {
             std::cout << "game ended, winner " << m_state.winner ( ) << nl << nl;
+            sf::sleep ( sf::milliseconds ( 2'000 ) );
             std::exit ( EXIT_SUCCESS );
         }
     }
@@ -451,6 +452,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
             return display_type ( d_ ) == what_type ( m_last );
         }
         std::cout << "game ended, winner " << m_state.winner ( ) << nl << nl;
+        sf::sleep ( sf::milliseconds ( 2'000 ) );
         std::exit ( EXIT_SUCCESS );
         return false;
     }
@@ -470,6 +472,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
             return true;
         }
         std::cout << "game ended, winner " << m_state.winner ( ) << nl << nl;
+        sf::sleep ( sf::milliseconds ( 2'000 ) );
         std::exit ( EXIT_SUCCESS );
         return false;
     }
@@ -493,6 +496,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
             return false;
         }
         std::cout << "game ended, winner " << m_state.winner ( ) << nl << nl;
+        sf::sleep ( sf::milliseconds ( 2'000 ) );
         std::exit ( EXIT_SUCCESS );
         return false;
     }
