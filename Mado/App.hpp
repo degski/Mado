@@ -162,7 +162,6 @@ private:
         return static_cast<T> ( static_cast<int> ( x - std::numeric_limits<idx_type>::min ( ) ) + std::numeric_limits<idx_type>::min ( ) );
     }
 
-    [[ nodiscard ]] idx_type pointToIdx ( const sf::Vector2f & p ) const noexcept;
     [[ nodiscard ]] hex pointToHex ( sf::Vector2f p_ ) const noexcept;
     [[ nodiscard ]] bool playAreaContains ( sf::Vector2f p_ ) const noexcept;
 
@@ -215,23 +214,10 @@ public:
     bool runStartupAnimation ( ) noexcept;
     void updateWindow ( ) noexcept;
 
-private:
-
-    // void doAgentMctsMove ( ) noexcept;
-
-public:
-
     void mouseEvents ( const sf::Event & event_ );
 };
 
 
-
-//  https://stackoverflow.com/questions/22128872/simple-c-sfml-program-high-cpu-usage
-
-
-[[ nodiscard ]] App::idx_type App::pointToIdx ( const sf::Vector2f & p_ ) const noexcept {
-    return 0; // MadoState::hex_to_idx ( pointToHex ( p_ ) );
-}
 
 [[ nodiscard] ] App::hex App::pointToHex ( sf::Vector2f p_ ) const noexcept {
     using value_type = typename hex::value_type;
