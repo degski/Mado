@@ -40,12 +40,17 @@
 
 #include <fsmlite/fsm.hpp>
 
+#include <sax/singleton.hpp>
+
 #include "Globals.hpp"
 #include "Mado.hpp"
 #include "Drawables.hpp"
 
 
 #include "resource.h"
+
+
+
 
 
 template<typename GameState, typename Position>
@@ -140,7 +145,6 @@ class App {
 
     NextMove m_human_move;
 
-    sf::CallbackAnimator m_animator;
     sf::Music m_music;
 
     public:
@@ -291,7 +295,7 @@ App::App ( ) :
     // m_player_to_move.what = display::in_active_green;
     // Ge started.
     m_mouse.initialize ( m_window );
-    m_animator.reserve ( 32 );
+    Animator::instance ( ).reserve ( 32 );
 
     m_overlay.setSize ( sf::Vector2f { m_window_width, m_window_height } );
 
@@ -307,7 +311,7 @@ App::App ( ) :
         m_overlay_text.setFillColor ( sf::Color { 178u, 178u, 178u, static_cast<sf::Uint8> ( std::clamp ( v - 175.0f, 0.0f, 70.0f ) ) } );
     };
     // Start animation.
-    m_animator.emplace ( LAMBDA_EASING_START_END_DURATION ( update_overlay_alpha, sf::easing::exponentialInEasing, 255.0f, 0.0f, 2'500 ) );
+    Animator::instance ( ).emplace ( LAMBDA_EASING_START_END_DURATION ( update_overlay_alpha, sf::easing::exponentialInEasing, 255.0f, 0.0f, 2'500 ) );
 
     m_window.requestFocus ( );
 }
@@ -322,13 +326,13 @@ void App::setIcon ( ) noexcept {
 
 
 bool App::runStartupAnimation ( ) noexcept {
-    m_animator.run ( );
+    Animator::instance ( ).run ( );
     m_window.clear ( sf::Color { 10u, 10u, 10u, 255u } );
     m_window.draw ( m_play_area );
     m_window.draw ( m_overlay );
     m_window.draw ( m_overlay_text );
     m_window.display ( );
-    return m_animator.size ( );
+    return Animator::instance ( ).size ( );
 }
 
 

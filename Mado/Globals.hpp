@@ -33,7 +33,10 @@
 #include <limits>
 #include <random>
 
+#include <SFML/Extensions.hpp>
+
 #include <sax/prng.hpp>
+#include <sax/singleton.hpp>
 #include <sax/uniform_int_distribution.hpp>
 
 
@@ -96,3 +99,5 @@ extern fs::path const & g_app_path;
 [[ nodiscard ]] inline std::uint32_t getNumberOfProcessors ( ) noexcept {
     return std::thread::hardware_concurrency ( );
 }
+
+using Animator = sax::singleton<sf::CallbackAnimator>;

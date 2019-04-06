@@ -406,15 +406,15 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
         set_quad_texture ( m_circles [ t_ ], is_active ( d_ ) ? DisplayValue::inactive_vacant : DisplayValue::active_vacant );
         set_quad_texture ( m_quads [ t_ ], d_ );
         set_quad_alpha ( m_quads [ t_ ], 0.0f );
-        m_animator.emplace ( LAMBDA_EASING_START_END_DURATION ( ( [ &, t_ ] ( const float v ) noexcept { set_quad_alpha ( m_quads [ t_ ], v ); } ), sf::easing::exponentialInEasing, 0.0f, 255.0f, 750 ) );
+        Animator::instance ( ).emplace ( LAMBDA_EASING_START_END_DURATION ( ( [ &, t_ ] ( const float v ) noexcept { set_quad_alpha ( m_quads [ t_ ], v ); } ), sf::easing::exponentialInEasing, 0.0f, 255.0f, 750 ) );
     }
 
     void set_from_quad ( const size_type f_ ) noexcept {
         auto const w = what_value ( f_ );
         set_quad_texture ( m_circles [ f_ ], is_active ( w ) ? DisplayValue::inactive_vacant : DisplayValue::active_vacant );
         set_quad_alpha ( m_quads [ f_ ], 255.0f );
-        m_animator.emplace ( LAMBDA_EASING_START_END_DURATION ( ( [ &, f_ ] ( const float v ) noexcept { set_quad_alpha ( m_quads [ f_ ], v ); } ), sf::easing::exponentialInEasing, 255.0f, 0.0f, 750 ) );
-        m_animator.emplace ( LAMBDA_DELAY ( ( [ &, w, f_ ] ( const float v ) noexcept {
+        Animator::instance ( ).emplace ( LAMBDA_EASING_START_END_DURATION ( ( [ &, f_ ] ( const float v ) noexcept { set_quad_alpha ( m_quads [ f_ ], v ); } ), sf::easing::exponentialInEasing, 255.0f, 0.0f, 750 ) );
+        Animator::instance ( ).emplace ( LAMBDA_DELAY ( ( [ &, w, f_ ] ( const float v ) noexcept {
             if ( w == what_value ( f_ ) ) { // Reset, iff not changed.
                 set_quad_texture ( m_quads [ f_ ], DisplayValue::inactive_vacant );
                 set_quad_alpha ( m_quads [ f_ ], 255.0f );
@@ -523,7 +523,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
 
     void update ( ) noexcept {
         // Run animations.
-        m_animator.run ( );
+        Animator::instance ( ).run ( );
         // Check if there is a move.
         if ( m_lock.try_lock ( ) ) {
             if ( m_agent_move.is_valid ( ) ) {
@@ -557,7 +557,6 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
 
     state_reference m_state;
     clock_reference m_clock;
-    sf::CallbackAnimator m_animator;
 
     play_area_lock m_lock;
     stlab::future<void> m_move_future;
