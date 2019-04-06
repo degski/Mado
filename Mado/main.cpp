@@ -140,7 +140,7 @@ int main ( ) {
     std::exception_ptr eptr;
     try {
         std::unique_ptr<App> app_uptr = std::make_unique<App> ( );
-        sf::Pacer keep ( 30 );
+        sf::Pacer keep ( 60 );
         sf::Event event;
         // Startup animation.
         while ( app_uptr->runStartupAnimation ( ) ) {

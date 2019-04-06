@@ -290,14 +290,28 @@ App::App ( ) :
     m_overlay_text.setString ( "m a d o" );
     m_overlay_text.setColor ( sf::Color { 178u, 178u, 178u, 255u } );
     sf::centreOrigin ( m_overlay_text );
-    m_overlay_text.setPosition ( sf::Vector2f { m_window_width / 2.0f, m_window_height / 3.0f } );
+    m_overlay_text.setScale ( 0.01f, 0.01f );
+    m_overlay_text.setPosition ( sf::Vector2f { m_window_width / 2.0f, m_window_height * 0.66f } );
 
     auto update_overlay_alpha = [ & ] ( const float v ) {
-        m_overlay.setFillColor ( sf::Color { 10u, 10u, 10u, static_cast< sf::Uint8 > ( v ) } );
-        m_overlay_text.setFillColor ( sf::Color { 178u, 178u, 178u, static_cast<sf::Uint8> ( std::clamp ( v - 175.0f, 0.0f, 70.0f ) ) } );
+        m_overlay.setFillColor ( sf::Color { 10u, 10u, 10u, static_cast<sf::Uint8> ( v ) } );
     };
+    auto update_overlay_text_alpha = [ & ] ( const float v ) {
+        m_overlay_text.setFillColor ( sf::Color { 178u, 178u, 178u, static_cast<sf::Uint8> ( v ) } );
+    };
+    auto update_overlay_text_position = [ & ] ( const float v ) {
+        m_overlay_text.setPosition ( sf::Vector2f { m_window_width / 2.0f, m_window_height * v } );
+    };
+    auto update_overlay_text_scale = [ & ] ( const float v ) {
+        m_overlay_text.setScale ( v, v );
+    };
+
     // Start animation.
-    Animator::instance ( ).emplace ( LAMBDA_EASING_START_END_DURATION ( update_overlay_alpha, sf::easing::exponentialInEasing, 255.0f, 0.0f, 2'500 ) );
+    Animator::instance ( ).emplace ( LAMBDA_EASING_START_END_DURATION ( update_overlay_alpha, sf::easing::exponentialInEasing, 255.0f, 0.0f, 3'000 ) );
+    Animator::instance ( ).emplace ( LAMBDA_EASING_START_END_DURATION_DELAY ( update_overlay_text_alpha, sf::easing::exponentialInEasing, 255.0f, 0.0f, 750, 750 ) );
+    Animator::instance ( ).emplace ( LAMBDA_EASING_START_END_DURATION ( update_overlay_text_position, sf::easing::exponentialInEasing, 0.5f, 0.33f, 1'000 ) );
+    Animator::instance ( ).emplace ( LAMBDA_EASING_START_END_DURATION ( update_overlay_text_scale, sf::easing::exponentialInEasing, 0.01f, 1.0f, 1'000 ) );
+    Animator::instance ( ).emplace ( LAMBDA_EASING_START_END_DURATION_DELAY ( update_overlay_text_position, sf::easing::exponentialInEasing, 0.33f, 0.0f, 550, 1'000 ) );
 
     m_window.requestFocus ( );
 }
