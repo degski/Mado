@@ -561,7 +561,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
 
     play_area_lock m_lock;
     stlab::future<void> m_move_future;
-    state_move m_agent_move;
+    alignas ( 64 ) state_move m_agent_move;
     sf::VertexArray m_vertices;
     sf::Quad * m_circles, * m_quads;
 };

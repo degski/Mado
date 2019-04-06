@@ -302,12 +302,12 @@ App::App ( ) :
     sf::centreOrigin ( m_overlay_text );
     m_overlay_text.setPosition ( sf::Vector2f { m_window_width / 2.0f, m_window_height / 3.0f } );
 
-    auto update_overlay_alpha = [ this ] ( const float v ) {
+    auto update_overlay_alpha = [ & ] ( const float v ) {
         m_overlay.setFillColor ( sf::Color { 10u, 10u, 10u, static_cast< sf::Uint8 > ( v ) } );
-        m_overlay_text.setFillColor ( sf::Color { 178u, 178u, 178u, static_cast<sf::Uint8> ( std::clamp ( v - 185.0f, 0.0f, 60.0f ) ) } );
+        m_overlay_text.setFillColor ( sf::Color { 178u, 178u, 178u, static_cast<sf::Uint8> ( std::clamp ( v - 175.0f, 0.0f, 70.0f ) ) } );
     };
     // Start animation.
-    m_animator.emplace ( LAMBDA_EASING_START_END_DURATION ( update_overlay_alpha, sf::easing::exponentialInEasing, 255.0f, 0.0f, 1'200 ) );
+    m_animator.emplace ( LAMBDA_EASING_START_END_DURATION ( update_overlay_alpha, sf::easing::exponentialInEasing, 255.0f, 0.0f, 2'500 ) );
 
     m_window.requestFocus ( );
 }
