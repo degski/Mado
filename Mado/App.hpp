@@ -132,7 +132,6 @@ class App {
     sf::FloatRect m_window_bounds;
 
     sf::Font m_font_regular, m_font_bold, m_font_mono, m_font_numbers, m_font_dottie;
-    sf::Texture m_name_texture;
 
     bool m_is_running = true, m_minimize = false;
 
@@ -209,6 +208,8 @@ public:
 
     sf::RectangleShape m_overlay;
     sf::Text m_overlay_text;
+    sf::Texture m_name_texture;
+    sf::Sprite m_name_sprite;
 
     void setupStartupAnimation ( ) noexcept;
     bool runStartupAnimation ( ) noexcept;
@@ -279,6 +280,8 @@ App::App ( ) :
     m_music.setLoopPoints ( loop );
     // Load Name Image.
     sf::loadFromResource ( m_name_texture, NAME );
+    m_name_texture.setSmooth ( true );
+    m_name_sprite.setTexture ( m_name_texture );
     // Start.
     m_music.play ( );
     // Player to move.
@@ -302,6 +305,7 @@ void App::setIcon ( ) noexcept {
 void App::setupStartupAnimation ( ) noexcept {
     m_overlay.setSize ( sf::Vector2f { m_window_width, m_window_height } );
     // Text.
+    /*
     m_overlay_text.setFont ( m_font_mono );
     m_overlay_text.setCharacterSize ( 72u );
     m_overlay_text.setString ( "m a d o" );
@@ -309,10 +313,17 @@ void App::setupStartupAnimation ( ) noexcept {
     sf::centreOrigin ( m_overlay_text );
     m_overlay_text.setScale ( 0.01f, 0.01f );
     m_overlay_text.setPosition ( sf::Vector2f { m_window_width / 2.0f, m_window_height * 0.66f } );
+    */
+
+    sf::centreOrigin ( m_name_sprite );
+    m_name_sprite.setScale ( sf::Vector2f { 0.75f, 0.75f } );
+    m_name_sprite.setPosition ( sf::Vector2f { m_window_width / 2.0f, m_window_height * 0.66f } );
+
     // Callbacks.
     auto update_overlay_alpha = [ & ] ( const float v ) {
         m_overlay.setFillColor ( sf::Color { 10u, 10u, 10u, static_cast< sf::Uint8 > ( v ) } );
     };
+    /*
     auto update_overlay_text_alpha = [ & ] ( const float v ) {
         m_overlay_text.setFillColor ( sf::Color { 178u, 178u, 178u, static_cast< sf::Uint8 > ( v ) } );
     };
@@ -332,6 +343,31 @@ void App::setupStartupAnimation ( ) noexcept {
     Animator::instance ( ).emplace ( LAMBDA_EASING_START_END_DURATION ( update_overlay_text_scale, sf::easing::exponentialInEasing, 0.01f, 1.0f, 1'000 ) );
     Animator::instance ( ).emplace ( LAMBDA_EASING_START_END_DURATION ( update_overlay_text_rotate, sf::easing::exponentialInEasing, 0.0f, 360.0f, 1'000 ) );
     Animator::instance ( ).emplace ( LAMBDA_EASING_START_END_DURATION_DELAY ( update_overlay_text_position, sf::easing::exponentialInEasing, 0.33f, 0.0f, 550, 1'000 ) );
+    */
+
+    auto update_overlay_text_alpha = [ & ] ( const float v ) {
+        m_name_sprite.setColor ( sf::Color { 255u, 255u, 255u, static_cast<sf::Uint8> ( v ) } );
+    };
+    auto update_overlay_text_position = [ & ] ( const float v ) {
+        m_name_sprite.setPosition ( sf::Vector2f { m_window_width / 2.0f, m_window_height * v } );
+    };
+    auto update_overlay_text_rotate = [ & ] ( const float v ) {
+        m_name_sprite.setRotation ( v );
+    };
+    auto update_overlay_text_scale = [ & ] ( const float v ) {
+        m_name_sprite.setScale ( v, v );
+    };
+    // Start animation.
+    Animator::instance ( ).emplace ( LAMBDA_EASING_START_END_DURATION ( update_overlay_alpha, sf::easing::exponentialInEasing, 255.0f, 0.0f, 3'000 ) );
+    Animator::instance ( ).emplace ( LAMBDA_EASING_START_END_DURATION_DELAY ( update_overlay_text_alpha, sf::easing::exponentialInEasing, 255.0f, 0.0f, 750, 750 ) );
+    Animator::instance ( ).emplace ( LAMBDA_EASING_START_END_DURATION ( update_overlay_text_position, sf::easing::exponentialInEasing, 0.5f, 0.33f, 1'000 ) );
+    Animator::instance ( ).emplace ( LAMBDA_EASING_START_END_DURATION ( update_overlay_text_scale, sf::easing::exponentialInEasing, 0.01f, 0.75f, 1'000 ) );
+    Animator::instance ( ).emplace ( LAMBDA_EASING_START_END_DURATION ( update_overlay_text_rotate, sf::easing::exponentialInEasing, 0.0f, 360.0f, 1'000 ) );
+    Animator::instance ( ).emplace ( LAMBDA_EASING_START_END_DURATION_DELAY ( update_overlay_text_position, sf::easing::exponentialInEasing, 0.33f, 0.0f, 550, 1'000 ) );
+
+
+
+
 }
 
 
@@ -340,7 +376,7 @@ bool App::runStartupAnimation ( ) noexcept {
     m_window.clear ( sf::Color { 10u, 10u, 10u, 255u } );
     m_window.draw ( m_play_area );
     m_window.draw ( m_overlay );
-    m_window.draw ( m_overlay_text );
+    m_window.draw ( m_name_sprite );
     m_window.display ( );
     return Animator::instance ( ).size ( );
 }
