@@ -326,13 +326,13 @@ void App::setupStartupAnimation ( ) noexcept {
         m_name_sprite.setScale ( v, v );
     };
     // Start animation.
-    Animator::instance ( ).emplace ( LAMBDA_EASING_START_END_DURATION ( update_overlay_alpha, sf::easing::exponentialInEasing, 255.0f, 0.0f, 3'000 ) );
-    Animator::instance ( ).emplace ( LAMBDA_EASING_START_END_DURATION ( update_overlay_text_alpha, sf::easing::exponentialInEasing, 0.0f, 255.0f, 1'000 ) );
-    Animator::instance ( ).emplace ( LAMBDA_EASING_START_END_DURATION_DELAY ( update_overlay_text_alpha, sf::easing::exponentialInEasing, 255.0f, 0.0f, 800, 850 ) );
-    Animator::instance ( ).emplace ( LAMBDA_EASING_START_END_DURATION ( update_overlay_text_position, sf::easing::exponentialInEasing, 0.90f, 0.40f, 1'000 ) );
-    Animator::instance ( ).emplace ( LAMBDA_EASING_START_END_DURATION ( update_overlay_text_scale, sf::easing::exponentialInEasing, 0.01f, 1.0f, 1'000 ) );
-    Animator::instance ( ).emplace ( LAMBDA_EASING_START_END_DURATION ( update_overlay_text_rotate, sf::easing::exponentialInEasing, 0.0f, 360.0f, 1'000 ) );
-    Animator::instance ( ).emplace ( LAMBDA_EASING_START_END_DURATION_DELAY ( update_overlay_text_position, sf::easing::exponentialInEasing, 0.40f, 0.0f, 550, 1'100 ) );
+    Animator::instance ( ).emplace ( LAMBDA_EASING_START_END_DURATION ( update_overlay_alpha, sf::easing::exponentialInEasing, 255.0f, 0.0f, 4'000 ) );
+    Animator::instance ( ).emplace ( LAMBDA_EASING_START_END_DURATION ( update_overlay_text_alpha, sf::easing::exponentialInEasing, 0.0f, 255.0f, 1'300 ) );
+    Animator::instance ( ).emplace ( LAMBDA_EASING_START_END_DURATION_DELAY ( update_overlay_text_alpha, sf::easing::exponentialInEasing, 255.0f, 0.0f, 1'050, 1'100 ) );
+    Animator::instance ( ).emplace ( LAMBDA_EASING_START_END_DURATION ( update_overlay_text_position, sf::easing::exponentialInEasing, 0.90f, 0.40f, 1'300 ) );
+    Animator::instance ( ).emplace ( LAMBDA_EASING_START_END_DURATION ( update_overlay_text_scale, sf::easing::exponentialInEasing, 0.01f, 1.0f, 1'300 ) );
+    Animator::instance ( ).emplace ( LAMBDA_EASING_START_END_DURATION ( update_overlay_text_rotate, sf::easing::exponentialInEasing, 0.0f, 360.0f, 1'300 ) );
+    Animator::instance ( ).emplace ( LAMBDA_EASING_START_END_DURATION_DELAY ( update_overlay_text_position, sf::easing::exponentialInEasing, 0.40f, 0.0f, 750, 1'500 ) );
 }
 
 
