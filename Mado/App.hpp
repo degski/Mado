@@ -311,7 +311,7 @@ void App::setupStartupAnimation ( ) noexcept {
     m_name_sprite.setColor ( sf::Color { 255u, 255u, 255u, 0u } );
     // Callbacks.
     auto update_overlay_alpha = [ & ] ( const float v ) {
-        m_overlay.setFillColor ( sf::Color { 10u, 10u, 10u, static_cast< sf::Uint8 > ( v ) } );
+        m_overlay.setFillColor ( sf::Color { 10u, 10u, 10u, static_cast<sf::Uint8> ( v ) } );
     };
     auto update_overlay_text_alpha = [ & ] ( const float v ) {
         m_name_sprite.setColor ( sf::Color { 255u, 255u, 255u, static_cast<sf::Uint8> ( v ) } );
