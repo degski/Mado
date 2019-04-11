@@ -28,7 +28,10 @@
 
 #define MUSIC                           110
 
+#define NAME                            115
+
 #define __REGULAR_FONT__				123
 #define __BOLD_FONT__					124
 #define __MONO_FONT__					125
 #define __NUMBERS_FONT__				126
+#define __DOTTIE_FONT__                 127

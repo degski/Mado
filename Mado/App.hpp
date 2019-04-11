@@ -131,7 +131,8 @@ class App {
     sf::RenderWindow m_window;
     sf::FloatRect m_window_bounds;
 
-    sf::Font m_font_regular, m_font_bold, m_font_mono, m_font_numbers;
+    sf::Font m_font_regular, m_font_bold, m_font_mono, m_font_numbers, m_font_dottie;
+    sf::Texture m_name_texture;
 
     bool m_is_running = true, m_minimize = false;
 
@@ -267,6 +268,7 @@ App::App ( ) :
     sf::loadFromResource ( m_font_bold, __BOLD_FONT__ );
     sf::loadFromResource ( m_font_mono, __MONO_FONT__ );
     sf::loadFromResource ( m_font_numbers, __NUMBERS_FONT__ );
+    sf::loadFromResource ( m_font_dottie, __DOTTIE_FONT__  );
     // Load sound.
     sf::loadFromResource ( m_music, MUSIC );
     m_music.setVolume ( 10.0f );
@@ -275,6 +277,9 @@ App::App ( ) :
     loop.offset = sf::seconds ( 3.0f );
     loop.length = sf::seconds ( 192.0f );
     m_music.setLoopPoints ( loop );
+    // Load Name Image.
+    sf::loadFromResource ( m_name_texture, NAME );
+    // Start.
     m_music.play ( );
     // Player to move.
     // m_player_to_move.what = display::in_active_green;

@@ -76,6 +76,7 @@ IDI_ICON1               ICON                    "logo.ico"
 CIRCLES_LARGE           FILEDATA                "circles.png"
 TASKBAR                 FILEDATA                "taskbar.png"
 MUSIC                   FILEDATA                "music.ogg"
+NAME                    FILEDATA                "mado.png"
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -86,3 +87,4 @@ __REGULAR_FONT__		FILEDATA				"Sk-Modernist-Regular.otf"
 __BOLD_FONT__			FILEDATA				"Sk-Modernist-Bold.otf"
 __MONO_FONT__			FILEDATA				"Sk-Modernist-Mono.otf"
 __NUMBERS_FONT__		FILEDATA				"TitilliumWeb-ExtraLight.ttf"
+__DOTTIE_FONT__         FILEDATA                "DottieMcGee.otf" 
