@@ -318,12 +318,12 @@ struct GameClock : public sf::Drawable, public sf::Transformable {
 template<typename State>
 struct PlayArea : public sf::Drawable, public sf::Transformable {
 
-    using board = typename State::board;
-    using state_move = typename State::move;
+    using Board = typename State::Board;
+    using state_move = typename State::Move;
     using state_reference = State &;
     using clock_reference = GameClock &;
 
-    using size_type = typename board::size_type;
+    using size_type = typename Board::size_type;
 
     using play_area_lock = sax::SRWLock;
     using future_state_move = stlab::future<state_move>;
@@ -337,8 +337,8 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
     // first sf::Vertex of the sf::Quad is a multiple of the DisplayValue, as per above, i.e. the
     // texCoords store the information as to which sub-texture is referenced.
 
-    using idx_type = typename State::idx_type;
-    using hex = typename State::hex;
+    using IdxType = typename State::IdxType;
+    using Hex = typename State::Hex;
 
     [[ nodiscard ]] sf::Quad make_vertex ( const sf::Vector2f & p_ ) const noexcept;
     void init ( const sf::Vector2f & center_ ) noexcept;
@@ -346,7 +346,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
     PlayArea ( State & state_, GameClock & clock_, const sf::Vector2f & center_, float hori_, float vert_, float circle_diameter_ );
 
     ~PlayArea ( ) {
-        // Wait for the agent to return it's move. This
+        // Wait for the agent to return it's Move. This
         // is the only time this lock might spin.
         if ( m_move_lock.try_lock ( ) )
             return;
@@ -392,10 +392,10 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
         return static_cast<DisplayType> ( what ( i_ ) % 3 );
     }
 
-    [[ nodiscard ]] bool are_neighbors ( const hex a_, const hex b_ ) const noexcept {
+    [[ nodiscard ]] bool are_neighbors ( const Hex a_, const Hex b_ ) const noexcept {
         if ( a_ != b_ ) {
-            const typename hex::value_type dq = a_.q - b_.q, dr = a_.r - b_.r;
-            return std::abs ( dq ) + std::abs ( dr ) + std::abs ( -dq - dr ) == typename hex::value_type { 2 };
+            const typename Hex::value_type dq = a_.q - b_.q, dr = a_.r - b_.r;
+            return std::abs ( dq ) + std::abs ( dr ) + std::abs ( -dq - dr ) == typename Hex::value_type { 2 };
         }
         return false;
     }
@@ -427,12 +427,12 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
             m_move_lock.lock ( );
             agent_is_making_move = true;
             m_move_future = std::move ( stlab::async ( stlab::default_executor, [ & ] ( ) noexcept {
-                return m_state.get_random_move ( );
+                return m_state.randomMove ( );
             } ).then ( [ & ] ( state_move m ) noexcept {
                     m_lock.lock ( );
                     m_agent_move = m;
                     m_lock.unlock ( );
-                    m_state.move_hash_winner ( m );
+                    m_state.moveHashWinner ( m );
                     m_clock.update_next ( );
                     agent_is_making_move = false;
                     m_move_lock.unlock ( );
@@ -446,9 +446,9 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
         }
     }
 
-    [[ nodiscard ]] bool select ( const hex & i_, const DisplayValue d_ ) noexcept {
+    [[ nodiscard ]] bool select ( const Hex & i_, const DisplayValue d_ ) noexcept {
         if ( m_state.nonterminal ( ) ) {
-            m_last = board::index ( i_.q, i_.r );
+            m_last = Board::index ( i_.q, i_.r );
             return display_type ( d_ ) == what_type ( m_last );
         }
         std::cout << "game ended, winner " << m_state.winner ( ) << nl << nl;
@@ -460,12 +460,12 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
         m_last = not_set;
     }
 
-    [[ nodiscard ]] bool place ( const hex & t_, const DisplayValue d_ ) noexcept {
+    [[ nodiscard ]] bool place ( const Hex & t_, const DisplayValue d_ ) noexcept {
         if ( m_state.nonterminal ( ) ) {
-            if ( const size_type t = board::index ( t_.q, t_.r ); DisplayType::vacant == what_type ( t ) ) {
+            if ( const size_type t = Board::index ( t_.q, t_.r ); DisplayType::vacant == what_type ( t ) ) {
                 set_to_quad ( t, d_ );
                 m_last = t;
-                m_state.move_hash_winner ( state_move { t } );
+                m_state.moveHashWinner ( state_move { t } );
                 m_clock.update_next ( );
                 make_agent_move ( );
             }
@@ -477,20 +477,20 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
         return false;
     }
 
-    [[ nodiscard ]] bool move ( const hex & f_, const hex & t_, const DisplayValue d_ ) noexcept {
+    [[ nodiscard ]] bool Move ( const Hex & f_, const Hex & t_, const DisplayValue d_ ) noexcept {
         if ( m_state.nonterminal ( ) ) {
             if ( are_neighbors ( f_, t_ ) ) {
-                if ( const size_type f = board::index ( f_.q, f_.r ), t = board::index ( t_.q, t_.r ); display_type ( d_ ) == what_type ( f ) and DisplayValue::active_vacant == what_value ( t ) ) {
+                if ( const size_type f = Board::index ( f_.q, f_.r ), t = Board::index ( t_.q, t_.r ); display_type ( d_ ) == what_type ( f ) and DisplayValue::active_vacant == what_value ( t ) ) {
                     set_from_quad ( f );
                     set_to_quad ( t, d_ );
                     m_last = t;
-                    m_state.move_hash_winner ( state_move { f, t } );
+                    m_state.moveHashWinner ( state_move { f, t } );
                     m_clock.update_next ( );
                     make_agent_move ( );
                     return true;
                 }
             }
-            const size_type f = board::index ( f_.q, f_.r );
+            const size_type f = Board::index ( f_.q, f_.r );
             set_quad_texture ( m_quads [ f ], what_type ( f ) );
             set_quad_texture ( m_circles [ f ], DisplayValue::inactive_vacant );
             return false;
@@ -501,8 +501,8 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
         return false;
     }
 
-    void make_active ( const hex & i_ ) noexcept {
-        if ( const size_type i = board::index ( i_.q, i_.r ), w = what ( i ); w < 3 ) {
+    void make_active ( const Hex & i_ ) noexcept {
+        if ( const size_type i = Board::index ( i_.q, i_.r ), w = what ( i ); w < 3 ) {
             if ( not_set != m_last ) {
                 set_quad_texture ( m_quads [ m_last ], what_type ( m_last ) );
                 set_quad_texture ( m_circles [ m_last ], DisplayValue::inactive_vacant );
@@ -524,7 +524,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
     void update ( ) noexcept {
         // Run animations.
         Animator::instance ( ).run ( );
-        // Check if there is a move.
+        // Check if there is a Move.
         if ( m_lock.try_lock ( ) ) {
             if ( m_agent_move.is_valid ( ) ) {
                 if ( m_agent_move.is_slide ( ) )
@@ -599,14 +599,14 @@ template<typename State>
 void PlayArea<State>::init ( const sf::Vector2f & center_ ) noexcept {
     // Construct vertices.
     m_vertices.setPrimitiveType ( sf::Quads );
-    m_vertices.resize ( 4 * ( 2 * board::size ( ) ) );
+    m_vertices.resize ( 4 * ( 2 * Board::size ( ) ) );
     m_quads = reinterpret_cast<sf::Quad*> ( & m_vertices [ 0 ] );
     auto const quads_size = ( m_vertices.getVertexCount ( ) ) / 8;
     m_circles = m_quads + quads_size;
     size_type i = 0;
     sf::Vector2f p = center_ - sf::Vector2f { m_circle_radius, m_circle_radius };
     m_quads [ i ] = make_vertex ( p );
-    for ( size_type ring = 1; ring <= board::radius ( ); ++ring ) {
+    for ( size_type ring = 1; ring <= Board::radius ( ); ++ring ) {
         p.x += m_hori; // Move east.
         for ( size_type j = 0; j < ring; ++j ) { // nw.
             p.x -= m_hori / 2; p.y -= m_vert;

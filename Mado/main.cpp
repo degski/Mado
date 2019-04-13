@@ -97,7 +97,7 @@ struct HexGrid : public RadBase {
         size_type q = rad::centre_idx ( ), r = rad::centre_idx ( );
         add_neighbor_arcs ( q, r );
         for ( size_type ring = 1; ring <= rad::radius ( ); ++ring ) {
-            ++q; // move to next ring, east.
+            ++q; // Move to next ring, east.
             for ( size_type j = 0; j < ring; ++j ) // nw.
                 add_neighbor_arcs ( q, --r );
             for ( size_type j = 0; j < ring; ++j ) // w.
@@ -194,9 +194,9 @@ using board_type = HexContainer<int, 2, true>;
 
 int main7686787 ( ) {
 
-    board_type board;
+    board_type Board;
 
-    std::cout << sizeof ( board ) << nl;
+    std::cout << sizeof ( Board ) << nl;
 
     std::cout << board_type::index ( 0, 0 ) << nl;
 
@@ -208,10 +208,10 @@ int main7686787 ( ) {
     }
     std::cout << nl;
 
-    for ( auto & v : board )
+    for ( auto & v : Board )
         v = 1;
 
-    std::cout << board << nl;
+    std::cout << Board << nl;
 
     return EXIT_SUCCESS;
 }
@@ -243,10 +243,10 @@ int main ( ) {
 
     for ( int i = 0; i < 10'000; ++i ) {
         while ( true ) {
-            auto const m = state.get_random_move (  );
+            auto const m = state.randomMove (  );
             if ( state.terminal ( ) )
                 break;
-            state.move_winner ( m );
+            state.moveWinner ( m );
         }
         state.reset ( );
     }
@@ -671,7 +671,7 @@ struct instance_counter {
     instance_counter ( ) noexcept { ++icounter.num_construct; }
     instance_counter ( const instance_counter& ) noexcept { ++icounter.num_copy; }
     instance_counter ( instance_counter&& ) noexcept { ++icounter.num_move; }
-    // Simulate both copy-assign and move-assign
+    // Simulate both copy-assign and Move-assign
     instance_counter& operator=( instance_counter ) noexcept {
         return *this;
     }

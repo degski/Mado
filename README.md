@@ -20,7 +20,7 @@ An implementation of the game of Susan, invented by Stephen Linhart in 1994.
     I should call it.  Just then, the waitress came over and Michael asked her
     name.  She said 'Susan', and he turned to me and said 'Susan'.  So I said
     'Ah... Susan'.  Anyway, the name stuck, and it must be a good one because
-    everybody asks "So why call a board game SUSAN?"
+    everybody asks "So why call a Board game SUSAN?"
 
 
 Right, trademark has been claimed by Stephen Linhart (see below), so I decided to 
@@ -28,7 +28,7 @@ do the exact same thing. Me and my wife were having a beer at my favorite bar. I
 developing this game and asked the waitress what she was called, she said 'Mado', 
 we ordered another round and called it a job well done. The rest is history.
 
-I decided to get rid of the Hexagonal representation and go with a board of circles
+I decided to get rid of the Hexagonal representation and go with a Board of circles
 ordered along a triangular pattern (hexagons in disguise).
 
 
@@ -53,7 +53,7 @@ Below a copy of the original (copyrighted) document published by Stephen Linhart
 
     THE FINE PRINT
     --------------
-    The board game SUSAN and this manual are protected under international
+    The Board game SUSAN and this manual are protected under international
     copyright conventions and all rights are reserved.  However, you are encouraged
     to copy and distribute this manual freely, as long as you do not modify it in
     any way and you do not charge money for it. SUSAN, Enigma and Enigmatic are
@@ -64,8 +64,8 @@ Below a copy of the original (copyrighted) document published by Stephen Linhart
 
     ABOUT SUSAN
     -----------
-    SUSAN is a quick and subtle board game for two players.  It was invented by
-    Stephen Linhart (that's me) in 1991.  In addition to the traditional board
+    SUSAN is a quick and subtle Board game for two players.  It was invented by
+    Stephen Linhart (that's me) in 1991.  In addition to the traditional Board
     game, SUSAN is also available as a computer game for Macintosh.  You can get
     the Macintosh version on AOL or GEnie, or from the info-mac ftp site at
     sumex-aim.stanford.edu on the Internet.  The Macintosh version of SUSAN
@@ -83,7 +83,7 @@ Below a copy of the original (copyrighted) document published by Stephen Linhart
     I should call it.  Just then, the waitress came over and Michael asked her
     name.  She said 'Susan', and he turned to me and said 'Susan'.  So I said
     'Ah... Susan'.  Anyway, the name stuck, and it must be a good one because
-    everybody asks "So why call a board game SUSAN?"
+    everybody asks "So why call a Board game SUSAN?"
 
 
 
@@ -108,8 +108,8 @@ Below a copy of the original (copyrighted) document published by Stephen Linhart
 
     THE RULES
     ---------
-    SUSAN is played on a hexagonal board with 61 spaces, using two sets of playing
-    stones.  Here is a diagram of a SUSAN board.  Each star is a space where a
+    SUSAN is played on a hexagonal Board with 61 spaces, using two sets of playing
+    stones.  Here is a diagram of a SUSAN Board.  Each star is a space where a
     stone can be placed.  Most spaces have six neighbors.  The edge spaces have
     four neighbors and the corners have three.
 
@@ -125,7 +125,7 @@ Below a copy of the original (copyrighted) document published by Stephen Linhart
 
     To begin the game, players choose colors and decide who goes first.  On each
     turn you can place a stone in any empty space, or slide a stone that you
-    already have on the board.  When you slide a stone, you move it to any
+    already have on the Board.  When you slide a stone, you Move it to any
     neighboring space that's empty.  If both players slide three turns in a row
     (three slides for each player makes six total), the game is a draw.  You can't
     pass your turn.
@@ -133,12 +133,12 @@ Below a copy of the original (copyrighted) document published by Stephen Linhart
     The object of the game is to surround any ONE of your opponent's stones.  You
     surround a stone by filling in the spaces around it - a stone can be surrounded
     by any combination of your stones, your opponent's stones and the edge of the
-    board.  But be careful; if one of your stones is surrounded on your own turn
+    Board.  But be careful; if one of your stones is surrounded on your own turn
     (even if you surround one of your opponent's stones at the same time), you lose
     the game!
 
     Remember that your stones can be surrounded by your own stones, as well as your
-    opponent's stones and the edge of the board.  Having more stones on the board
+    opponent's stones and the edge of the Board.  Having more stones on the Board
     is not always better.
 
 
@@ -161,7 +161,7 @@ Below a copy of the original (copyrighted) document published by Stephen Linhart
         . . . . .
 
     A black stone is surrounded on five sides.  Black needs to make a defensive
-    move.  Otherwise White can win on the next turn.
+    Move.  Otherwise White can win on the next turn.
 
     D e f e n d e d
         . . . ..
@@ -174,7 +174,7 @@ Below a copy of the original (copyrighted) document published by Stephen Linhart
        . . . . . .
         . . . . .
 
-    This move guards the space where White would have placed the winning stone. 
+    This Move guards the space where White would have placed the winning stone. 
     Remember, if one of your stones is surrounded on your own turn, you lose the
     game.
 
@@ -190,7 +190,7 @@ Below a copy of the original (copyrighted) document published by Stephen Linhart
         . . . . .
 
     White slides a stone.  In this situation, neither player can make the winning
-    move.
+    Move.
 
     S a f e
         . . . . .
@@ -202,7 +202,7 @@ Below a copy of the original (copyrighted) document published by Stephen Linhart
       . . . . . . .
        . . . . . .
         . . . . .
-    Because of its position near the corner, this black stone cannot be surrounded.
+    Because of its Position near the corner, this black stone cannot be surrounded.
      White cannot place in the corner without losing the game.
 
 
@@ -242,7 +242,7 @@ Below a copy of the original (copyrighted) document published by Stephen Linhart
     need to win, you're safe.  The example titled 'Defended' in the previous
     section is an example of this kind of defense.
 
-    There are six spaces on the board where a stone will be safe even if you don't
+    There are six spaces on the Board where a stone will be safe even if you don't
     defend it.  Your opponent can never place all six stones needed to surround a
     stone in one of these spaces:
 
@@ -269,8 +269,8 @@ Below a copy of the original (copyrighted) document published by Stephen Linhart
     PATTERNS
     --------
     The next stage of strategy in SUSAN is to control the pattern of stones that
-    develops on the board.  Significant patterns range from simple arcs and
-    triangles to complex whole-board patterns.
+    develops on the Board.  Significant patterns range from simple arcs and
+    triangles to complex whole-Board patterns.
 
     The arc pattern is an extension of the same idea that makes spaces near the
     corners safe.  This white stone is safe because Black can't place six stones
@@ -328,11 +328,11 @@ Below a copy of the original (copyrighted) document published by Stephen Linhart
     WHOLE BOARD PATTERNS
     --------------------
     The idea of using a pattern of stones that protect and reinforce each other can
-    be extended to the whole board.  You won't generally finish such a large
+    be extended to the whole Board.  You won't generally finish such a large
     pattern in a serious game, but these patterns do give you ways to plan your
-    strategy and to understand board positions.
+    strategy and to understand Board positions.
 
-    One good pattern is to fill the board with triangles based on the safe spaces
+    One good pattern is to fill the Board with triangles based on the safe spaces
     near the corners.
 
         . . . . .
@@ -360,7 +360,7 @@ Below a copy of the original (copyrighted) document published by Stephen Linhart
        o o . . o o
         . o . o .
 
-    From here, you can add twelve more stones to reach an even stronger position.
+    From here, you can add twelve more stones to reach an even stronger Position.
 
         . o . o .
        o o o o o o
@@ -403,15 +403,15 @@ Below a copy of the original (copyrighted) document published by Stephen Linhart
 
     EDGE PLAY
     ---------
-    Play around the edges is unique.  You can think of the edge of the board as a
-    circle of stones that don't move, and are neither black nor white.  Each corner
-    of the board is an arc of three imaginary stones protecting one of the six safe
+    Play around the edges is unique.  You can think of the edge of the Board as a
+    circle of stones that don't Move, and are neither black nor white.  Each corner
+    of the Board is an arc of three imaginary stones protecting one of the six safe
     spaces.  A stone in a safe space, plus two more on the edge complete the arc to
     form a ring.  This is a very fast way to form a ring, but it doesn't influence
-    much of the board.
+    much of the Board.
 
     This diagram shows three ways to make a partial ring around the edge of the
-    board.
+    Board.
 
         . o . . .
        o o . . . o
@@ -424,7 +424,7 @@ Below a copy of the original (copyrighted) document published by Stephen Linhart
         o . o . .
 
     The three-stone partial on the upper left and the four-stone partial on the
-    upper right are compatible.  You can surround the edge of the board with these
+    upper right are compatible.  You can surround the edge of the Board with these
     two patterns and have twelve partial rings.
 
         . o . o .
@@ -437,7 +437,7 @@ Below a copy of the original (copyrighted) document published by Stephen Linhart
        o o o o o o
         . o . o .
 
-    This is 30 very safe and stable stones and it's also part of the full-board
+    This is 30 very safe and stable stones and it's also part of the full-Board
     pattern I described in the previous section.  It's unlikely you'd ever form
     this pattern entirely from your own stones.  But it's easy to develop this
     situation with a mixture of stones from both players - a somewhat less stable
@@ -475,7 +475,7 @@ Below a copy of the original (copyrighted) document published by Stephen Linhart
         . . . . .
 
     This is an important technique, because you can use it to protect a threatened
-    stone in a single move.
+    stone in a single Move.
 
 
 
@@ -497,7 +497,7 @@ Below a copy of the original (copyrighted) document published by Stephen Linhart
         . . . . .
 
     One way to take advantage of this technique is to build an empty trap.  That
-    leaves you with spaces on the board where you have some flexibility, but your
+    leaves you with spaces on the Board where you have some flexibility, but your
     opponent doesn't.  In this example, White has constructed an empty trap, while
     Black has formed three partial rings.
 
@@ -530,20 +530,20 @@ Below a copy of the original (copyrighted) document published by Stephen Linhart
 
     THE END GAME
     ------------
-    As the board fills up, it can get hard to find moves that don't put you in
+    As the Board fills up, it can get hard to find moves that don't put you in
     jeopardy.  You can get in trouble because of a shortage of good moves, or you
-    can use it to your advantage.  Sometimes neither player can find a safe move
+    can use it to your advantage.  Sometimes neither player can find a safe Move
     except for slides, and the game is a draw.
 
     If you can create a situation in which you're opponent has no safe moves but
     you do, you can win.  One way to do this is to count down the number of
-    remaining moves, and try to control the board so the last safe move will be
+    remaining moves, and try to control the Board so the last safe Move will be
     yours.  If both players play very close to a pattern you are familiar with, you
     may be able to count the number of slides that you and your opponent have made
     and know who will win if the pattern isn't disrupted.
 
-    If the board looks like this on White's turn, White can slide the center stone
-    and win in one more move.
+    If the Board looks like this on White's turn, White can slide the center stone
+    and win in one more Move.
 
         . o . x .
        x x x o x x
@@ -556,10 +556,10 @@ Below a copy of the original (copyrighted) document published by Stephen Linhart
         . o . x .
 
     Black needs to avoid this situation, either by sliding instead of placing on
-    the previous turn, or by setting up a safe move earlier in the game.
+    the previous turn, or by setting up a safe Move earlier in the game.
 
-    To have a safe move when the board fills up, you can try to keep more options
-    open than your opponent does.  Or you can try to have a place on the board
+    To have a safe Move when the Board fills up, you can try to keep more options
+    open than your opponent does.  Or you can try to have a place on the Board
     where you'll always be able to slide, and there's nothing your opponent can do
     about it.  If you can do that, you can always settle for at least a draw and
     you have a good chance of winning.
@@ -598,7 +598,7 @@ Below a copy of the original (copyrighted) document published by Stephen Linhart
 
     Give each row a letter from 'a' thru 'i', starting at the top.  Then number the
     spaces in each row starting at the left.  This gives you a unique letter-number
-    combination for each space on the board.
+    combination for each space on the Board.
 
     a     1 2 3 4 5
     b    1 2 3 4 5 6
@@ -627,8 +627,8 @@ Below a copy of the original (copyrighted) document published by Stephen Linhart
 
     The letters label rows from the left.  The upper set of numbers labels
     diagonals down to the left.  The lower set of numbers labels diagonals up to
-    the left.  Use the upper set of numbers on the upper half of the board and the
-    lower set of numbers on the lower half of the board.  The two sets of numbers
+    the left.  Use the upper set of numbers on the upper half of the Board and the
+    lower set of numbers on the lower half of the Board.  The two sets of numbers
     are the same for row 'e'.
 
 
@@ -655,7 +655,7 @@ Below a copy of the original (copyrighted) document published by Stephen Linhart
     13 B  f2
     14 W  e5
 
-    The computer tries to take control of the middle board.  I take the safe spaces
+    The computer tries to take control of the middle Board.  I take the safe spaces
     and then contest the center.
 
            1 2 3 4 5
@@ -706,8 +706,8 @@ Below a copy of the original (copyrighted) document published by Stephen Linhart
 
     The computer responds to my attacks on turns 22, 24 and 26 by withdrawing, but
     basically stays within its desired pattern.  I'm succeeding in forcing it to
-    waste turns while I build board position.  On turn 28 I try to get back to my
-    own pattern, but the computer takes advantage of my less aggressive move to
+    waste turns while I build Board Position.  On turn 28 I try to get back to my
+    own pattern, but the computer takes advantage of my less aggressive Move to
     attack e5 and gain initiative.
 
            1 2 3 4 5
@@ -757,7 +757,7 @@ Below a copy of the original (copyrighted) document published by Stephen Linhart
     47 B  h3
     48 W  g6->f6 *W*
 
-    By turn 45 it's pretty much all over.  The computer's move 47 is just killing
+    By turn 45 it's pretty much all over.  The computer's Move 47 is just killing
     time until I win on turn 48 by surrounding e7.
 
            1 2 3 4 5
@@ -781,9 +781,9 @@ Below a copy of the original (copyrighted) document published by Stephen Linhart
     THE END
     -------
     Once you've mastered all these techniques and you're looking for a deeper, more
-    complex game, try playing on a slightly larger 91-space board - six spaces on
-    an edge.  The larger board makes for a more involved and intricate game.  SUSAN
-    on a 61-space board is a quick and subtle game, and it's a great way to get
+    complex game, try playing on a slightly larger 91-space Board - six spaces on
+    an edge.  The larger Board makes for a more involved and intricate game.  SUSAN
+    on a 61-space Board is a quick and subtle game, and it's a great way to get
     started.
 
     Thank you for your interest in SUSAN.  Have Fun!

@@ -54,29 +54,29 @@
 template<typename GameState, typename Position>
 struct NextMove {
 
-    enum State : int { select = 0, place, move };
+    enum State : int { select = 0, place, Move };
 
-    using position = Position;
+    using Position = Position;
 
     void reset ( ) noexcept {
-        m_from = position { };
-        m_to = position { };
+        m_from = Position { };
+        m_to = Position { };
         m_state = State::select;
     }
 
-    [[ nodiscard ]] const position & from ( ) const noexcept {
+    [[ nodiscard ]] const Position & from ( ) const noexcept {
         return m_from;
     }
-    void from ( const position & f_ ) noexcept {
+    void from ( const Position & f_ ) noexcept {
         m_from = f_;
-        m_to = position { };
-        m_state = State::move;
+        m_to = Position { };
+        m_state = State::Move;
     }
 
-    [[ nodiscard ]] const position & to ( ) const noexcept {
+    [[ nodiscard ]] const Position & to ( ) const noexcept {
         return m_to;
     }
-    void to ( const position & t_ ) noexcept {
+    void to ( const Position & t_ ) noexcept {
         m_to = t_;
         m_state = State::select;
     }
@@ -98,7 +98,7 @@ struct NextMove {
             out_ << "place  <" << nm_.m_from << nm_.m_to << ">";
             break;
         case 2:
-            out_ << "move   <" << nm_.m_from << nm_.m_to << ">";
+            out_ << "Move   <" << nm_.m_from << nm_.m_to << ">";
             break;
         }
         return out_;
@@ -106,7 +106,7 @@ struct NextMove {
 
     private:
 
-    position m_from, m_to;
+    Position m_from, m_to;
     State m_state = State::select;
 };
 
@@ -116,10 +116,10 @@ class App {
 
     using MadoState = Mado<4>;
 
-    using idx_type = typename MadoState::idx_type;
-    using hex = typename MadoState::hex;
+    using IdxType = typename MadoState::IdxType;
+    using Hex = typename MadoState::Hex;
     using PlayArea = PlayArea<MadoState>;
-    using NextMove = NextMove<MadoState, hex>;
+    using NextMove = NextMove<MadoState, Hex>;
     using Player = typename MadoState::value_type;
 
     MadoState m_state;
@@ -157,10 +157,10 @@ private:
 
     template<typename T>
     [[ nodiscard ]] inline T floorf ( float x ) const noexcept {
-        return static_cast<T> ( static_cast<int> ( x - std::numeric_limits<idx_type>::min ( ) ) + std::numeric_limits<idx_type>::min ( ) );
+        return static_cast<T> ( static_cast<int> ( x - std::numeric_limits<IdxType>::min ( ) ) + std::numeric_limits<IdxType>::min ( ) );
     }
 
-    [[ nodiscard ]] hex pointToHex ( sf::Vector2f p_ ) const noexcept;
+    [[ nodiscard ]] Hex pointToHex ( sf::Vector2f p_ ) const noexcept;
     [[ nodiscard ]] bool playAreaContains ( sf::Vector2f p_ ) const noexcept;
 
     void setIcon ( ) noexcept;
@@ -209,7 +209,7 @@ public:
     sf::RectangleShape m_overlay;
     sf::Text m_overlay_text;
     sf::Texture m_name_texture;
-    sf::Sprite m_name_sprite;
+    sf::Sprite m_sprite;
 
     void setupStartupAnimation ( ) noexcept;
     bool runStartupAnimation ( ) noexcept;
@@ -220,14 +220,14 @@ public:
 
 
 
-[[ nodiscard] ] App::hex App::pointToHex ( sf::Vector2f p_ ) const noexcept {
-    using value_type = typename hex::value_type;
+[[ nodiscard] ] App::Hex App::pointToHex ( sf::Vector2f p_ ) const noexcept {
+    using value_type = typename Hex::value_type;
     // https://www.redblobgames.com/grids/hexagons/#comment-1063818420
     static const float radius { m_hori * 0.5773502588f };
     static const sf::Vector2f center { m_center.x, m_center.y - radius };
     p_ -= center;
     p_.x /= m_hori; p_.y /= radius;
-    hex h;
+    Hex h;
     h.q = floorf<value_type> ( p_.y + p_.x );
     h.r = floorf<value_type> ( ( floorf<value_type> ( p_.y - p_.x ) + h.q ) * 0.3333333433f );
     h.q = floorf<value_type> ( ( floorf<value_type> ( 2.0f * p_.x + 1.0f ) + h.q ) * 0.3333333433f ) - h.r;
@@ -237,7 +237,7 @@ public:
 
 [[ nodiscard ]] bool App::playAreaContains ( sf::Vector2f p_ ) const noexcept {
     // http://www.playchilla.com/how-to-check-if-a-point-is-inside-a-hexagon
-    static const float hori { MadoState::board::width ( ) * 0.5f * m_vert }, vert { hori * 0.5773502588f }, vert_2 { 2.0f * vert }, hori_vert_2 { hori * vert_2 };
+    static const float hori { MadoState::Board::width ( ) * 0.5f * m_vert }, vert { hori * 0.5773502588f }, vert_2 { 2.0f * vert }, hori_vert_2 { hori * vert_2 };
     p_ -= m_center;
     p_.x = std::abs ( p_.x ); p_.y = std::abs ( p_.y );
     // x- and y-coordinates swapped (for flat-topped hexagon).
@@ -252,11 +252,11 @@ App::App ( ) :
     m_state { },
     m_hori { 74.0f },
     m_vert { 64.0f },
-    m_window_width { MadoState::board::width ( ) * m_hori + m_vert + 1.0f },
-    m_window_height { MadoState::board::height ( ) * m_vert + m_vert + 1.0f + 12.0f },
+    m_window_width { MadoState::Board::width ( ) * m_hori + m_vert + 1.0f },
+    m_window_height { MadoState::Board::height ( ) * m_vert + m_vert + 1.0f + 12.0f },
     m_center { sf::Vector2f { m_window_width * 0.5f, m_window_height * 0.5f + 6.0f } },
     m_taskbar { m_window_width },
-    m_game_clock { std::floorf ( ( m_window_width - ( MadoState::board::radius ( ) + 1 ) * m_hori ) / 4 ), m_window_width - std::floorf ( ( m_window_width - ( MadoState::board::radius ( ) + 1 ) * m_hori ) / 4 ), 76.5f },
+    m_game_clock { std::floorf ( ( m_window_width - ( MadoState::Board::radius ( ) + 1 ) * m_hori ) / 4 ), m_window_width - std::floorf ( ( m_window_width - ( MadoState::Board::radius ( ) + 1 ) * m_hori ) / 4 ), 76.5f },
     m_play_area { m_state, m_game_clock, m_center, m_hori, m_vert, 67.0f } {
     m_settings.antialiasingLevel = 8u;
     // Create the m_window.
@@ -281,10 +281,10 @@ App::App ( ) :
     // Load Name Image.
     sf::loadFromResource ( m_name_texture, NAME );
     m_name_texture.setSmooth ( true );
-    m_name_sprite.setTexture ( m_name_texture );
+    m_sprite.setTexture ( m_name_texture );
     // Start.
     m_music.play ( );
-    // Player to move.
+    // Player to Move.
     // m_player_to_move.what = display::in_active_green;
     // Ge started.
     m_mouse.initialize ( m_window );
@@ -305,25 +305,25 @@ void App::setIcon ( ) noexcept {
 void App::setupStartupAnimation ( ) noexcept {
     m_overlay.setSize ( sf::Vector2f { m_window_width, m_window_height } );
     // Text.
-    sf::centreOrigin ( m_name_sprite );
-    m_name_sprite.setScale ( sf::Vector2f { 0.01f, 0.01f } );
-    m_name_sprite.setPosition ( sf::Vector2f { m_window_width / 2.0f, m_window_height * 0.90f } );
-    m_name_sprite.setColor ( sf::Color { 255u, 255u, 255u, 0u } );
+    sf::centreOrigin ( m_sprite );
+    m_sprite.setScale ( sf::Vector2f { 0.01f, 0.01f } );
+    m_sprite.setPosition ( sf::Vector2f { m_window_width / 2.0f, m_window_height * 0.90f } );
+    m_sprite.setColor ( sf::Color { 255u, 255u, 255u, 0u } );
     // Callbacks.
     auto update_overlay_alpha = [ & ] ( const float v ) {
         m_overlay.setFillColor ( sf::Color { 10u, 10u, 10u, static_cast<sf::Uint8> ( v ) } );
     };
     auto update_overlay_text_alpha = [ & ] ( const float v ) {
-        m_name_sprite.setColor ( sf::Color { 255u, 255u, 255u, static_cast<sf::Uint8> ( v ) } );
+        m_sprite.setColor ( sf::Color { 255u, 255u, 255u, static_cast<sf::Uint8> ( v ) } );
     };
     auto update_overlay_text_position = [ & ] ( const float v ) {
-        m_name_sprite.setPosition ( sf::Vector2f { m_window_width / 2.0f, m_window_height * v } );
+        m_sprite.setPosition ( sf::Vector2f { m_window_width / 2.0f, m_window_height * v } );
     };
     auto update_overlay_text_rotate = [ & ] ( const float v ) {
-        m_name_sprite.setRotation ( v );
+        m_sprite.setRotation ( v );
     };
     auto update_overlay_text_scale = [ & ] ( const float v ) {
-        m_name_sprite.setScale ( v, v );
+        m_sprite.setScale ( v, v );
     };
     // Start animation.
     Animator::instance ( ).emplace ( LAMBDA_EASING_START_END_DURATION ( update_overlay_alpha, sf::easing::exponentialInEasing, 255.0f, 0.0f, 4'000 ) );
@@ -341,7 +341,7 @@ bool App::runStartupAnimation ( ) noexcept {
     m_window.clear ( sf::Color { 10u, 10u, 10u, 255u } );
     m_window.draw ( m_play_area );
     m_window.draw ( m_overlay );
-    m_window.draw ( m_name_sprite );
+    m_window.draw ( m_sprite );
     m_window.display ( );
     return Animator::instance ( ).size ( );
 }
@@ -369,9 +369,9 @@ void App::mouseEvents ( const sf::Event & event_ ) {
     const sf::Vector2f & mouse_position = m_mouse.update ( );
     if ( m_window_bounds.contains ( mouse_position ) ) {
         // In window.
-        const hex hex_position = pointToHex ( mouse_position );
+        const Hex hex_position = pointToHex ( mouse_position );
         // if ( hex_position.valid ( ) ) {
-        if ( hex::is_valid ( hex_position.q, hex_position.r ) ) {
+        if ( Hex::is_valid ( hex_position.q, hex_position.r ) ) {
             if ( not ( m_play_area.agent_is_making_move ) and sf::Mouse::isButtonPressed ( sf::Mouse::Left ) ) {
                 // Selected a cicle.
                 bool no_reset = false;
@@ -384,8 +384,8 @@ void App::mouseEvents ( const sf::Event & event_ ) {
                     if ( ( no_reset = m_play_area.place ( hex_position, PlayArea::DisplayValue::active_red ) ) )
                         m_human_move.to ( hex_position );
                     break;
-                case NextMove::State::move:
-                    if ( ( no_reset = m_play_area.move ( m_human_move.from ( ), hex_position, PlayArea::DisplayValue::active_red ) ) )
+                case NextMove::State::Move:
+                    if ( ( no_reset = m_play_area.Move ( m_human_move.from ( ), hex_position, PlayArea::DisplayValue::active_red ) ) )
                         m_human_move.to ( hex_position );
                     break;
                 }
@@ -408,8 +408,8 @@ void App::mouseEvents ( const sf::Event & event_ ) {
                     }
                     else {
                         if ( not ( m_play_area.agent_is_making_move ) ) {
-                            // Clicked the new area, after selecting where to move from.
-                            if ( NextMove::State::move == m_human_move.state ( ) ) {
+                            // Clicked the new area, after selecting where to Move from.
+                            if ( NextMove::State::Move == m_human_move.state ( ) ) {
                                 m_human_move.reset ( );
                                 m_play_area.unselect ( );
                             }

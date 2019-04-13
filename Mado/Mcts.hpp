@@ -105,7 +105,7 @@ namespace mcts {
     template<typename State>
     struct ArcData { // 1 bytes.
 
-        using Move = typename State::move;
+        using Move = typename State::Move;
 
         // float m_score = 0.0f; // 4 bytes.
         // std::int32_t m_visits = 0; // 4 bytes.
@@ -131,7 +131,7 @@ namespace mcts {
         }
 
         ArcData ( ArcData && ad_ ) noexcept {
-            // std::cout << "arcdata move constructed\n";
+            // std::cout << "arcdata Move constructed\n";
             // m_score = std::move ( ad_.m_score );
             // m_visits = std::move ( ad_.m_visits );
             m_move = std::move ( ad_.m_move );
@@ -155,7 +155,7 @@ namespace mcts {
         }
 
         [[ maybe_unused ]] ArcData & operator = ( ArcData && ad_ ) noexcept {
-            // std::cout << "arcdata move assigned\n";
+            // std::cout << "arcdata Move assigned\n";
             // m_score = std::move ( ad_.m_score );
             // m_visits = std::move ( ad_.m_visits );
             m_move = std::move ( ad_.m_move );
@@ -174,7 +174,7 @@ namespace mcts {
     template<typename State>
     struct NodeData { // 17 bytes.
 
-        using Move = typename State::move;
+        using Move = typename State::Move;
         using Moves = std::vector<Move>;
         using MovesPool = sax::MemoryPool<Moves, 65536>;
         using MovesPoolPtr = sax::owningptr<MovesPool>;
@@ -223,7 +223,7 @@ namespace mcts {
 
         NodeData ( NodeData && nd_ ) noexcept {
 
-            // std::cout << "nodedata move constructed\n";
+            // std::cout << "nodedata Move constructed\n";
 
             std::swap ( m_moves, nd_.m_moves );
 
@@ -244,10 +244,10 @@ namespace mcts {
 
         [[ nodiscard ]] Move getUntriedMove ( ) noexcept {
             if ( m_moves->size ( ) == 1 ) {
-                const Move move = m_moves->front ( );
+                const Move Move = m_moves->front ( );
                 m_moves_pool->deallocate ( m_moves );
                 m_moves = nullptr;
-                return move;
+                return Move;
             }
             return m_moves->draw ( );
         }
@@ -272,7 +272,7 @@ namespace mcts {
         }
 
         [[ nodiscard ]] NodeData & operator = ( NodeData && nd_ ) noexcept {
-            // std::cout << "nodedata move assigned\n";
+            // std::cout << "nodedata Move assigned\n";
             std::swap ( m_moves, nd_.m_moves );
             m_score = std::move ( nd_.m_score );
             m_visits = std::move ( nd_.m_visits );
@@ -338,13 +338,13 @@ namespace mcts {
         using InIt = typename Tree::in_iterator;
         using OutIt = typename Tree::out_iterator;
 
-        using Move = typename State::move;
+        using Move = typename State::Move;
         using Moves = std::vector<Move>;
 
         using Link = typename Tree::Link;
         using Path = typename Tree::Path;
 
-        using ZobristHash = typename State::zobrist_hash;
+        using ZobristHash = typename State::ZobristHash;
 
         typedef std::unordered_map<ZobristHash, Node> TranspositionTable;
         typedef std::vector<ZobristHash> InverseTranspositionTable;
@@ -360,7 +360,7 @@ namespace mcts {
         // The purpose of the m_path is to maintain the path with updates
         // (of the visits/scores) all the way to the original root (start
         // of the game). It's also used as a scrath-pad for the updates
-        // after play-out. Each move and players' move gets added to this
+        // after play-out. Each Move and players' Move gets added to this
         // path.
 
         Path m_path;
@@ -458,7 +458,7 @@ namespace mcts {
                 visits += m_tree [ a ].m_visits;
             }
             //                              Exploitation                                                             Exploration
-            // Exploitation is the task to select the move that leads to the best results so far.
+            // Exploitation is the task to select the Move that leads to the best results so far.
             // Exploration deals with less promising moves that still have to be examined, due to the uncertainty of the evaluation.
             return ( float ) child_data.m_score / ( float ) child_data.m_visits + sqrtf ( 3.0f * logf ( ( float ) visits ) / ( float ) child_data.m_visits );
         }
@@ -466,7 +466,7 @@ namespace mcts {
 
         [[ nodiscard ]] float getUCTFromNode ( const Node parent_, const Node child_ ) const noexcept {
             //                              Exploitation                                                             Exploration
-            // Exploitation is the task to select the move that leads to the best results so far.
+            // Exploitation is the task to select the Move that leads to the best results so far.
             // Exploration deals with less promising moves that still have to be examined, due to the uncertainty of the evaluation.
             return ( float ) m_tree [ child_ ].m_score / ( float ) m_tree [ child_ ].m_visits + sqrtf ( 4.0f * logf ( ( float ) ( m_tree [ parent_ ].m_visits + 1 ) ) / ( float ) m_tree [ child_ ].m_visits );
         }
@@ -504,7 +504,7 @@ namespace mcts {
 
 
         [[ nodiscard ]] Link addChild ( const Node parent_, const State & state_ ) noexcept {
-            // State is updated to reflect move.
+            // State is updated to reflect Move.
             const Node child = getNode ( state_.zobrist ( ) [ 0 ] );
             return child == Tree::invalid_node ? addNode ( parent_, state_ ) : addArc ( parent_, child, state_ );
         }
@@ -539,7 +539,7 @@ namespace mcts {
 
 
         void connectStatesPath ( const State & state_ ) noexcept {
-            // Adding the move of the opponent to the path (and possibly to the tree).
+            // Adding the Move of the opponent to the path (and possibly to the tree).
             const Node parent = m_path.back ( ).target; Node child = getNode ( state_.zobrist ( ) [ 0 ] );
             if ( child == Tree::invalid_node ) {
                 child = addNode ( parent, state_ ).target;
@@ -571,7 +571,7 @@ namespace mcts {
                     // is higher than a certain threshold T
                     // Link child = player == Player::Type::agent and m_tree [ node ].m_visits < threshold ? selectChildRandom ( node ) :
                     Link child = selectChildUCT ( node );
-                    state.move_hash ( m_tree [ child.arc ].m_move );
+                    state.moveHash ( m_tree [ child.arc ].m_move );
                     m_path.push ( child );
                     node = child.target;
                 }
@@ -592,18 +592,18 @@ namespace mcts {
                 */
 
                 // If we are not already at the final state, expand the tree with a new
-                // node and move there.
+                // node and Move there.
 
                 // In addition to expanding one node per simulated game, we also expand all the
                 // children of a node when a node's visit count equals T
 
                 if ( hasUntriedMoves ( node ) ) {
                     //if ( player == Player::Type::agent and m_tree [ node ].m_visits < threshold )
-                    state.move_hash_winner ( getUntriedMove ( node ) ); // State update.
+                    state.moveHashWinner ( getUntriedMove ( node ) ); // State update.
                     m_path.push ( addChild ( node, state ) );
                 }
 
-                // The player in back of path is player ( the player to move ).We now play
+                // The player in back of path is player ( the player to Move ).We now play
                 // randomly until the game ends.
 
                 if ( player == Player::Type::human ) {
@@ -956,7 +956,7 @@ namespace mcts {
     template<typename State>
     void computeMove ( State & state_, int max_iterations_ = 100'000 ) noexcept {
         Mcts<State> * mcts = new Mcts<State> ( );
-        state_.move_hash_winner ( mcts->compute ( state_, max_iterations_ ) );
+        state_.moveHashWinner ( mcts->compute ( state_, max_iterations_ ) );
         delete mcts;
     }
 }

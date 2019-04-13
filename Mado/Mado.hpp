@@ -56,36 +56,36 @@
 template<int R>
 struct Mado {
 
-    using hex = Hex<R, true>;
-    using idx_type = typename hex::idx_type;
+    using Hex = Hex<R, true>;
+    using IdxType = typename Hex::IdxType;
 
-    using move = Move<R>;
+    using Move = Move<R>;
 
     using value = typename Player<R>::Type;
     using value_type = Player<R>;
     using pointer = value_type * ;
     using const_pointer = value_type const *;
 
-    using board = HexContainer<value_type, R, true>;
-    using size_type = typename board::size_type;
+    using Board = HexContainer<value_type, R, true>;
+    using size_type = typename Board::size_type;
 
-    using zobrist_hash = std::uint64_t;
+    using ZobristHash = std::uint64_t;
 
-    using surrounded_player_vector = std::experimental::fixed_capacity_vector<value_type, 6>;
+    using SurroundedPlayerVector = std::experimental::fixed_capacity_vector<value_type, 6>;
 
-    using move_lock = sax::SRWLock;
+    using MoveLock = sax::SRWLock;
 
-    board m_board;
-    zobrist_hash m_zobrist_hash = 0xb735a0f5839e4e22; // Hash of the current m_board, some random initial value;
+    Board m_board;
+    ZobristHash m_zobrist_hash = 0xb735a0f5839e4e22; // Hash of the current m_board, some random initial value;
 
     int m_slides = 0;
 
-    move m_last_move;
+    Move m_last_move;
 
     value_type m_player_to_move = value::human; // value_type::random ( ),
     value_type m_winner = value::invalid;
 
-    move_lock m_move_lock;
+    MoveLock m_move_lock;
 
     Mado ( ) noexcept {
     }
@@ -115,11 +115,11 @@ struct Mado {
         return k_ ^ ( k_ >> 33 );
     }
 
-    [[ nodiscard ]] static constexpr zobrist_hash hash ( value_type p_, const idx_type i_ ) noexcept {
+    [[ nodiscard ]] static constexpr ZobristHash hash ( value_type p_, const IdxType i_ ) noexcept {
         return iu_mix64 ( static_cast<std::uint64_t> ( p_.as_index ( ) ) ^ static_cast<std::uint64_t> ( i_ ) );
     }
 
-    [[ nodiscard ]] zobrist_hash zobrist ( ) const noexcept {
+    [[ nodiscard ]] ZobristHash zobrist ( ) const noexcept {
         return m_zobrist_hash;
     }
 
@@ -131,7 +131,7 @@ struct Mado {
     }
 
 
-    void move_hash_impl ( const move & move_ ) noexcept {
+    void moveHashImpl ( const Move & move_ ) noexcept {
         if ( move_.is_placement ( ) ) { // Place.
             if ( m_slides )
                 m_zobrist_hash ^= mm_mix64 ( static_cast<std::uint64_t> ( m_slides ) );
@@ -151,7 +151,7 @@ struct Mado {
         m_zobrist_hash ^= 0xa9063818575b53b7;
     }
 
-    void move_impl ( const move & move_ ) noexcept {
+    void moveImpl ( const Move & move_ ) noexcept {
         if ( move_.is_placement ( ) ) { // Place.
             m_slides = 0;
         }
@@ -165,8 +165,8 @@ struct Mado {
     private:
 
     template<typename IdxType>
-    [[ nodiscard ]] inline bool is_surrounded ( const IdxType idx_ ) const noexcept {
-        for ( auto const neighbor : board::neighbors [ idx_ ] )
+    [[ nodiscard ]] inline bool isSurrounded ( const IdxType idx_ ) const noexcept {
+        for ( auto const neighbor : Board::neighbors [ idx_ ] )
             if ( m_board [ neighbor ].vacant ( ) )
                 return false;
         return true;
@@ -175,7 +175,7 @@ struct Mado {
     public:
 
     void checkForWinner ( ) noexcept {
-        // To be called before the player swap, but after m_player_to_move made his move.
+        // To be called before the player swap, but after m_player_to_move made his Move.
         // If both players slide three turns in a row (three slides for each player makes
         // six total), the game is a draw.
         if ( 6 == m_slides ) {
@@ -185,15 +185,15 @@ struct Mado {
         // The object of the game is to surround any one of your opponent's stones. You
         // surround a stone by filling in the spaces around it - a stone can be surrounded
         // by any combination of your stones, your opponent's stones and the edge of the
-        // board. But be careful; if one of your stones is surrounded on your own turn
+        // Board. But be careful; if one of your stones is surrounded on your own turn
         // (even if you surround one of your opponent's stones at the same time), you lose
         // the game!
-        if ( is_surrounded ( m_last_move.to ) ) {
+        if ( isSurrounded ( m_last_move.to ) ) {
             m_winner = m_player_to_move.opponent ( );
             return;
         }
-        for ( auto const neighbor : board::neighbors [ m_last_move.to ] ) {
-            if ( m_board [ neighbor ].occupied ( ) and is_surrounded ( neighbor ) ) {
+        for ( auto const neighbor : Board::neighbors [ m_last_move.to ] ) {
+            if ( m_board [ neighbor ].occupied ( ) and isSurrounded ( neighbor ) ) {
                 if ( m_player_to_move == m_board [ neighbor ] ) {
                     m_winner = m_player_to_move.opponent ( );
                     return;
@@ -204,38 +204,38 @@ struct Mado {
         }
     }
 
-    void move_hash ( const move & move_ ) noexcept {
+    void moveHash ( const Move & move_ ) noexcept {
         m_last_move = move_;
-        move_hash_impl ( move_ );
+        moveHashImpl ( move_ );
         // std::cout << *this << nl;
         m_player_to_move.next ( );
     }
 
-    void move_winner ( const move & move_ ) noexcept {
+    void moveWinner ( const Move & move_ ) noexcept {
         m_last_move = move_;
-        move_impl ( move_ );
+        moveImpl ( move_ );
         checkForWinner ( );
         m_player_to_move.next ( );
     }
 
-    void move_hash_winner ( const move & move_ ) noexcept {
+    void moveHashWinner ( const Move & move_ ) noexcept {
         m_last_move = move_;
-        move_hash_impl ( move_ );
+        moveHashImpl ( move_ );
         checkForWinner ( );
         std::cout << *this << nl;
         m_player_to_move.next ( );
     }
 
-    void locked_move_hash_winner ( const move & move_ ) noexcept {
+    void lockedMoveHashWinner ( const Move & move_ ) noexcept {
         m_move_lock.lock ( );
-        move_hash_winner ( move_ );
+        moveHashWinner ( move_ );
         m_move_lock.unlock ( );
     }
 
     template<typename MovesContainerPtr>
     [[ nodiscard ]] bool availableMoves ( MovesContainerPtr moves_ ) const noexcept {
         // Mcts class takes/has ownership.
-        for ( int i = 0; i < static_cast<int> ( board::size ( ) ); ++i ) {
+        for ( int i = 0; i < static_cast<int> ( Board::size ( ) ); ++i ) {
             // Find places.
             if ( m_board [ i ].vacant ( ) ) {
                 moves_->emplace_back ( i );
@@ -243,7 +243,7 @@ struct Mado {
             }
             // Find slides.
             if ( m_player_to_move == m_board [ i ] ) {
-                for ( auto const to : board::neighbors [ i ] )
+                for ( auto const to : Board::neighbors [ i ] )
                     if ( m_board [ to ].vacant ( ) )
                         moves_->emplace_back ( i, to );
             }
@@ -252,15 +252,15 @@ struct Mado {
     }
 
 
-    [[ nodiscard ]] move get_random_move ( ) noexcept {
+    [[ nodiscard ]] Move randomMove ( ) noexcept {
         sf::sleep ( sf::milliseconds ( sax::uniform_int_distribution<size_type> ( 500, 1'500 ) ( Rng::gen ( ) ) ) );
-        static std::experimental::fixed_capacity_vector<move, board::size ( ) * 2> available_moves;
+        static std::experimental::fixed_capacity_vector<Move, Board::size ( ) * 2> available_moves;
         available_moves.clear ( );
         if ( nonterminal ( ) and availableMoves ( & available_moves ) ) {
             return available_moves [ sax::uniform_int_distribution<size_type> ( 0, available_moves.size ( ) - 1 ) ( Rng::gen ( ) ) ];
         }
         else {
-            return move { };
+            return Move { };
         }
     }
 
@@ -269,7 +269,7 @@ struct Mado {
     }
 
     [[ nodiscard ]] float result ( const value_type player_just_moved_ ) const noexcept {
-        // Determine result: last player of path is the player to move.
+        // Determine result: last player of path is the player to Move.
         return m_winner.vacant ( ) ? 0.0f : ( m_winner == player_just_moved_ ? 1.0f : -1.0f );
     }
 
@@ -284,7 +284,7 @@ struct Mado {
         return m_winner;
     }
 
-    [[ nodiscard ]] move lastMove ( ) const noexcept {
+    [[ nodiscard ]] Move lastMove ( ) const noexcept {
         return m_last_move;
     }
 

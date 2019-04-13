@@ -44,9 +44,9 @@ struct RadiusBase {
 
     static_assert ( R > 1 and R < 105, "radius (R) must be on interval [ 2, 104 ]" );
 
-    using idx_type = std::conditional_t<( 1 + 3 * R * ( R + 1 ) ) < std::numeric_limits<std::int8_t>::max ( ), std::int8_t, std::int16_t>;
+    using IdxType = std::conditional_t<( 1 + 3 * R * ( R + 1 ) ) < std::numeric_limits<std::int8_t>::max ( ), std::int8_t, std::int16_t>;
 
-    using index_array = std::experimental::fixed_capacity_vector<idx_type, ( 1 + 2 * R )>;
+    using index_array = std::experimental::fixed_capacity_vector<IdxType, ( 1 + 2 * R )>;
     using const_index_array = index_array const;
 
     using size_type = int;
@@ -81,12 +81,12 @@ struct RadiusBase {
     // Compile-time function.
     template<size_type Start>
     [[ nodiscard ]] static constexpr const_index_array make_index_array ( ) noexcept {
-        index_array a ( 1, static_cast<idx_type> ( Start - radius ( ) ) );
+        index_array a ( 1, static_cast<IdxType> ( Start - radius ( ) ) );
         size_type i = radius ( ) + 1;
         for ( ; i < ( 1 + 2 * radius ( ) ); ++i )
-            a.emplace_back ( static_cast<idx_type> ( a.back ( ) + i + 1 ) );
+            a.emplace_back ( static_cast<IdxType> ( a.back ( ) + i + 1 ) );
         for ( ; i > ( 1 + radius ( ) ); --i )
-            a.emplace_back ( static_cast<idx_type> ( a.back ( ) + i ) );
+            a.emplace_back ( static_cast<IdxType> ( a.back ( ) + i ) );
         return a;
     }
 
@@ -110,8 +110,8 @@ template<int R, bool zero_base>
 struct Hex : public RadiusBase<R, zero_base> {
 
     using rad = RadiusBase<R, zero_base>;
-    using idx_type = typename rad::idx_type;
-    using value_type = idx_type;
+    using IdxType = typename rad::IdxType;
+    using value_type = IdxType;
     using size_type = typename rad::size_type;
 
     using rad::radius;
@@ -153,12 +153,12 @@ template<int R, bool zero_base>
 struct HexBase : public RadiusBase<R, zero_base> {
 
     using rad = RadiusBase<R, zero_base>;
-    using idx_type = typename rad::idx_type;
+    using IdxType = typename rad::IdxType;
     using size_type = typename rad::size_type;
-    using const_pointer = idx_type const *;
-    using const_reference = idx_type const &;
+    using const_pointer = IdxType const *;
+    using const_reference = IdxType const &;
 
-    using neighbors_type = std::experimental::fixed_capacity_vector<idx_type, 6>;
+    using neighbors_type = std::experimental::fixed_capacity_vector<IdxType, 6>;
     using neighbors_type_array = std::array<neighbors_type, rad::size ( )>;
 
     using const_iterator = typename neighbors_type::const_iterator;
@@ -198,7 +198,7 @@ struct HexBase : public RadiusBase<R, zero_base> {
         size_type q = center_idx ( ), r = center_idx ( );
         emplace_neighbors ( na, q, r );
         for ( size_type ring = 1; ring <= radius ( ); ++ring ) {
-            ++q; // move to next ring, east.
+            ++q; // Move to next ring, east.
             for ( size_type j = 0; j < ring; ++j ) // nw.
                 emplace_neighbors ( na, q, --r );
             for ( size_type j = 0; j < ring; ++j ) // w.
@@ -227,8 +227,8 @@ template<typename Type, int R, bool zero_base>
 struct HexContainer : public HexBase<R, zero_base> {
 
     using rad = RadiusBase<R, zero_base>;
-    using idx_type = typename rad::idx_type;
-    using hex = Hex<R, zero_base>;
+    using IdxType = typename rad::IdxType;
+    using Hex = Hex<R, zero_base>;
     using hex_base = HexBase<R, zero_base>;
 
     using rad::radius;
@@ -304,10 +304,10 @@ struct HexContainer : public HexBase<R, zero_base> {
         return std::cend ( m_data );
     }
 
-    [[ nodiscard ]] const_reference operator [ ] ( const hex & h_ ) const noexcept {
+    [[ nodiscard ]] const_reference operator [ ] ( const Hex & h_ ) const noexcept {
         return at ( h_ );
     }
-    [[ nodiscard ]] reference operator [ ] ( const hex & h_ ) noexcept {
+    [[ nodiscard ]] reference operator [ ] ( const Hex & h_ ) noexcept {
         return const_cast<reference> ( std::as_const ( *this ).operator [ ] ( h_ ) );
     }
 
