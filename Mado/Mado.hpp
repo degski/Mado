@@ -79,6 +79,21 @@ struct Mado {
         Board m_board;
         std::int8_t m_slides;
         value_type m_player_to_move; // value_type::random ( ),
+
+        PositionData ( ) = default;
+        PositionData ( const PositionData & ) = default;
+        PositionData ( PositionData && ) = default;
+
+        private:
+
+        friend class cereal::access;
+
+        template<class Archive>
+        void serialize ( Archive & ar_ ) {
+            ar_ ( m_board );
+            ar_ ( m_slides );
+            ar_ ( m_player_to_move );
+        }
     };
 
     PositionData m_pos;
@@ -299,5 +314,12 @@ struct Mado {
         out_ << b_.m_pos.m_board << nl;
         out_ << nl << "  hash 0x" << std::hex << b_.m_zobrist_hash << " slides " << b_.m_pos.m_slides << nl;
         return out_;
+    }
+
+    friend class cereal::access;
+
+    template<class Archive>
+    void serialize ( Archive & ar_ ) {
+        ar_ ( m_pos );
     }
 };

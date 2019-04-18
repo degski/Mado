@@ -51,14 +51,21 @@ struct Player {
 
     Type value = Type::vacant;
 
-    Player ( ) noexcept {
-    }
+    Player ( ) noexcept = default;
+    Player ( const Player & p_ ) noexcept = default;
+    Player ( Player && p_ ) noexcept = default;
+
+    Player & operator = ( const Player & ) noexcept = default;
+    Player & operator = ( Player && ) noexcept = default;
+
     Player ( const Type & p_ ) noexcept :
         value ( p_ ) {
     }
     Player ( Type && p_ ) noexcept :
         value ( std::move ( p_ ) ) {
     }
+
+    ~Player ( ) noexcept = default;
 
     [[ nodiscard ]] Type opponent ( ) const noexcept {
         return static_cast<Type> ( -static_cast<IdxType> ( value ) );
