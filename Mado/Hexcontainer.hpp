@@ -81,6 +81,15 @@ struct RadiusBase {
         return static_cast<size_type> ( zero_base ? 0 : radius ( ) );
     }
 
+    RadiusBase ( ) noexcept = default;
+    RadiusBase ( const RadiusBase & ) noexcept = default;
+    RadiusBase ( RadiusBase && ) noexcept = default;
+
+    RadiusBase & operator = ( const RadiusBase & ) noexcept = default;
+    RadiusBase & operator = ( RadiusBase && ) noexcept = default;
+
+    ~RadiusBase ( ) noexcept = default;
+
     // Compile-time function.
     template<size_type Start>
     [[ nodiscard ]] static constexpr const_index_array make_index_array ( ) noexcept {
@@ -129,6 +138,15 @@ struct Hex : public RadiusBase<R, zero_base> {
     using rad::is_valid;
 
     value_type q = value_type { -radius ( ) - 1 }, r = value_type { -radius ( ) - 1 };
+
+    Hex ( ) noexcept = default;
+    Hex ( const Hex & ) noexcept = default;
+    Hex ( Hex && ) noexcept = default;
+
+    Hex & operator = ( const Hex & ) noexcept = default;
+    Hex & operator = ( Hex && ) noexcept = default;
+
+    ~Hex ( ) noexcept = default;
 
     void nil ( ) noexcept {
         q = value_type { -radius ( ) - 1 }; r = value_type { -radius ( ) - 1 };
@@ -187,6 +205,15 @@ struct HexBase : public RadiusBase<R, zero_base> {
     using rad::is_invalid;
     using rad::is_valid;
 
+    HexBase ( ) noexcept = default;
+    HexBase ( const HexBase & ) noexcept = default;
+    HexBase ( HexBase && ) noexcept = default;
+
+    HexBase & operator = ( const HexBase & ) noexcept = default;
+    HexBase & operator = ( HexBase && ) noexcept = default;
+
+    ~HexBase ( ) noexcept = default;
+
     private:
 
     // From https://stackoverflow.com/a/40030044/646940, and fixed the missing constexpr std::swap (in C++17).
@@ -229,8 +256,6 @@ struct HexBase : public RadiusBase<R, zero_base> {
     }
 
     public:
-
-    constexpr HexBase ( ) noexcept : rad { } { }
 
     static constexpr neighbors_type_array const neighbors = make_neighbors_array ( );
 };
@@ -275,7 +300,14 @@ struct HexContainer : public HexBase<R, zero_base> {
 
     data_array m_data = { }; // value initialized, default is indeterminate.
 
-    HexContainer ( ) noexcept : hex_base { } { }
+    HexContainer ( ) noexcept = default;
+    HexContainer ( const HexContainer & ) noexcept = default;
+    HexContainer ( HexContainer && ) noexcept = default;
+
+    HexContainer & operator = ( const HexContainer & ) noexcept = default;
+    HexContainer & operator = ( HexContainer && ) noexcept = default;
+
+    ~HexContainer ( ) noexcept = default;
 
     void reset ( ) noexcept {
         std::fill ( std::execution::par_unseq, begin ( ), end ( ), value_type { } );

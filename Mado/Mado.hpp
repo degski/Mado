@@ -80,9 +80,14 @@ struct Mado {
         std::int8_t m_slides;
         value_type m_player_to_move; // value_type::random ( ),
 
-        PositionData ( ) = default;
-        PositionData ( const PositionData & ) = default;
-        PositionData ( PositionData && ) = default;
+        PositionData ( ) noexcept = default;
+        PositionData ( const PositionData & ) noexcept = default;
+        PositionData ( PositionData && ) noexcept = default;
+
+        PositionData & operator = ( const PositionData & ) noexcept = default;
+        PositionData & operator = ( PositionData && ) noexcept = default;
+
+        ~PositionData ( ) noexcept = default;
 
         private:
 
