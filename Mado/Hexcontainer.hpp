@@ -146,6 +146,16 @@ struct Hex : public RadiusBase<R, zero_base> {
             out_ << std::dec << '<' << std::setw ( 2 ) << static_cast<int> ( h_.q ) << ' ' << std::setw ( 2 ) << static_cast<int> ( h_.r ) << '>';
         return out_;
     }
+
+    private:
+
+    friend class cereal::access;
+
+    template<class Archive>
+    void serialize ( Archive & ar_ ) {
+        ar_ ( q );
+        ar_ ( r );
+    }
 };
 
 
@@ -359,5 +369,14 @@ struct HexContainer : public HexBase<R, zero_base> {
         }
         out_ << nl;
         return out_;
+    }
+
+    private:
+
+    friend class cereal::access;
+
+    template<class Archive>
+    void serialize ( Archive & ar_ ) {
+        ar_ ( m_data );
     }
 };
