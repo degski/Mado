@@ -75,26 +75,31 @@ struct Mado {
 
     using MoveLock = sax::SRWLock;
 
-    Board m_board;
-    std::int8_t m_slides = 0;
-    value_type m_player_to_move = value::human; // value_type::random ( ),
+    struct PositionData {
+        Board m_board;
+        std::int8_t m_slides;
+        value_type m_player_to_move; // value_type::random ( ),
+    };
 
-    value_type m_winner = value::invalid;
+    PositionData m_pos;
 
-    ZobristHash m_zobrist_hash = 0xb735a0f5839e4e22; // Hash of the current m_board, some random initial value;
+    value_type m_winner;
+
+    ZobristHash m_zobrist_hash; // Hash of the current m_board, some random initial value;
     Move m_last_move;
 
     MoveLock m_move_lock;
 
     Mado ( ) noexcept {
+        reset ( );
     }
 
     void reset ( ) noexcept {
-        m_board.reset ( );
-        m_zobrist_hash = 0xb735a0f5839e4e22;
-        m_slides = 0;
-        m_player_to_move = value::human;
+        m_pos.m_board.reset ( );
+        m_pos.m_slides = 0;
+        m_pos.m_player_to_move = value::human;
         m_winner = value::invalid;
+        m_zobrist_hash = 0xb735a0f5839e4e22;
     }
 
     // From SplitMix64, the mixer.
@@ -123,28 +128,28 @@ struct Mado {
     }
 
     [[ nodiscard ]] value_type playerToMove ( ) const noexcept {
-        return m_player_to_move;
+        return m_pos.m_player_to_move;
     }
     [[ nodiscard ]] value_type playerJustMoved ( ) const noexcept {
-        return m_player_to_move.opponent ( );
+        return m_pos.m_player_to_move.opponent ( );
     }
 
 
     void moveHashImpl ( const Move & move_ ) noexcept {
         if ( move_.is_placement ( ) ) { // Place.
-            if ( m_slides )
-                m_zobrist_hash ^= mm_mix64 ( static_cast<std::uint64_t> ( m_slides ) );
-            m_slides = 0;
+            if ( m_pos.m_slides )
+                m_zobrist_hash ^= mm_mix64 ( static_cast<std::uint64_t> ( m_pos.m_slides ) );
+            m_pos.m_slides = 0;
         }
         else { // Slide.
-            if ( m_slides )
-                m_zobrist_hash ^= mm_mix64 ( static_cast<std::uint64_t> ( m_slides ) );
-            m_zobrist_hash ^= mm_mix64 ( static_cast<std::uint64_t> ( ++m_slides ) );
-            m_zobrist_hash ^= hash ( m_player_to_move, move_.from );
-            m_board [ move_.from ] = value::vacant;
+            if ( m_pos.m_slides )
+                m_zobrist_hash ^= mm_mix64 ( static_cast<std::uint64_t> ( m_pos.m_slides ) );
+            m_zobrist_hash ^= mm_mix64 ( static_cast<std::uint64_t> ( ++m_pos.m_slides ) );
+            m_zobrist_hash ^= hash ( m_pos.m_player_to_move, move_.from );
+            m_pos.m_board [ move_.from ] = value::vacant;
         }
-        m_board [ move_.to ] = m_player_to_move;
-        m_zobrist_hash ^= hash ( m_player_to_move, move_.to );
+        m_pos.m_board [ move_.to ] = m_pos.m_player_to_move;
+        m_zobrist_hash ^= hash ( m_pos.m_player_to_move, move_.to );
         // Alternatingly hash-in and hash-out this value,
         // to add-in the current player.
         m_zobrist_hash ^= 0xa9063818575b53b7;
@@ -152,13 +157,13 @@ struct Mado {
 
     void moveImpl ( const Move & move_ ) noexcept {
         if ( move_.is_placement ( ) ) { // Place.
-            m_slides = 0;
+            m_pos.m_slides = 0;
         }
         else { // Slide.
-            ++m_slides;
-            m_board [ move_.from ] = value::vacant;
+            ++m_pos.m_slides;
+            m_pos.m_board [ move_.from ] = value::vacant;
         }
-        m_board [ move_.to ] = m_player_to_move;
+        m_pos.m_board [ move_.to ] = m_pos.m_player_to_move;
     }
 
     private:
@@ -166,7 +171,7 @@ struct Mado {
     template<typename IdxType>
     [[ nodiscard ]] inline bool isSurrounded ( const IdxType idx_ ) const noexcept {
         for ( auto const neighbor : Board::neighbors [ idx_ ] )
-            if ( m_board [ neighbor ].vacant ( ) )
+            if ( m_pos.m_board [ neighbor ].vacant ( ) )
                 return false;
         return true;
     }
@@ -177,7 +182,7 @@ struct Mado {
         // To be called before the player swap, but after m_player_to_move made his Move.
         // If both players slide three turns in a row (three slides for each player makes
         // six total), the game is a draw.
-        if ( 6 == m_slides ) {
+        if ( 6 == m_pos.m_slides ) {
             m_winner = value::vacant;
             return;
         }
@@ -188,17 +193,17 @@ struct Mado {
         // (even if you surround one of your opponent's stones at the same time), you lose
         // the game!
         if ( isSurrounded ( m_last_move.to ) ) {
-            m_winner = m_player_to_move.opponent ( );
+            m_winner = m_pos.m_player_to_move.opponent ( );
             return;
         }
         for ( auto const neighbor : Board::neighbors [ m_last_move.to ] ) {
-            if ( m_board [ neighbor ].occupied ( ) and isSurrounded ( neighbor ) ) {
-                if ( m_player_to_move == m_board [ neighbor ] ) {
-                    m_winner = m_player_to_move.opponent ( );
+            if ( m_pos.m_board [ neighbor ].occupied ( ) and isSurrounded ( neighbor ) ) {
+                if ( m_pos.m_player_to_move == m_pos.m_board [ neighbor ] ) {
+                    m_winner = m_pos.m_player_to_move.opponent ( );
                     return;
                 }
                 // Continue to verify that the current player did not surround himself.
-                m_winner = m_player_to_move;
+                m_winner = m_pos.m_player_to_move;
             }
         }
     }
@@ -207,14 +212,14 @@ struct Mado {
         m_last_move = move_;
         moveHashImpl ( move_ );
         // std::cout << *this << nl;
-        m_player_to_move.next ( );
+        m_pos.m_player_to_move.next ( );
     }
 
     void moveWinner ( const Move & move_ ) noexcept {
         m_last_move = move_;
         moveImpl ( move_ );
         checkForWinner ( );
-        m_player_to_move.next ( );
+        m_pos.m_player_to_move.next ( );
     }
 
     void moveHashWinner ( const Move & move_ ) noexcept {
@@ -222,7 +227,7 @@ struct Mado {
         moveHashImpl ( move_ );
         checkForWinner ( );
         std::cout << *this << nl;
-        m_player_to_move.next ( );
+        m_pos.m_player_to_move.next ( );
     }
 
     void lockedMoveHashWinner ( const Move & move_ ) noexcept {
@@ -236,14 +241,14 @@ struct Mado {
         // Mcts class takes/has ownership.
         for ( int i = 0; i < static_cast<int> ( Board::size ( ) ); ++i ) {
             // Find places.
-            if ( m_board [ i ].vacant ( ) ) {
+            if ( m_pos.m_board [ i ].vacant ( ) ) {
                 moves_->emplace_back ( i );
                 continue;
             }
             // Find slides.
-            if ( m_player_to_move == m_board [ i ] ) {
+            if ( m_pos.m_player_to_move == m_pos.m_board [ i ] ) {
                 for ( auto const to : Board::neighbors [ i ] )
-                    if ( m_board [ to ].vacant ( ) )
+                    if ( m_pos.m_board [ to ].vacant ( ) )
                         moves_->emplace_back ( i, to );
             }
         }
@@ -291,8 +296,8 @@ struct Mado {
 
     template<typename Stream>
     [[ maybe_unused ]] friend Stream & operator << ( Stream & out_, const Mado & b_ ) noexcept {
-        out_ << b_.m_board << nl;
-        out_ << nl << "  hash 0x" << std::hex << b_.m_zobrist_hash << " slides " << b_.m_slides << nl;
+        out_ << b_.m_pos.m_board << nl;
+        out_ << nl << "  hash 0x" << std::hex << b_.m_zobrist_hash << " slides " << b_.m_pos.m_slides << nl;
         return out_;
     }
 };

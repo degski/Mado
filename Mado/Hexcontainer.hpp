@@ -35,6 +35,9 @@
 #include <iterator>
 #include <type_traits>
 
+#include <cereal/cereal.hpp>
+#include <cereal/types/array.hpp>
+#include <cereal/archives/binary.hpp>
 
 #include <experimental/fixed_capacity_vector>
 

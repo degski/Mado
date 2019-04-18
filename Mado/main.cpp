@@ -58,7 +58,7 @@
 #include "../../MCTSSearchTree/include/flat_search_tree.hpp"
 
 
-#if 0
+#if 1
 
 #include "App.hpp"
 
