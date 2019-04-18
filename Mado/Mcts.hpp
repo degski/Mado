@@ -43,7 +43,6 @@
 #include <sax/owningptr.hpp>
 #include <sax/memorypool.hpp>
 
-#include "Types.hpp"
 #include "../../MCTSSearchTree/include/flat_search_tree.hpp"
 
 

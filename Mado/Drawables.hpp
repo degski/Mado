@@ -427,7 +427,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
             m_move_lock.lock ( );
             agent_is_making_move = true;
             m_move_future = std::move ( stlab::async ( stlab::default_executor, [ & ] ( ) noexcept {
-                return m_state.randomMove ( );
+                return m_state.randomMoveDelayed ( );
             } ).then ( [ & ] ( state_move m ) noexcept {
                     m_lock.lock ( );
                     m_agent_move = m;

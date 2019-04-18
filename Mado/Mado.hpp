@@ -76,14 +76,13 @@ struct Mado {
     using MoveLock = sax::SRWLock;
 
     Board m_board;
-    ZobristHash m_zobrist_hash = 0xb735a0f5839e4e22; // Hash of the current m_board, some random initial value;
-
-    int m_slides = 0;
-
-    Move m_last_move;
-
+    std::int8_t m_slides = 0;
     value_type m_player_to_move = value::human; // value_type::random ( ),
+
     value_type m_winner = value::invalid;
+
+    ZobristHash m_zobrist_hash = 0xb735a0f5839e4e22; // Hash of the current m_board, some random initial value;
+    Move m_last_move;
 
     MoveLock m_move_lock;
 
@@ -251,17 +250,19 @@ struct Mado {
         return moves_->size ( );
     }
 
-
     [[ nodiscard ]] Move randomMove ( ) noexcept {
-        sf::sleep ( sf::milliseconds ( sax::uniform_int_distribution<size_type> ( 500, 1'500 ) ( Rng::gen ( ) ) ) );
         static std::experimental::fixed_capacity_vector<Move, Board::size ( ) * 2> available_moves;
         available_moves.clear ( );
-        if ( nonterminal ( ) and availableMoves ( & available_moves ) ) {
+        if ( nonterminal ( ) and availableMoves ( &available_moves ) ) {
             return available_moves [ sax::uniform_int_distribution<size_type> ( 0, available_moves.size ( ) - 1 ) ( Rng::gen ( ) ) ];
         }
         else {
             return Move { };
         }
+    }
+    [[ nodiscard ]] Move randomMoveDelayed ( ) noexcept {
+        sf::sleep ( sf::milliseconds ( sax::uniform_int_distribution<size_type> ( 500, 1'500 ) ( Rng::gen ( ) ) ) );
+        return randomMove ( );
     }
 
     [[ nodiscard ]] std::optional<value_type> ended ( ) const noexcept {

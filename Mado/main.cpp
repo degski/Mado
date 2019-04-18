@@ -58,7 +58,7 @@
 #include "../../MCTSSearchTree/include/flat_search_tree.hpp"
 
 
-#if 1
+#if 0
 
 #include "App.hpp"
 
@@ -235,7 +235,7 @@ struct Hash32 {
 
 int main ( ) {
 
-    Mado<5> state;
+    Mado<4> state;
 
     plf::nanotimer timer;
 
