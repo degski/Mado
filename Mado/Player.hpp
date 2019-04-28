@@ -55,8 +55,8 @@ struct Player {
     Player ( const Player & p_ ) noexcept = default;
     Player ( Player && p_ ) noexcept = default;
 
-    Player & operator = ( const Player & ) noexcept = default;
-    Player & operator = ( Player && ) noexcept = default;
+    [[ maybe_unused ]] Player & operator = ( const Player & ) noexcept = default;
+    [[ maybe_unused ]] Player & operator = ( Player && ) noexcept = default;
 
     Player ( const Type & p_ ) noexcept :
         value ( p_ ) {

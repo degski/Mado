@@ -47,15 +47,15 @@ struct Move {
     value_type from, to;
 
     constexpr Move ( ) noexcept :
-        from { std::move ( std::numeric_limits<value_type>::lowest ( ) ) },
-        to { std::move ( std::numeric_limits<value_type>::lowest ( ) ) } {
+        from { std::numeric_limits<value_type>::lowest ( ) },
+        to { std::numeric_limits<value_type>::lowest ( ) } {
     }
     constexpr Move ( const value_type & to_ ) noexcept :
-        from { std::move ( std::numeric_limits<value_type>::lowest ( ) ) },
+        from { std::numeric_limits<value_type>::lowest ( ) },
         to { to_ } {
     }
     constexpr Move ( value_type && to_ ) noexcept :
-        from { std::move ( std::numeric_limits<value_type>::lowest ( ) ) },
+        from { std::numeric_limits<value_type>::lowest ( ) },
         to { std::move ( to_ ) } {
     }
     constexpr Move ( const value_type & from_, const value_type & to_ ) noexcept :

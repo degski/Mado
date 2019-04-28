@@ -349,10 +349,10 @@ struct HexContainer : public HexBase<R, zero_base> {
         return std::cend ( m_data );
     }
 
-    [[ nodiscard ]] const_reference operator [ ] ( const Hex & h_ ) const noexcept {
+    [[ nodiscard ]] inline const_reference operator [ ] ( const Hex h_ ) const noexcept {
         return at ( h_ );
     }
-    [[ nodiscard ]] reference operator [ ] ( const Hex & h_ ) noexcept {
+    [[ nodiscard ]] inline reference operator [ ] ( const Hex h_ ) noexcept {
         return const_cast<reference> ( std::as_const ( *this ).operator [ ] ( h_ ) );
     }
 

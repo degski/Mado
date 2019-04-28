@@ -40,6 +40,8 @@
 
 #include <fsmlite/fsm.hpp>
 
+#include <lz4frame.h>
+
 #include <sax/singleton.hpp>
 
 #include "Globals.hpp"
@@ -67,7 +69,7 @@ struct NextMove {
     [[ nodiscard ]] const Position & from ( ) const noexcept {
         return m_from;
     }
-    void from ( const Position & f_ ) noexcept {
+    void from ( const Position f_ ) noexcept {
         m_from = f_;
         m_to = Position { };
         m_state = State::Move;
@@ -76,7 +78,7 @@ struct NextMove {
     [[ nodiscard ]] const Position & to ( ) const noexcept {
         return m_to;
     }
-    void to ( const Position & t_ ) noexcept {
+    void to ( const Position t_ ) noexcept {
         m_to = t_;
         m_state = State::select;
     }
@@ -84,8 +86,8 @@ struct NextMove {
     [[ nodiscard ]] State state ( ) const noexcept {
         return m_state;
     }
-    void state ( const State & s_ ) noexcept {
-        m_state = s_;
+    void state ( const State s_ ) noexcept {
+        m_state = std::move ( s_ );
     }
 
     template<typename Stream>
@@ -124,6 +126,8 @@ class App {
 
     MadoState m_state;
 
+    sf::LZ4Dictionary m_dict;
+
     float m_hori, m_vert, m_window_width, m_window_height;
     sf::Vector2f m_center;
 
@@ -151,12 +155,12 @@ class App {
 
 private:
 
-    [[ nodiscard ]] static constexpr float distance_squared ( const sf::Vector2f & p1_, const sf::Vector2f & p2_ ) noexcept {
+    [[ nodiscard ]] static inline float distance_squared ( const sf::Vector2f p1_, const sf::Vector2f p2_ ) noexcept {
         return ( ( p1_.x - p2_.x ) * ( p1_.x - p2_.x ) ) + ( ( p1_.y - p2_.y ) * ( p1_.y - p2_.y ) );
     }
 
     template<typename T>
-    [[ nodiscard ]] inline T floorf ( float x ) const noexcept {
+    [[ nodiscard ]] inline T floorf ( const float x ) const noexcept {
         return static_cast<T> ( static_cast<int> ( x - std::numeric_limits<IdxType>::min ( ) ) + std::numeric_limits<IdxType>::min ( ) );
     }
 
@@ -171,7 +175,7 @@ public:
         return m_window.isOpen ( );
     }
 
-    [[ nodiscard ]] inline bool pollWindowEvent ( sf::Event &event_ ) {
+    [[ nodiscard ]] inline bool pollWindowEvent ( sf::Event & event_ ) {
         return m_window.pollEvent ( event_ );
     }
 
@@ -282,6 +286,8 @@ App::App ( ) :
     sf::loadFromResource ( m_name_texture, NAME );
     m_name_texture.setSmooth ( true );
     m_sprite.setTexture ( m_name_texture );
+    // Load dictionary.
+    m_dict.loadFromResource ( DICT );
     // Start.
     m_music.play ( );
     // Player to Move.

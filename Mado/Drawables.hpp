@@ -31,6 +31,7 @@
 #include <array>
 #include <atomic>
 #include <iostream>
+#include <jthread>
 #include <mutex>
 #include <thread>
 #include <vector>
@@ -49,7 +50,6 @@
 #include "Hexcontainer.hpp"
 
 #include "resource.h"
-
 
 namespace sf {
 
@@ -123,7 +123,7 @@ class Taskbar : public sf::Drawable {
 
     private:
 
-    [[ nodiscard ]] sf::Quad make_vertex ( const sf::Vector2f & p_ ) const noexcept {
+    [[ nodiscard ]] sf::Quad make_vertex ( const sf::Vector2f p_ ) const noexcept {
         return {
             sf::Vertex { sf::Vector2f { p_.x, p_.y }, sf::Vector2f { 0.0f, 0.0f } },
             sf::Vertex { sf::Vector2f { p_.x + width, p_.y }, sf::Vector2f { width, 0.0f } },
@@ -278,7 +278,7 @@ struct GameClock : public sf::Drawable, public sf::Transformable {
         target.draw ( m_text [ Player::agent ] );
     }
 
-    [[ nodiscard ]] bool isClicked ( const sf::Vector2f & mouse_position_ ) noexcept {
+    [[ nodiscard ]] bool isClicked ( const sf::Vector2f mouse_position_ ) noexcept {
         const bool is_clicked = m_bounds [ m_player_to_move ].contains ( mouse_position_ );
         if ( is_clicked )
             update_next ( );
@@ -340,10 +340,10 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
     using IdxType = typename State::IdxType;
     using Hex = typename State::Hex;
 
-    [[ nodiscard ]] sf::Quad make_vertex ( const sf::Vector2f & p_ ) const noexcept;
-    void init ( const sf::Vector2f & center_ ) noexcept;
+    [[ nodiscard ]] sf::Quad make_vertex ( const sf::Vector2f p_ ) const noexcept;
+    void init ( const sf::Vector2f center_ ) noexcept;
 
-    PlayArea ( State & state_, GameClock & clock_, const sf::Vector2f & center_, float hori_, float vert_, float circle_diameter_ );
+    PlayArea ( State & state_, GameClock & clock_, const sf::Vector2f center_, float hori_, float vert_, float circle_diameter_ );
 
     ~PlayArea ( ) {
         // Wait for the agent to return it's Move. This
@@ -446,7 +446,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
         }
     }
 
-    [[ nodiscard ]] bool select ( const Hex & i_, const DisplayValue d_ ) noexcept {
+    [[ nodiscard ]] bool select ( const Hex i_, const DisplayValue d_ ) noexcept {
         if ( m_state.nonterminal ( ) ) {
             m_last = Board::index ( i_.q, i_.r );
             return display_type ( d_ ) == what_type ( m_last );
@@ -460,7 +460,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
         m_last = not_set;
     }
 
-    [[ nodiscard ]] bool place ( const Hex & t_, const DisplayValue d_ ) noexcept {
+    [[ nodiscard ]] bool place ( const Hex t_, const DisplayValue d_ ) noexcept {
         if ( m_state.nonterminal ( ) ) {
             if ( const size_type t = Board::index ( t_.q, t_.r ); DisplayType::vacant == what_type ( t ) ) {
                 set_to_quad ( t, d_ );
@@ -477,7 +477,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
         return false;
     }
 
-    [[ nodiscard ]] bool Move ( const Hex & f_, const Hex & t_, const DisplayValue d_ ) noexcept {
+    [[ nodiscard ]] bool Move ( const Hex f_, const Hex t_, const DisplayValue d_ ) noexcept {
         if ( m_state.nonterminal ( ) ) {
             if ( are_neighbors ( f_, t_ ) ) {
                 if ( const size_type f = Board::index ( f_.q, f_.r ), t = Board::index ( t_.q, t_.r ); display_type ( d_ ) == what_type ( f ) and DisplayValue::active_vacant == what_value ( t ) ) {
@@ -501,7 +501,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
         return false;
     }
 
-    void make_active ( const Hex & i_ ) noexcept {
+    void make_active ( const Hex i_ ) noexcept {
         if ( const size_type i = Board::index ( i_.q, i_.r ), w = what ( i ); w < 3 ) {
             if ( not_set != m_last ) {
                 set_quad_texture ( m_quads [ m_last ], what_type ( m_last ) );
@@ -567,7 +567,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
 
 
 template<typename State>
-PlayArea<State>::PlayArea ( State & state_, GameClock & clock_, const sf::Vector2f & center_, float hori_, float vert_, float circle_diameter_ ) :
+PlayArea<State>::PlayArea ( State & state_, GameClock & clock_, const sf::Vector2f center_, float hori_, float vert_, float circle_diameter_ ) :
     // Parameters.
     m_hori { hori_ },
     m_vert { vert_ },
@@ -586,7 +586,7 @@ PlayArea<State>::PlayArea ( State & state_, GameClock & clock_, const sf::Vector
 
 
 template<typename State>
-[[ nodiscard ]] sf::Quad PlayArea<State>::make_vertex ( const sf::Vector2f & p_ ) const noexcept {
+[[ nodiscard ]] sf::Quad PlayArea<State>::make_vertex ( const sf::Vector2f p_ ) const noexcept {
     return {
         sf::Vertex { sf::Vector2f { p_.x, p_.y }, sf::Vector2f { 0.0f, 0.0f } },
         sf::Vertex { sf::Vector2f { p_.x + m_circle_diameter, p_.y }, sf::Vector2f { m_circle_diameter, 0.0f } },
@@ -596,7 +596,7 @@ template<typename State>
 }
 
 template<typename State>
-void PlayArea<State>::init ( const sf::Vector2f & center_ ) noexcept {
+void PlayArea<State>::init ( const sf::Vector2f center_ ) noexcept {
     // Construct vertices.
     m_vertices.setPrimitiveType ( sf::Quads );
     m_vertices.resize ( 4 * ( 2 * Board::size ( ) ) );
@@ -634,7 +634,7 @@ void PlayArea<State>::init ( const sf::Vector2f & center_ ) noexcept {
         }
     }
     // Sort m_quads lambda.
-    auto quads_less = [ ] ( const auto & a, const auto & b ) {
+    auto quads_less = [ ] ( const auto a, const auto b ) {
         return ( a.v0.position.y < b.v0.position.y ) or ( a.v0.position.y == b.v0.position.y and a.v0.position.x < b.v0.position.x );
     };
     std::sort ( m_quads, m_circles, quads_less );

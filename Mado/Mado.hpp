@@ -31,9 +31,11 @@
 
 #include <algorithm>
 #include <array>
+#include <charconv>
 #include <sax/iostream.hpp>
 #include <optional>
 #include <random>
+#include <string_view>
 #include <thread>
 #include <type_traits>
 #include <vector>
@@ -45,12 +47,47 @@
 #include <cereal/cereal.hpp>
 #include <cereal/archives/binary.hpp>
 
-#include <sax/srwlock.hpp>
+#include <sax/singleton.hpp>
 #include <sax/stl.hpp>
+#include <sax/srwlock.hpp>
 
 #include "Player.hpp"
 #include "Hexcontainer.hpp"
 #include "Move.hpp"
+
+
+template<int R>
+struct PositionData {
+
+    using value_type = Player<R>;
+    using Board = HexContainer<value_type, R, true>;
+
+    Board m_board;
+    std::int8_t m_slides;
+    value_type m_player_to_move; // = value_type::random ( );
+
+    PositionData ( ) noexcept = default;
+    PositionData ( const PositionData & ) noexcept = default;
+    PositionData ( PositionData && ) noexcept = default;
+    [[ maybe_unused ]] PositionData & operator = ( const PositionData & ) noexcept = default;
+    [[ maybe_unused ]] PositionData & operator = ( PositionData && ) noexcept = default;
+    ~PositionData ( ) noexcept = default;
+
+    private:
+
+    friend class cereal::access;
+
+    template<class Archive>
+    void serialize ( Archive & ar_ ) {
+        ar_ ( m_board );
+        ar_ ( m_slides );
+        ar_ ( m_player_to_move );
+    }
+};
+
+
+template<int R>
+using PositionDataVector = sax::singleton<std::vector<PositionData<R>>>;
 
 
 template<int R>
@@ -63,10 +100,10 @@ struct Mado {
 
     using value = typename Player<R>::Type;
     using value_type = Player<R>;
-    using pointer = value_type * ;
-    using const_pointer = value_type const *;
 
-    using Board = HexContainer<value_type, R, true>;
+    using PositionData = PositionData<R>;
+    using PDV = PositionDataVector<R>;
+    using Board = typename PositionData::Board;
     using size_type = typename Board::size_type;
 
     using ZobristHash = std::uint64_t;
@@ -75,39 +112,10 @@ struct Mado {
 
     using MoveLock = sax::SRWLock;
 
-    struct PositionData {
-        Board m_board;
-        std::int8_t m_slides;
-        value_type m_player_to_move; // value_type::random ( ),
-
-        PositionData ( ) noexcept = default;
-        PositionData ( const PositionData & ) noexcept = default;
-        PositionData ( PositionData && ) noexcept = default;
-
-        PositionData & operator = ( const PositionData & ) noexcept = default;
-        PositionData & operator = ( PositionData && ) noexcept = default;
-
-        ~PositionData ( ) noexcept = default;
-
-        private:
-
-        friend class cereal::access;
-
-        template<class Archive>
-        void serialize ( Archive & ar_ ) {
-            ar_ ( m_board );
-            ar_ ( m_slides );
-            ar_ ( m_player_to_move );
-        }
-    };
-
     PositionData m_pos;
-
     value_type m_winner;
-
     ZobristHash m_zobrist_hash; // Hash of the current m_board, some random initial value;
     Move m_last_move;
-
     MoveLock m_move_lock;
 
     Mado ( ) noexcept {
@@ -128,6 +136,7 @@ struct Mado {
         k_ = ( k_ ^ ( k_ >> 27 ) ) * std::uint64_t { 0x94d049bb133111eb };
         return k_ ^ ( k_ >> 31 );
     }
+    // My mixer.
     [[ nodiscard ]] static constexpr std::uint64_t iu_mix64 ( std::uint64_t k_  ) noexcept {
         k_ = ( k_ ^ ( k_ >> 32 ) ) * std::uint64_t { 0xd6e8feb86659fd93 };
         return k_ ^ ( k_ >> 32 );
@@ -155,7 +164,7 @@ struct Mado {
     }
 
 
-    void moveHashImpl ( const Move & move_ ) noexcept {
+    void moveHashImpl ( const Move move_ ) noexcept {
         if ( move_.is_placement ( ) ) { // Place.
             if ( m_pos.m_slides )
                 m_zobrist_hash ^= mm_mix64 ( static_cast<std::uint64_t> ( m_pos.m_slides ) );
@@ -175,7 +184,7 @@ struct Mado {
         m_zobrist_hash ^= 0xa9063818575b53b7;
     }
 
-    void moveImpl ( const Move & move_ ) noexcept {
+    void moveImpl ( const Move move_ ) noexcept {
         if ( move_.is_placement ( ) ) { // Place.
             m_pos.m_slides = 0;
         }
@@ -228,29 +237,57 @@ struct Mado {
         }
     }
 
-    void moveHash ( const Move & move_ ) noexcept {
+    void addPositionData ( ) {
+        if ( Rng::bernoulli ( 0.0025 ) )
+            PDV::instance ( ).push_back ( m_pos );
+    }
+
+    template<typename T>
+    void saveToFileBin ( const T & t_, sf::Path && path_, std::string_view && file_name_, const bool append_ = false ) noexcept {
+        std::ofstream ostream ( path_ / file_name_, append_ ? std::ios::binary | std::ios::app | std::ios::out : std::ios::binary | std::ios::out );
+        {
+            cereal::BinaryOutputArchive archive ( ostream );
+            archive ( t_ );
+        }
+        ostream.flush ( );
+        ostream.close ( );
+    }
+
+    void writePositionData ( ) {
+        if ( Rng::bernoulli ( 0.0025 ) ) {
+            static std::array<char, 21> str;
+            if ( auto [ p, ec ] = std::to_chars ( str.data ( ), str.data ( ) + str.size ( ), sax::uniform_int_distribution<std::uint64_t> ( ) ( Rng::gen ( ) ) );
+                ec == std::errc ( ) )
+                saveToFileBin ( m_pos, "y://dict//", std::string_view ( str.data ( ), p - str.data ( ) ) );
+        }
+    }
+
+    void moveHash ( const Move move_ ) noexcept {
         m_last_move = move_;
         moveHashImpl ( move_ );
         // std::cout << *this << nl;
+        // writePositionData ( );
         m_pos.m_player_to_move.next ( );
     }
 
-    void moveWinner ( const Move & move_ ) noexcept {
+    void moveWinner ( const Move move_ ) noexcept {
         m_last_move = move_;
         moveImpl ( move_ );
         checkForWinner ( );
+        // writePositionData ( );
         m_pos.m_player_to_move.next ( );
     }
 
-    void moveHashWinner ( const Move & move_ ) noexcept {
+    void moveHashWinner ( const Move move_ ) noexcept {
         m_last_move = move_;
         moveHashImpl ( move_ );
         checkForWinner ( );
         std::cout << *this << nl;
+        // writePositionData ( );
         m_pos.m_player_to_move.next ( );
     }
 
-    void lockedMoveHashWinner ( const Move & move_ ) noexcept {
+    void lockedMoveHashWinner ( const Move move_ ) noexcept {
         m_move_lock.lock ( );
         moveHashWinner ( move_ );
         m_move_lock.unlock ( );

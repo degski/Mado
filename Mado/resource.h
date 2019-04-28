@@ -35,3 +35,5 @@
 #define __MONO_FONT__					125
 #define __NUMBERS_FONT__				126
 #define __DOTTIE_FONT__                 127
+
+#define DICT                            140
