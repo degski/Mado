@@ -48,17 +48,12 @@
 #include "Mado.hpp"
 #include "Drawables.hpp"
 
-
 #include "resource.h"
-
-
 
 template<typename GameState, typename Position>
 struct NextMove {
 
     enum State : int { select = 0, place, Move };
-
-    using Position = Position;
 
     void reset ( ) noexcept {
         m_from = Position { };
