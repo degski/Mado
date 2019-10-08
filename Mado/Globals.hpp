@@ -71,18 +71,18 @@ struct Rng final {
     [[ nodiscard ]] static T pareto_variate ( const T min_ = T { 1 }, const T alpha_ = { std::log ( T { 5 } ) / std::log ( T { 4 } ) } ) noexcept {
         assert ( min_ > T { 0 } ); assert ( alpha_ > T { 0 } );
         static std::uniform_real_distribution<T> dis ( std::numeric_limits<T>::min ( ), T { 1 } );
-        return min_ / std::pow ( dis ( Rng::gen ( ) ), T { 1 } / alpha_ );
+        return min_ / std::pow ( dis ( Rng::generator ( ) ), T { 1 } / alpha_ );
     }
 
     [[ nodiscard ]] static bool bernoulli ( double p_ = 0.5 ) noexcept {
-        return std::bernoulli_distribution ( p_ ) ( Rng::gen ( ) );
+        return std::bernoulli_distribution ( p_ ) ( Rng::generator ( ) );
     }
 
     static void seed ( const std::uint64_t s_ = 0u ) noexcept {
-        Rng::gen ( ).seed ( s_ ? s_ : sax::os_seed ( ) );
+        Rng::generator ( ).seed ( s_ ? s_ : sax::os_seed ( ) );
     }
 
-    [[nodiscard]] static sax::Rng& gen ( ) noexcept {
+    [[nodiscard]] static sax::Rng& generator ( ) noexcept {
         if constexpr ( RANDOM ) {
             static thread_local sax::Rng generator ( sax::os_seed ( ), sax::os_seed ( ), sax::os_seed ( ), sax::os_seed ( ) );
             return generator;

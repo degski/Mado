@@ -106,6 +106,7 @@ struct Mado {
     using Board = typename PositionData::Board;
     using size_type = typename Board::size_type;
 
+    using Generator = sax::Rng&;
     using ZobristHash = std::uint64_t;
 
     using SurroundedPlayerVector = std::experimental::fixed_capacity_vector<value_type, 6>;
@@ -114,11 +115,12 @@ struct Mado {
 
     PositionData m_pos;
     value_type m_winner;
+    Generator m_generator;
     ZobristHash m_zobrist_hash; // Hash of the current m_board, some random initial value;
     Move m_last_move;
     MoveLock m_move_lock;
 
-    Mado ( ) noexcept {
+    Mado ( ) noexcept : m_generator ( Rng::generator ( ) ) {
         reset ( );
     }
 
@@ -238,7 +240,7 @@ struct Mado {
     }
 
     void addPositionData ( ) {
-        if ( Rng::bernoulli ( 0.0025 ) )
+        if ( std::bernoulli_distribution ( 0.0025 ) ( m_generator ) )
             PDV::instance ( ).push_back ( m_pos );
     }
 
@@ -254,9 +256,9 @@ struct Mado {
     }
 
     void writePositionData ( ) {
-        if ( Rng::bernoulli ( 0.0025 ) ) {
+        if ( std::bernoulli_distribution ( 0.0025 ) ( m_generator ) ) {
             static std::array<char, 21> str;
-            if ( auto [ p, ec ] = std::to_chars ( str.data ( ), str.data ( ) + str.size ( ), sax::uniform_int_distribution<std::uint64_t> ( ) ( Rng::gen ( ) ) );
+            if ( auto [ p, ec ] = std::to_chars ( str.data ( ), str.data ( ) + str.size ( ), sax::uniform_int_distribution<std::uint64_t> ( ) ( m_generator ) );
                 ec == std::errc ( ) )
                 saveToFileBin ( m_pos, "y://dict//", std::string_view ( str.data ( ), p - str.data ( ) ) );
         }
@@ -316,14 +318,14 @@ struct Mado {
         static std::experimental::fixed_capacity_vector<Move, Board::size ( ) * 2> available_moves;
         available_moves.clear ( );
         if ( nonterminal ( ) and availableMoves ( &available_moves ) ) {
-            return available_moves [ sax::uniform_int_distribution<size_type> ( 0, available_moves.size ( ) - 1 ) ( Rng::gen ( ) ) ];
+            return available_moves [ sax::uniform_int_distribution<size_type> ( 0, available_moves.size ( ) - 1 ) ( m_generator ) ];
         }
         else {
             return Move { };
         }
     }
     [[ nodiscard ]] Move randomMoveDelayed ( ) noexcept {
-        sf::sleep ( sf::milliseconds ( sax::uniform_int_distribution<size_type> ( 500, 1'500 ) ( Rng::gen ( ) ) ) );
+        sf::sleep ( sf::milliseconds ( sax::uniform_int_distribution<size_type> ( 500, 1'500 ) ( m_generator ) ) );
         return randomMove ( );
     }
 

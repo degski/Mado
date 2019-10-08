@@ -43,6 +43,8 @@
 #include <sax/owningptr.hpp>
 #include <sax/memorypool.hpp>
 
+#include "Globals.hpp"
+
 #include "../../MCTSSearchTree/include/flat_search_tree.hpp"
 
 
@@ -343,6 +345,7 @@ namespace mcts {
         using Link = typename Tree::Link;
         using Path = typename Tree::Path;
 
+        using Generator = sax::Rng &;
         using ZobristHash = typename State::ZobristHash;
 
         typedef std::unordered_map<ZobristHash, Node> TranspositionTable;
@@ -353,6 +356,7 @@ namespace mcts {
 
         Tree m_tree;
         TranspositionTablePtr m_transposition_table;
+        Generator m_generator;
 
         bool m_not_initialized = true;
 
@@ -364,6 +368,8 @@ namespace mcts {
 
         Path m_path;
         int m_path_size;
+
+        Mcts () noexcept : m_generator ( Rng::generator ( ) ) {}
 
         // Init.
 
@@ -476,7 +482,7 @@ namespace mcts {
             for ( OutIt a ( m_tree, parent_ ); a != OutIt::end ( ); ++a ) {
                 children.emplace_back ( m_tree.link ( a ) );
             }
-            return children [ std::uniform_int_distribution < ptrdiff_t > ( 0, children.size ( ) - 1 ) ( g_rng ) ];
+            return children [ std::uniform_int_distribution < ptrdiff_t > ( 0, children.size ( ) - 1 ) ( m_generator ) ];
         }
 
 
@@ -498,7 +504,7 @@ namespace mcts {
                 }
             }
             // Ties are broken by fair coin flips.
-            return best_children.size ( ) == 1 ? best_children.back ( ) : best_children [ std::uniform_int_distribution < ptrdiff_t > ( 0, best_children.size ( ) - 1 ) ( g_rng ) ];
+            return best_children.size ( ) == 1 ? best_children.back ( ) : best_children [ std::uniform_int_distribution < ptrdiff_t > ( 0, best_children.size ( ) - 1 ) ( m_generator ) ];
         }
 
 
