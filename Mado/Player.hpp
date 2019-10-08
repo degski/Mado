@@ -52,10 +52,10 @@ struct Player {
     Type value = Type::vacant;
 
     Player ( ) noexcept = default;
-    Player ( const Player & p_ ) noexcept = default;
+    Player ( Player const & p_ ) noexcept = default;
     Player ( Player && p_ ) noexcept = default;
 
-    [[ maybe_unused ]] Player & operator = ( const Player & ) noexcept = default;
+    [[ maybe_unused ]] Player & operator = ( Player const & ) noexcept = default;
     [[ maybe_unused ]] Player & operator = ( Player && ) noexcept = default;
 
     Player ( const Type & p_ ) noexcept :
@@ -106,16 +106,16 @@ struct Player {
     }
 
     template<typename Stream>
-    [[ maybe_unused ]] friend Stream & operator << ( Stream & out_, const Player & p_ ) noexcept {
+    [[ maybe_unused ]] friend Stream & operator << ( Stream & out_, Player const & p_ ) noexcept {
         constexpr char name [ 4 ] { ' ', 'A', '*', 'H' };
         out_ << name [ static_cast<int> ( p_.value ) + 2 ];
         return out_;
     }
 
-    [[ nodiscard ]] bool operator == ( const Player p_ ) const noexcept {
+    [[ nodiscard ]] bool operator == ( Player const p_ ) const noexcept {
         return value == p_.value;
     }
-    [[ nodiscard ]] bool operator != ( const Player p_ ) const noexcept {
+    [[ nodiscard ]] bool operator != ( Player const p_ ) const noexcept {
         return value != p_.value;
     }
 

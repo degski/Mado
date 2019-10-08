@@ -50,7 +50,7 @@ struct Move {
         from { std::numeric_limits<value_type>::lowest ( ) },
         to { std::numeric_limits<value_type>::lowest ( ) } {
     }
-    constexpr Move ( const value_type & to_ ) noexcept :
+    constexpr Move ( value_type const & to_ ) noexcept :
         from { std::numeric_limits<value_type>::lowest ( ) },
         to { to_ } {
     }
@@ -58,7 +58,7 @@ struct Move {
         from { std::numeric_limits<value_type>::lowest ( ) },
         to { std::move ( to_ ) } {
     }
-    constexpr Move ( const value_type & from_, const value_type & to_ ) noexcept :
+    constexpr Move ( value_type const & from_, value_type const & to_ ) noexcept :
         from { from_ },
         to { to_ } {
     }
@@ -85,7 +85,7 @@ struct Move {
     }
 
     template<typename Stream>
-    [[ maybe_unused ]] friend Stream & operator << ( Stream & out_, const Move & m_ ) noexcept {
+    [[ maybe_unused ]] friend Stream & operator << ( Stream & out_, Move const & m_ ) noexcept {
         if ( std::numeric_limits<value_type>::lowest ( ) == m_.from )
             std::cout << '<' << static_cast<std::uint64_t> ( m_.to ) << '>';
         else

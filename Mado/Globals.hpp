@@ -63,12 +63,12 @@ struct Rng final {
     Rng ( const Rng & ) = delete;
 
     Rng & operator = ( Rng && ) = delete;
-    Rng & operator = ( const Rng & ) = delete;
+    Rng & operator = ( Rng const & ) = delete;
 
 
     // A pareto-variate, the defaults give the 'famous' 80/20 distribution.
     template<typename T = float>
-    [[ nodiscard ]] static T pareto_variate ( const T min_ = T { 1 }, const T alpha_ = { std::log ( T { 5 } ) / std::log ( T { 4 } ) } ) noexcept {
+    [[ nodiscard ]] static T pareto_variate ( T const min_ = T { 1 }, T const alpha_ = { std::log ( T { 5 } ) / std::log ( T { 4 } ) } ) noexcept {
         assert ( min_ > T { 0 } ); assert ( alpha_ > T { 0 } );
         static std::uniform_real_distribution<T> dis ( std::numeric_limits<T>::min ( ), T { 1 } );
         return min_ / std::pow ( dis ( Rng::generator ( ) ), T { 1 } / alpha_ );
@@ -78,7 +78,7 @@ struct Rng final {
         return std::bernoulli_distribution ( p_ ) ( Rng::generator ( ) );
     }
 
-    static void seed ( const std::uint64_t s_ = 0u ) noexcept {
+    static void seed ( std::uint64_t const s_ = 0u ) noexcept {
         Rng::generator ( ).seed ( s_ ? s_ : sax::os_seed ( ) );
     }
 

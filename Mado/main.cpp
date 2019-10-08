@@ -73,13 +73,13 @@ struct HexGrid : public RadBase {
 
     lemon::SmartDigraph m_grid;
 
-    void add_valid_neighbor_arc ( const size_type i_, const size_type q_, const size_type r_ ) noexcept {
+    void add_valid_neighbor_arc ( size_type const i_, size_type const q_, size_type const r_ ) noexcept {
         if ( rad::is_invalid ( q_, r_ ) )
             return;
         m_grid.addArc ( m_grid.nodeFromId ( rad::index ( q_, r_ ) ), m_grid.nodeFromId ( i_ ) );
     }
-    void add_neighbor_arcs ( const size_type q_, const size_type r_ ) noexcept {
-        const size_type i = rad::index ( q_, r_ );
+    void add_neighbor_arcs ( size_type const q_, size_type const r_ ) noexcept {
+        size_type const i = rad::index ( q_, r_ );
         add_valid_neighbor_arc ( i, q_    , r_ - 1 );
         add_valid_neighbor_arc ( i, q_ + 1, r_ - 1 );
         add_valid_neighbor_arc ( i, q_ - 1, r_     );
@@ -200,8 +200,8 @@ int main7686787 ( ) {
 
     std::cout << board_type::index ( 0, 0 ) << nl;
 
-    for ( const auto n : board_type::neighbors ) {
-        for ( const auto v : n ) {
+    for ( auto const n : board_type::neighbors ) {
+        for ( auto const v : n ) {
             std::cout << static_cast<int> ( v ) << sp;
         }
         std::cout << nl;
@@ -360,7 +360,7 @@ void test_compress ( FILE* outFp, FILE* inpFp, const char *dict, int dictSize ) 
     /* Write compressed data blocks.  Each block contains BLOCK_BYTES of plain
        data except possibly the last. */
     for ( ;;) {
-        const int inpBytes = ( int ) read_bin ( inpFp, inpBuf, BLOCK_BYTES );
+        int const inpBytes = ( int ) read_bin ( inpFp, inpBuf, BLOCK_BYTES );
         if ( 0 == inpBytes ) {
             break;
         }
@@ -369,7 +369,7 @@ void test_compress ( FILE* outFp, FILE* inpFp, const char *dict, int dictSize ) 
         LZ4_loadDict ( lz4Stream, dict, dictSize );
         {
             char cmpBuf [ LZ4_COMPRESSBOUND ( BLOCK_BYTES ) ];
-            const int cmpBytes = LZ4_compress_fast_continue (
+            int const cmpBytes = LZ4_compress_fast_continue (
                 lz4Stream, inpBuf, cmpBuf, inpBytes, sizeof ( cmpBuf ), 1 );
             if ( cmpBytes <= 0 ) { exit ( 1 ); }
             write_bin ( outFp, cmpBuf, ( size_t ) cmpBytes );
@@ -442,7 +442,7 @@ void test_decompress ( FILE* outFp, FILE* inpFp, const char *dict, int dictSize,
         /* Load the dictionary */
         LZ4_setStreamDecode ( lz4StreamDecode, dict, dictSize );
         {
-            const int decBytes = LZ4_decompress_safe_continue (
+            int const decBytes = LZ4_decompress_safe_continue (
                 lz4StreamDecode, cmpBuf, decBuf, cmpBytes, BLOCK_BYTES );
             if ( decBytes <= 0 ) { exit ( 5 ); }
             {
@@ -550,7 +550,7 @@ int main869689 ( int argc, char* argv [ ] ) {
         seek_bin ( inpFp, offset, SEEK_SET );
 
         printf ( "verify : %s <-> %s\n", inpFilename, decFilename );
-        const int cmp = compare ( inpFp, decFp, length );
+        int const cmp = compare ( inpFp, decFp, length );
         if ( 0 == cmp ) {
             printf ( "verify : OK\n" );
         }
@@ -571,7 +571,7 @@ int main869689 ( int argc, char* argv [ ] ) {
 /*
 
 template <typename T, typename Hash>
-static T* hashLookup2(T* table, size_t buckets, const Hash& hash, const T& key, const T& empty)
+static T* hashLookup2(T* table, size_t buckets, const Hash& hash, T const& key, T const& empty)
 {
     assert(buckets > 0);
     assert((buckets & (buckets - 1)) == 0);
@@ -819,7 +819,7 @@ namespace exp = std::experimental;
 
 
 template<typename T, typename = std::enable_if_t<std::conjunction_v<std::is_integral<T>, std::is_unsigned<T>>>>
-void print_bits ( const T n ) noexcept {
+void print_bits ( T const n ) noexcept {
     int c = 0;
     T i = T ( 1 ) << ( sizeof ( T ) * 8 - 1 );
     while ( i ) {
@@ -835,7 +835,7 @@ void print_bits ( const T n ) noexcept {
 
 struct float_as_bits {
 
-    float_as_bits ( const float & v_ ) : value { v_ } { };
+    float_as_bits ( float const & v_ ) : value { v_ } { };
     float_as_bits ( float && v_ ) : value { std::move ( v_ ) } { };
 
     template<typename Stream>
@@ -876,9 +876,9 @@ class Vector {
     using size_type = std::intptr_t;
     using value_type = T;
     using pointer = T * ;
-    using const_pointer = const T *;
+    using const_pointer = T const *;
     using reference = T & ;
-    using const_reference = const T &;
+    using const_reference = T const &;
 
     private:
 
@@ -998,7 +998,7 @@ struct instance_counter {
             std::printf ( "%i direct constructions\n", num_construct );
             std::printf ( "%i copies\n", num_copy );
             std::printf ( "%i moves\n", num_move );
-            const int total_construct = num_construct + num_copy + num_move;
+            int const total_construct = num_construct + num_copy + num_move;
             std::printf ( "%i total constructions\n", total_construct );
             std::printf ( "%i destructions ", num_destruct );
             if ( total_construct == num_destruct ) {

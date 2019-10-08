@@ -67,7 +67,7 @@ struct PositionData {
     value_type m_player_to_move; // = value_type::random ( );
 
     PositionData ( ) noexcept = default;
-    PositionData ( const PositionData & ) noexcept = default;
+    PositionData ( PositionData const & ) noexcept = default;
     PositionData ( PositionData && ) noexcept = default;
     [[ maybe_unused ]] PositionData & operator = ( const PositionData & ) noexcept = default;
     [[ maybe_unused ]] PositionData & operator = ( PositionData && ) noexcept = default;
@@ -150,7 +150,7 @@ struct Mado {
         return k_ ^ ( k_ >> 33 );
     }
 
-    [[ nodiscard ]] static constexpr ZobristHash hash ( value_type p_, const IdxType i_ ) noexcept {
+    [[ nodiscard ]] static constexpr ZobristHash hash ( value_type p_, IdxType const i_ ) noexcept {
         return iu_mix64 ( static_cast<std::uint64_t> ( p_.as_index ( ) ) ^ static_cast<std::uint64_t> ( i_ ) );
     }
 
@@ -166,7 +166,7 @@ struct Mado {
     }
 
 
-    void moveHashImpl ( const Move move_ ) noexcept {
+    void moveHashImpl ( Move const move_ ) noexcept {
         if ( move_.is_placement ( ) ) { // Place.
             if ( m_pos.m_slides )
                 m_zobrist_hash ^= mm_mix64 ( static_cast<std::uint64_t> ( m_pos.m_slides ) );
@@ -186,7 +186,7 @@ struct Mado {
         m_zobrist_hash ^= 0xa9063818575b53b7;
     }
 
-    void moveImpl ( const Move move_ ) noexcept {
+    void moveImpl ( Move const move_ ) noexcept {
         if ( move_.is_placement ( ) ) { // Place.
             m_pos.m_slides = 0;
         }
@@ -200,7 +200,7 @@ struct Mado {
     private:
 
     template<typename IdxType>
-    [[ nodiscard ]] inline bool isSurrounded ( const IdxType idx_ ) const noexcept {
+    [[ nodiscard ]] inline bool isSurrounded ( IdxType const idx_ ) const noexcept {
         for ( auto const neighbor : Board::neighbors [ idx_ ] )
             if ( m_pos.m_board [ neighbor ].vacant ( ) )
                 return false;
@@ -245,7 +245,7 @@ struct Mado {
     }
 
     template<typename T>
-    void saveToFileBin ( const T & t_, sf::Path && path_, std::string_view && file_name_, const bool append_ = false ) noexcept {
+    void saveToFileBin ( T const & t_, sf::Path && path_, std::string_view && file_name_, bool const append_ = false ) noexcept {
         std::ofstream ostream ( path_ / file_name_, append_ ? std::ios::binary | std::ios::app | std::ios::out : std::ios::binary | std::ios::out );
         {
             cereal::BinaryOutputArchive archive ( ostream );
@@ -264,7 +264,7 @@ struct Mado {
         }
     }
 
-    void moveHash ( const Move move_ ) noexcept {
+    void moveHash ( Move const move_ ) noexcept {
         m_last_move = move_;
         moveHashImpl ( move_ );
         // std::cout << *this << nl;
@@ -272,7 +272,7 @@ struct Mado {
         m_pos.m_player_to_move.next ( );
     }
 
-    void moveWinner ( const Move move_ ) noexcept {
+    void moveWinner ( Move const move_ ) noexcept {
         m_last_move = move_;
         moveImpl ( move_ );
         checkForWinner ( );
@@ -280,7 +280,7 @@ struct Mado {
         m_pos.m_player_to_move.next ( );
     }
 
-    void moveHashWinner ( const Move move_ ) noexcept {
+    void moveHashWinner ( Move const move_ ) noexcept {
         m_last_move = move_;
         moveHashImpl ( move_ );
         checkForWinner ( );
@@ -289,7 +289,7 @@ struct Mado {
         m_pos.m_player_to_move.next ( );
     }
 
-    void lockedMoveHashWinner ( const Move move_ ) noexcept {
+    void lockedMoveHashWinner ( Move const move_ ) noexcept {
         m_move_lock.lock ( );
         moveHashWinner ( move_ );
         m_move_lock.unlock ( );
@@ -333,7 +333,7 @@ struct Mado {
         return m_winner.invalid ( ) ? std::optional<value_type> { } : std::optional<value_type> { m_winner };
     }
 
-    [[ nodiscard ]] float result ( const value_type player_just_moved_ ) const noexcept {
+    [[ nodiscard ]] float result ( value_type const player_just_moved_ ) const noexcept {
         // Determine result: last player of path is the player to Move.
         return m_winner.vacant ( ) ? 0.0f : ( m_winner == player_just_moved_ ? 1.0f : -1.0f );
     }
@@ -354,7 +354,7 @@ struct Mado {
     }
 
     template<typename Stream>
-    [[ maybe_unused ]] friend Stream & operator << ( Stream & out_, const Mado & b_ ) noexcept {
+    [[ maybe_unused ]] friend Stream & operator << ( Stream & out_, Mado const & b_ ) noexcept {
         out_ << b_.m_pos.m_board << nl;
         out_ << nl << "  hash 0x" << std::hex << b_.m_zobrist_hash << " slides " << b_.m_pos.m_slides << nl;
         return out_;

@@ -82,10 +82,10 @@ struct RadiusBase {
     }
 
     RadiusBase ( ) noexcept = default;
-    RadiusBase ( const RadiusBase & ) noexcept = default;
+    RadiusBase ( RadiusBase const & ) noexcept = default;
     RadiusBase ( RadiusBase && ) noexcept = default;
 
-    RadiusBase & operator = ( const RadiusBase & ) noexcept = default;
+    RadiusBase & operator = ( RadiusBase const & ) noexcept = default;
     RadiusBase & operator = ( RadiusBase && ) noexcept = default;
 
     ~RadiusBase ( ) noexcept = default;
@@ -102,17 +102,17 @@ struct RadiusBase {
         return a;
     }
 
-    [[ nodiscard ]] static constexpr size_type index ( const size_type q_, const size_type r_ ) noexcept {
+    [[ nodiscard ]] static constexpr size_type index ( size_type const q_, size_type const r_ ) noexcept {
         assert ( not ( is_invalid ( q_, r_ ) ) );
         constexpr const_index_array idx = make_index_array<zero_base ? R : 0> ( );
         return ( idx.data ( ) + ( zero_base ? R : 0 ) ) [ r_ ] + q_;
     }
 
-    [[ nodiscard ]] static constexpr bool is_invalid ( const size_type q_, const size_type r_ ) noexcept {
+    [[ nodiscard ]] static constexpr bool is_invalid ( size_type const q_, size_type const r_ ) noexcept {
         auto abs = [ ] ( auto const a ) noexcept { return a > decltype ( a ) { 0 } ? a : -a; };
         return abs ( q_ - ( zero_base ? 0 : radius ( ) ) ) > radius ( ) or abs ( r_ - ( zero_base ? 0 : radius ( ) ) ) > radius ( ) or abs ( -q_ - r_ + ( 2 * ( zero_base ? 0 : radius ( ) ) ) ) > radius ( );
     }
-    [[ nodiscard ]] static constexpr bool is_valid ( const size_type q_, const size_type r_ ) noexcept {
+    [[ nodiscard ]] static constexpr bool is_valid ( size_type const q_, size_type const r_ ) noexcept {
         return not ( is_invalid ( q_, r_ ) );
     }
 };
@@ -140,10 +140,10 @@ struct Hex : public RadiusBase<R, zero_base> {
     value_type q = value_type { -radius ( ) - 1 }, r = value_type { -radius ( ) - 1 };
 
     Hex ( ) noexcept = default;
-    Hex ( const Hex & ) noexcept = default;
+    Hex ( Hex const & ) noexcept = default;
     Hex ( Hex && ) noexcept = default;
 
-    Hex & operator = ( const Hex & ) noexcept = default;
+    Hex & operator = ( Hex const & ) noexcept = default;
     Hex & operator = ( Hex && ) noexcept = default;
 
     ~Hex ( ) noexcept = default;
@@ -152,15 +152,15 @@ struct Hex : public RadiusBase<R, zero_base> {
         q = value_type { -radius ( ) - 1 }; r = value_type { -radius ( ) - 1 };
     }
 
-    [[ nodiscard ]] constexpr bool operator == ( const Hex & rhs_ ) const noexcept {
+    [[ nodiscard ]] constexpr bool operator == ( Hex const & rhs_ ) const noexcept {
         return q == rhs_.q and r == rhs_.r;
     }
-    [[ nodiscard ]] constexpr bool operator != ( const Hex & rhs_ ) const noexcept {
+    [[ nodiscard ]] constexpr bool operator != ( Hex const & rhs_ ) const noexcept {
         return q != rhs_.q or r != rhs_.r;
     }
 
     template<typename Stream>
-    [[ maybe_unused ]] friend Stream & operator << ( Stream & out_, const Hex & h_ ) noexcept {
+    [[ maybe_unused ]] friend Stream & operator << ( Stream & out_, Hex const & h_ ) noexcept {
         if ( value_type { -Hex::radius ( ) - 1 } == h_.q )
             out_ << std::dec << "<* *>";
         else
@@ -218,12 +218,12 @@ struct HexBase : public RadiusBase<R, zero_base> {
 
     // From https://stackoverflow.com/a/40030044/646940, and fixed the missing constexpr std::swap (in C++17).
 
-    static constexpr void emplace_valid_neighbor ( neighbors_type & n_, const size_type q_, const size_type r_ ) noexcept {
+    static constexpr void emplace_valid_neighbor ( neighbors_type & n_, size_type const q_, size_type const r_ ) noexcept {
         if ( is_valid ( q_, r_ ) )
             n_.emplace_back ( index ( q_, r_ ) );
     }
 
-    static constexpr void emplace_neighbors ( neighbors_type_array & na_, const size_type q_, const size_type r_ ) noexcept {
+    static constexpr void emplace_neighbors ( neighbors_type_array & na_, size_type const q_, size_type const r_ ) noexcept {
         neighbors_type & n = na_ [ index ( q_, r_ ) ];
         emplace_valid_neighbor ( n, q_    , r_ - 1 );
         emplace_valid_neighbor ( n, q_ + 1, r_ - 1 );
@@ -285,10 +285,10 @@ struct HexContainer : public HexBase<R, zero_base> {
     using size_type = typename rad::size_type;
     using value_type = Type;
     using pointer = value_type * ;
-    using const_pointer = const value_type*;
+    using const_pointer = value_type const*;
 
     using reference = value_type & ;
-    using const_reference = const value_type &;
+    using const_reference = value_type const &;
     using rv_reference = value_type && ;
 
     using data_array = std::array<value_type, rad::size ( )>;
@@ -301,10 +301,10 @@ struct HexContainer : public HexBase<R, zero_base> {
     data_array m_data = { }; // value initialized, default is indeterminate.
 
     HexContainer ( ) noexcept = default;
-    HexContainer ( const HexContainer & ) noexcept = default;
+    HexContainer ( HexContainer const & ) noexcept = default;
     HexContainer ( HexContainer && ) noexcept = default;
 
-    HexContainer & operator = ( const HexContainer & ) noexcept = default;
+    HexContainer & operator = ( HexContainer const & ) noexcept = default;
     HexContainer & operator = ( HexContainer && ) noexcept = default;
 
     ~HexContainer ( ) noexcept = default;
@@ -315,10 +315,10 @@ struct HexContainer : public HexBase<R, zero_base> {
 
     // Data access.
 
-    [[ nodiscard ]] constexpr const_reference at ( const size_type q_, const size_type r_ ) const noexcept {
+    [[ nodiscard ]] constexpr const_reference at ( size_type const q_, size_type const r_ ) const noexcept {
        return m_data [ index ( q_, r_ ) ];
     }
-    [[ nodiscard ]] constexpr reference at ( const size_type q_, const size_type r_ ) noexcept {
+    [[ nodiscard ]] constexpr reference at ( size_type const q_, size_type const r_ ) noexcept {
         return const_cast<reference> ( std::as_const ( * this ).at ( q_, r_ ) );
     }
 
@@ -349,39 +349,39 @@ struct HexContainer : public HexBase<R, zero_base> {
         return std::cend ( m_data );
     }
 
-    [[ nodiscard ]] inline const_reference operator [ ] ( const Hex h_ ) const noexcept {
+    [[ nodiscard ]] inline const_reference operator [ ] ( Hex const h_ ) const noexcept {
         return at ( h_ );
     }
-    [[ nodiscard ]] inline reference operator [ ] ( const Hex h_ ) noexcept {
+    [[ nodiscard ]] inline reference operator [ ] ( Hex const h_ ) noexcept {
         return const_cast<reference> ( std::as_const ( *this ).operator [ ] ( h_ ) );
     }
 
-    [[ nodiscard ]] const_reference operator [ ] ( const size_type i_ ) const noexcept {
+    [[ nodiscard ]] const_reference operator [ ] ( size_type const i_ ) const noexcept {
         return m_data [ i_ ];
     }
-    [[ nodiscard ]] reference operator [ ] ( const size_type i_ ) noexcept {
+    [[ nodiscard ]] reference operator [ ] ( size_type const i_ ) noexcept {
         return const_cast<reference> ( std::as_const ( *this ).operator [ ] ( i_ ) );
     }
 
     // Neighbors.
 
-    [[ nodiscard ]] const_neighbor_iterator begin ( const size_type i_ ) const noexcept {
+    [[ nodiscard ]] const_neighbor_iterator begin ( size_type const i_ ) const noexcept {
         return std::cbegin ( neighbors [ i_ ] );
     }
-    [[ nodiscard ]] const_neighbor_iterator end ( const size_type i_ ) const noexcept {
+    [[ nodiscard ]] const_neighbor_iterator end ( size_type const i_ ) const noexcept {
         return std::cend ( neighbors [ i_ ] );
     }
-    [[ nodiscard ]] const_neighbor_iterator begin ( const size_type q_, const size_type r_ ) const noexcept {
+    [[ nodiscard ]] const_neighbor_iterator begin ( size_type const q_, size_type const r_ ) const noexcept {
         return begin ( index ( q_, r_ ) );
     }
-    [[ nodiscard ]] const_neighbor_iterator end ( const size_type q_, const size_type r_ ) const noexcept {
+    [[ nodiscard ]] const_neighbor_iterator end ( size_type const q_, size_type const r_ ) const noexcept {
         return end ( index ( q_, r_ ) );
     }
 
     // Output.
 
     template<typename Stream>
-    [[ maybe_unused ]] friend Stream & operator << ( Stream & out_, const HexContainer & hc_ ) noexcept {
+    [[ maybe_unused ]] friend Stream & operator << ( Stream & out_, HexContainer const & hc_ ) noexcept {
         constexpr int width = 1;
         size_type r = 0;
         const_pointer p = hc_.m_data.data ( );

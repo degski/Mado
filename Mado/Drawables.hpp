@@ -78,7 +78,7 @@ struct MouseState {
         m_position = sf::castVector2f ( m_data [ 0 ] );
     }
 
-    [[ nodiscard ]] const sf::Vector2f & operator ( ) ( ) const noexcept {
+    [[ nodiscard ]] sf::Vector2f const & operator ( ) ( ) const noexcept {
         return m_position;
     }
 
@@ -96,7 +96,7 @@ struct MouseState {
         return static_cast<int> ( m_mouse_state ) & 1;
     }
 
-    const sf::Vector2f & update ( ) noexcept {
+    sf::Vector2f const & update ( ) noexcept {
         m_mouse_state = mouse_state::idle;
         if ( sf::Mouse::isButtonPressed ( sf::Mouse::Left ) )
             m_mouse_state = mouse_state::left_clicked;
@@ -123,7 +123,7 @@ class Taskbar : public sf::Drawable {
 
     private:
 
-    [[ nodiscard ]] sf::Quad make_vertex ( const sf::Vector2f p_ ) const noexcept {
+    [[ nodiscard ]] sf::Quad make_vertex ( sf::Vector2f const p_ ) const noexcept {
         return {
             sf::Vertex { sf::Vector2f { p_.x, p_.y }, sf::Vector2f { 0.0f, 0.0f } },
             sf::Vertex { sf::Vector2f { p_.x + width, p_.y }, sf::Vector2f { width, 0.0f } },
@@ -132,7 +132,7 @@ class Taskbar : public sf::Drawable {
         };
     }
 
-    void set_quad_texture ( const State state_ ) noexcept {
+    void set_quad_texture ( State const state_ ) noexcept {
         if ( state_ != state ( ) ) {
             sf::Quad & quads = *reinterpret_cast<sf::Quad*> ( & m_vertices [ 0 ] );
             quads.v3.texCoords.x = quads.v0.texCoords.x = state_ * width;
@@ -142,7 +142,7 @@ class Taskbar : public sf::Drawable {
 
     public:
 
-    Taskbar ( const float window_width_ ) :
+    Taskbar ( float const window_width_ ) :
         m_minimize_bounds { window_width_ - width, 0.0f, width / 3.0f, height },
         m_close_bounds { window_width_ - width / 3.0f, 0.0f, width / 3.0f, height } {
         sf::loadFromResource ( m_texture, TASKBAR );
@@ -162,7 +162,7 @@ class Taskbar : public sf::Drawable {
         return static_cast<State> ( static_cast<int> ( m_vertices [ 0 ].texCoords.x ) / static_cast<int> ( width ) );
     }
 
-    void update ( const sf::Vector2f & p_ ) noexcept {
+    void update ( sf::Vector2f const & p_ ) noexcept {
         set_quad_texture ( m_minimize_bounds.contains ( p_ ) ? State::minimize : m_close_bounds.contains ( p_ ) ? State::close : State::in_active );
     }
 
@@ -181,17 +181,17 @@ class Taskbar : public sf::Drawable {
 
 struct DelayTimer {
 
-    void set ( const int d_ ) {
+    void set ( int const d_ ) {
         m_delay = std::chrono::milliseconds { 1'000 * d_ };
         expired = m_delay == std::chrono::milliseconds { 0 };
     }
 
-    void restart ( const sf::HrClock::time_point now_ ) {
+    void restart ( sf::HrClock::time_point const now_ ) {
         if ( not ( expired = m_delay == std::chrono::milliseconds { 0 } ) )
             m_end_time = now_ + m_delay;
     }
 
-    [[ nodiscard ]] bool update ( const sf::HrClock::time_point now_ ) noexcept {
+    [[ nodiscard ]] bool update ( sf::HrClock::time_point const now_ ) noexcept {
         return expired = now_ > m_end_time;
     }
 
@@ -216,7 +216,7 @@ struct GameClock : public sf::Drawable, public sf::Transformable {
 
     public:
 
-    GameClock ( const float left_, const float right_, const float height_ ) noexcept {
+    GameClock ( float const left_, float const right_, float const height_ ) noexcept {
         sf::loadFromResource ( m_font_numbers, __NUMBERS_FONT__ );
         init ( m_text [ Player::human ] );
         m_text [ Player::human ].setPosition ( left_, height_ );
@@ -228,7 +228,7 @@ struct GameClock : public sf::Drawable, public sf::Transformable {
         restart ( Player::human );
     }
 
-    void set ( const int min_, const int sec_ = 0, const int delay_ = 0 ) noexcept {
+    void set ( int const min_, int const sec_ = 0, int const delay_ = 0 ) noexcept {
         m_time [ Player::human ] = m_time [ Player::agent ] = sf::fminutes { min_ } +sf::fseconds { sec_ };
         m_delay_timer.set ( delay_ );
         char buf [ 6 ] = { 0 };
@@ -260,7 +260,7 @@ struct GameClock : public sf::Drawable, public sf::Transformable {
         }
     }
 
-    void restart ( const Player p_ ) noexcept {
+    void restart ( Player const p_ ) noexcept {
         m_player_to_move = p_;
         m_start = m_clock.now ( ); // In case delay == 0 or very short.
         m_delay_timer.restart ( m_start );
@@ -278,8 +278,8 @@ struct GameClock : public sf::Drawable, public sf::Transformable {
         target.draw ( m_text [ Player::agent ] );
     }
 
-    [[ nodiscard ]] bool isClicked ( const sf::Vector2f mouse_position_ ) noexcept {
-        const bool is_clicked = m_bounds [ m_player_to_move ].contains ( mouse_position_ );
+    [[ nodiscard ]] bool isClicked ( sf::Vector2f const mouse_position_ ) noexcept {
+        bool const is_clicked = m_bounds [ m_player_to_move ].contains ( mouse_position_ );
         if ( is_clicked )
             update_next ( );
         return is_clicked;
@@ -340,10 +340,10 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
     using IdxType = typename State::IdxType;
     using Hex = typename State::Hex;
 
-    [[ nodiscard ]] sf::Quad make_vertex ( const sf::Vector2f p_ ) const noexcept;
-    void init ( const sf::Vector2f center_ ) noexcept;
+    [[ nodiscard ]] sf::Quad make_vertex ( sf::Vector2f const p_ ) const noexcept;
+    void init ( sf::Vector2f const center_ ) noexcept;
 
-    PlayArea ( State & state_, GameClock & clock_, const sf::Vector2f center_, float hori_, float vert_, float circle_diameter_ );
+    PlayArea ( State & state_, GameClock & clock_, sf::Vector2f const center_, float hori_, float vert_, float circle_diameter_ );
 
     ~PlayArea ( ) {
         // Wait for the agent to return it's Move. This
@@ -367,10 +367,10 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
         set_quad_texture ( * quad_, i_ );
     }
 
-    void set_quad_alpha ( sf::Quad & quad_, const float alpha_ ) noexcept {
+    void set_quad_alpha ( sf::Quad & quad_, float const alpha_ ) noexcept {
         quad_.v3.color.a = quad_.v2.color.a = quad_.v1.color.a = quad_.v0.color.a = static_cast<sf::Uint8> ( alpha_ );
     }
-    void set_quad_alpha ( sf::Quad * quad_, const float alpha_ ) noexcept {
+    void set_quad_alpha ( sf::Quad * quad_, float const alpha_ ) noexcept {
         set_quad_alpha ( * quad_, alpha_ );
     }
 
@@ -392,7 +392,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
         return static_cast<DisplayType> ( what ( i_ ) % 3 );
     }
 
-    [[ nodiscard ]] bool are_neighbors ( const Hex a_, const Hex b_ ) const noexcept {
+    [[ nodiscard ]] bool are_neighbors ( Hex const a_, Hex const b_ ) const noexcept {
         if ( a_ != b_ ) {
             const typename Hex::value_type dq = a_.q - b_.q, dr = a_.r - b_.r;
             return std::abs ( dq ) + std::abs ( dr ) + std::abs ( -dq - dr ) == typename Hex::value_type { 2 };
@@ -402,19 +402,19 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
 
     public:
 
-    void set_to_quad ( const size_type t_, const DisplayValue d_ ) noexcept {
+    void set_to_quad ( size_type const t_, DisplayValue const d_ ) noexcept {
         set_quad_texture ( m_circles [ t_ ], is_active ( d_ ) ? DisplayValue::inactive_vacant : DisplayValue::active_vacant );
         set_quad_texture ( m_quads [ t_ ], d_ );
         set_quad_alpha ( m_quads [ t_ ], 0.0f );
-        Animator::instance ( ).emplace ( LAMBDA_EASING_START_END_DURATION ( ( [ &, t_ ] ( const float v ) noexcept { set_quad_alpha ( m_quads [ t_ ], v ); } ), sf::easing::exponentialInEasing, 0.0f, 255.0f, 750 ) );
+        Animator::instance ( ).emplace ( LAMBDA_EASING_START_END_DURATION ( ( [ &, t_ ] ( float const v ) noexcept { set_quad_alpha ( m_quads [ t_ ], v ); } ), sf::easing::exponentialInEasing, 0.0f, 255.0f, 750 ) );
     }
 
-    void set_from_quad ( const size_type f_ ) noexcept {
+    void set_from_quad ( size_type const f_ ) noexcept {
         auto const w = what_value ( f_ );
         set_quad_texture ( m_circles [ f_ ], is_active ( w ) ? DisplayValue::inactive_vacant : DisplayValue::active_vacant );
         set_quad_alpha ( m_quads [ f_ ], 255.0f );
-        Animator::instance ( ).emplace ( LAMBDA_EASING_START_END_DURATION ( ( [ &, f_ ] ( const float v ) noexcept { set_quad_alpha ( m_quads [ f_ ], v ); } ), sf::easing::exponentialInEasing, 255.0f, 0.0f, 750 ) );
-        Animator::instance ( ).emplace ( LAMBDA_DELAY ( ( [ &, w, f_ ] ( const float v ) noexcept {
+        Animator::instance ( ).emplace ( LAMBDA_EASING_START_END_DURATION ( ( [ &, f_ ] ( float const v ) noexcept { set_quad_alpha ( m_quads [ f_ ], v ); } ), sf::easing::exponentialInEasing, 255.0f, 0.0f, 750 ) );
+        Animator::instance ( ).emplace ( LAMBDA_DELAY ( ( [ &, w, f_ ] ( float const v ) noexcept {
             if ( w == what_value ( f_ ) ) { // Reset, iff not changed.
                 set_quad_texture ( m_quads [ f_ ], DisplayValue::inactive_vacant );
                 set_quad_alpha ( m_quads [ f_ ], 255.0f );
@@ -422,7 +422,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
         } ), 750 ) );
     }
 
-    void make_agent_move ( const DisplayValue d_ = DisplayValue::inactive_green ) noexcept {
+    void make_agent_move ( DisplayValue const d_ = DisplayValue::inactive_green ) noexcept {
         if ( m_state.nonterminal ( ) ) {
             m_move_lock.lock ( );
             agent_is_making_move = true;
@@ -446,7 +446,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
         }
     }
 
-    [[ nodiscard ]] bool select ( const Hex i_, const DisplayValue d_ ) noexcept {
+    [[ nodiscard ]] bool select ( Hex const i_, DisplayValue const d_ ) noexcept {
         if ( m_state.nonterminal ( ) ) {
             m_last = Board::index ( i_.q, i_.r );
             return display_type ( d_ ) == what_type ( m_last );
@@ -460,9 +460,9 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
         m_last = not_set;
     }
 
-    [[ nodiscard ]] bool place ( const Hex t_, const DisplayValue d_ ) noexcept {
+    [[ nodiscard ]] bool place ( Hex const t_, DisplayValue const d_ ) noexcept {
         if ( m_state.nonterminal ( ) ) {
-            if ( const size_type t = Board::index ( t_.q, t_.r ); DisplayType::vacant == what_type ( t ) ) {
+            if ( size_type const t = Board::index ( t_.q, t_.r ); DisplayType::vacant == what_type ( t ) ) {
                 set_to_quad ( t, d_ );
                 m_last = t;
                 m_state.moveHashWinner ( state_move { t } );
@@ -477,10 +477,10 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
         return false;
     }
 
-    [[ nodiscard ]] bool Move ( const Hex f_, const Hex t_, const DisplayValue d_ ) noexcept {
+    [[ nodiscard ]] bool Move ( Hex const f_, Hex const t_, DisplayValue const d_ ) noexcept {
         if ( m_state.nonterminal ( ) ) {
             if ( are_neighbors ( f_, t_ ) ) {
-                if ( const size_type f = Board::index ( f_.q, f_.r ), t = Board::index ( t_.q, t_.r ); display_type ( d_ ) == what_type ( f ) and DisplayValue::active_vacant == what_value ( t ) ) {
+                if ( size_type const f = Board::index ( f_.q, f_.r ), t = Board::index ( t_.q, t_.r ); display_type ( d_ ) == what_type ( f ) and DisplayValue::active_vacant == what_value ( t ) ) {
                     set_from_quad ( f );
                     set_to_quad ( t, d_ );
                     m_last = t;
@@ -490,7 +490,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
                     return true;
                 }
             }
-            const size_type f = Board::index ( f_.q, f_.r );
+            size_type const f = Board::index ( f_.q, f_.r );
             set_quad_texture ( m_quads [ f ], what_type ( f ) );
             set_quad_texture ( m_circles [ f ], DisplayValue::inactive_vacant );
             return false;
@@ -501,8 +501,8 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
         return false;
     }
 
-    void make_active ( const Hex i_ ) noexcept {
-        if ( const size_type i = Board::index ( i_.q, i_.r ), w = what ( i ); w < 3 ) {
+    void make_active ( Hex const i_ ) noexcept {
+        if ( size_type const i = Board::index ( i_.q, i_.r ), w = what ( i ); w < 3 ) {
             if ( not_set != m_last ) {
                 set_quad_texture ( m_quads [ m_last ], what_type ( m_last ) );
                 set_quad_texture ( m_circles [ m_last ], DisplayValue::inactive_vacant );
@@ -543,7 +543,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
 
     play_area_lock m_move_lock;
 
-    const float m_hori, m_vert, m_circle_diameter, m_circle_radius;
+    float const m_hori, m_vert, m_circle_diameter, m_circle_radius;
 
     size_type m_last;
 
@@ -567,7 +567,7 @@ struct PlayArea : public sf::Drawable, public sf::Transformable {
 
 
 template<typename State>
-PlayArea<State>::PlayArea ( State & state_, GameClock & clock_, const sf::Vector2f center_, float hori_, float vert_, float circle_diameter_ ) :
+PlayArea<State>::PlayArea ( State & state_, GameClock & clock_, sf::Vector2f const center_, float hori_, float vert_, float circle_diameter_ ) :
     // Parameters.
     m_hori { hori_ },
     m_vert { vert_ },
@@ -586,7 +586,7 @@ PlayArea<State>::PlayArea ( State & state_, GameClock & clock_, const sf::Vector
 
 
 template<typename State>
-[[ nodiscard ]] sf::Quad PlayArea<State>::make_vertex ( const sf::Vector2f p_ ) const noexcept {
+[[ nodiscard ]] sf::Quad PlayArea<State>::make_vertex ( sf::Vector2f const p_ ) const noexcept {
     return {
         sf::Vertex { sf::Vector2f { p_.x, p_.y }, sf::Vector2f { 0.0f, 0.0f } },
         sf::Vertex { sf::Vector2f { p_.x + m_circle_diameter, p_.y }, sf::Vector2f { m_circle_diameter, 0.0f } },
@@ -596,7 +596,7 @@ template<typename State>
 }
 
 template<typename State>
-void PlayArea<State>::init ( const sf::Vector2f center_ ) noexcept {
+void PlayArea<State>::init ( sf::Vector2f const center_ ) noexcept {
     // Construct vertices.
     m_vertices.setPrimitiveType ( sf::Quads );
     m_vertices.resize ( 4 * ( 2 * Board::size ( ) ) );
@@ -634,7 +634,7 @@ void PlayArea<State>::init ( const sf::Vector2f center_ ) noexcept {
         }
     }
     // Sort m_quads lambda.
-    auto quads_less = [ ] ( const auto a, const auto b ) {
+    auto quads_less = [ ] ( auto const a, auto const b ) {
         return ( a.v0.position.y < b.v0.position.y ) or ( a.v0.position.y == b.v0.position.y and a.v0.position.x < b.v0.position.x );
     };
     std::sort ( m_quads, m_circles, quads_less );

@@ -57,16 +57,16 @@ namespace mcts {
 
     public:
 
-        Stack ( const T v_ ) noexcept {
+        Stack ( T const v_ ) noexcept {
             m_data.reserve ( N );
             m_data.push_back ( v_ );
         }
 
-        [[ nodiscard ]] const T pop ( ) noexcept {
+        [[ nodiscard ]] T const pop ( ) noexcept {
             return m_data.pop ( );
         }
 
-        void push ( const T v_ ) noexcept {
+        void push ( T const v_ ) noexcept {
             m_data.push_back ( v_ );
         }
 
@@ -83,17 +83,17 @@ namespace mcts {
 
     public:
 
-        Queue ( const T v_ ) noexcept {
+        Queue ( T const v_ ) noexcept {
             m_data.push_back ( v_ );
         }
 
-        [[ nodiscard ]] const T pop ( ) noexcept {
-            const T v = m_data.front ( );
+        [[ nodiscard ]] T pop ( ) noexcept {
+            T const v = m_data.front ( );
             m_data.pop_front ( );
             return v;
         }
 
-        void push ( const T v_ ) noexcept {
+        void push ( T const v_ ) noexcept {
             m_data.push_back ( v_ );
         }
 
@@ -119,12 +119,12 @@ namespace mcts {
             // std::cout << "arcdata default constructed\n";
         }
 
-        ArcData ( const State & state_ ) noexcept {
+        ArcData ( State const & state_ ) noexcept {
             // std::cout << "arcdata constructed from state\n";
             m_move = state_.lastMove ( );
         }
 
-        ArcData ( const ArcData & ad_ ) noexcept {
+        ArcData ( ArcData const & ad_ ) noexcept {
             // std::cout << "arcdata copy constructed\n";
             // m_score = nd_.m_score;
             // m_visits = nd_.m_visits;
@@ -141,13 +141,13 @@ namespace mcts {
         ~ArcData ( ) noexcept {
         }
 
-        [[ maybe_unused ]] ArcData & operator += ( const ArcData & rhs_ ) noexcept {
+        [[ maybe_unused ]] ArcData & operator += ( ArcData const & rhs_ ) noexcept {
             // m_score += rhs_.m_score;
             // m_visits += rhs_.m_visits;
             return * this;
         }
 
-        [[ maybe_unused ]] ArcData & operator = ( const ArcData & ad_ ) noexcept {
+        [[ maybe_unused ]] ArcData & operator = ( ArcData const & ad_ ) noexcept {
             // std::cout << "arcdata copy assigned\n";
             // m_score = nd_.m_score;
             // m_visits = nd_.m_visits;
@@ -196,7 +196,7 @@ namespace mcts {
             // std::cout << "nodedata default constructed\n";
         }
 
-        NodeData ( const State & state_ ) noexcept {
+        NodeData ( State const & state_ ) noexcept {
             // std::cout << "nodedata constructed from state\n";
             m_moves = new ( m_moves_pool->allocate ( ) ) Moves ( );
             if ( not ( state_.moves ( m_moves ) ) ) {
@@ -245,7 +245,7 @@ namespace mcts {
 
         [[ nodiscard ]] Move getUntriedMove ( ) noexcept {
             if ( m_moves->size ( ) == 1 ) {
-                const Move Move = m_moves->front ( );
+                Move const Move = m_moves->front ( );
                 m_moves_pool->deallocate ( m_moves );
                 m_moves = nullptr;
                 return Move;
@@ -373,7 +373,7 @@ namespace mcts {
 
         // Init.
 
-        void initialize ( const State & state_ ) noexcept {
+        void initialize ( State const & state_ ) noexcept {
             if ( m_transposition_table.get ( ) == nullptr ) {
                 m_transposition_table.reset ( new TranspositionTable ( ) );
             }
@@ -389,11 +389,11 @@ namespace mcts {
         }
 
 
-        [[ nodiscard ]] Link addArc ( const Node parent_, const Node child_, const State & state_ ) noexcept {
+        [[ nodiscard ]] Link addArc ( const Node parent_, const Node child_, State const & state_ ) noexcept {
             return m_tree.addArc ( parent_, child_, state_ );
         }
 
-        [[ nodiscard ]] Link addNode ( const Node parent_, const State & state_ ) noexcept {
+        [[ nodiscard ]] Link addNode ( const Node parent_, State const & state_ ) noexcept {
             const Link child = m_tree.addNode ( parent_, state_ );
             m_transposition_table->emplace ( state_.zobrist ( ) [ 0 ], child.target );
             return child;
@@ -415,7 +415,7 @@ namespace mcts {
 
 
         [[ nodiscard ]] Node getNode ( const ZobristHash zobrist_ ) const noexcept {
-            const auto it = m_transposition_table->find ( zobrist_ );
+            auto const it = m_transposition_table->find ( zobrist_ );
             return it == m_transposition_table->cend ( ) ? Tree::invalid_node : it->second;
         }
 
@@ -493,7 +493,7 @@ namespace mcts {
             ++a;
             for ( ; a != OutIt::end ( ); ++a ) {
                 const Link child = m_tree.link ( a );
-                const float UCT_score = getUCTFromNode ( parent_, child.target );
+                float const UCT_score = getUCTFromNode ( parent_, child.target );
                 if ( UCT_score > best_UCT_score ) {
                     best_children.resize ( 1 );
                     best_children.back ( ) = child;
@@ -508,15 +508,15 @@ namespace mcts {
         }
 
 
-        [[ nodiscard ]] Link addChild ( const Node parent_, const State & state_ ) noexcept {
+        [[ nodiscard ]] Link addChild ( const Node parent_, State const & state_ ) noexcept {
             // State is updated to reflect Move.
             const Node child = getNode ( state_.zobrist ( ) [ 0 ] );
             return child == Tree::invalid_node ? addNode ( parent_, state_ ) : addArc ( parent_, child, state_ );
         }
 
 
-        void updateData ( Link && link_, const State & state_ ) noexcept {
-            const float result = state_.result ( m_tree [ link_.target ].m_player_just_moved );
+        void updateData ( Link && link_, State const & state_ ) noexcept {
+            float const result = state_.result ( m_tree [ link_.target ].m_player_just_moved );
             // ++m_tree [ link_.arc ].m_visits;
             // m_tree [ link_.arc ].m_score += result;
             ++m_tree [ link_.target ].m_visits;
@@ -543,7 +543,7 @@ namespace mcts {
         }
 
 
-        void connectStatesPath ( const State & state_ ) noexcept {
+        void connectStatesPath ( State const & state_ ) noexcept {
             // Adding the Move of the opponent to the path (and possibly to the tree).
             const Node parent = m_path.back ( ).target; Node child = getNode ( state_.zobrist ( ) [ 0 ] );
             if ( child == Tree::invalid_node ) {
@@ -554,7 +554,7 @@ namespace mcts {
         }
 
 
-        [[ nodiscard ]] Move compute ( const State & state_, int max_iterations_ = 100'000 ) noexcept {
+        [[ nodiscard ]] Move compute ( State const & state_, int max_iterations_ = 100'000 ) noexcept {
             // constexpr std::int32_t threshold = 5;
             if ( m_not_initialized ) {
                 initialize ( state_ );
@@ -562,7 +562,7 @@ namespace mcts {
             else {
                 connectStatesPath ( state_ );
             }
-            const Player player = state_.playerToMove ( );
+            Player const player = state_.playerToMove ( );
             if ( player == Player::Type::agent ) {
                 // m_path.print ( );
             }
@@ -637,7 +637,7 @@ namespace mcts {
         }
 
 
-        void prune_ ( Mcts * new_mcts_, const State & state_ ) noexcept {
+        void prune_ ( Mcts * new_mcts_, State const & state_ ) noexcept {
 
             // at::AutoTimer t ( at::milliseconds );
 
@@ -687,11 +687,11 @@ namespace mcts {
             // Purge TransitionTable.
 
             auto it = m_transposition_table->begin ( );
-            const auto it_cend = m_transposition_table->cend ( );
+            auto const it_cend = m_transposition_table->cend ( );
 
             while ( it != it_cend ) {
 
-                const auto tmp_it = it;
+                auto const tmp_it = it;
 
                 ++it;
 
@@ -723,7 +723,7 @@ namespace mcts {
         }
 
 
-        static void prune ( Mcts * & old_mcts_, const State & state_ ) noexcept {
+        static void prune ( Mcts * & old_mcts_, State const & state_ ) noexcept {
 
             if ( not ( old_mcts_->m_not_initialized ) and old_mcts_->getNode ( state_.zobrist ( ) [ 0 ] ) != Mcts::Tree::invalid_node ) {
 
@@ -740,7 +740,7 @@ namespace mcts {
         }
 
 
-        static void reset ( Mcts * & mcts_, const State & state_, const Player player_ ) noexcept {
+        static void reset ( Mcts * & mcts_, State const & state_, Player const player_ ) noexcept {
 
             if ( not ( mcts_->m_not_initialized ) ) {
 
@@ -840,7 +840,7 @@ namespace mcts {
 
                         // Now do something. If child in s_mcts_ doesn't exist in t_mcts_, add child.
 
-                        const auto t_it = t_tt.find ( s_itt [ s_link.target ] );
+                        auto const t_it = t_tt.find ( s_itt [ s_link.target ] );
 
                         if ( t_it != t_tt.cend ( ) ) { // Child exists. The arc does or does not exist.
 

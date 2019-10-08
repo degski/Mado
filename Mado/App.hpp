@@ -61,19 +61,19 @@ struct NextMove {
         m_state = State::select;
     }
 
-    [[ nodiscard ]] const Position & from ( ) const noexcept {
+    [[ nodiscard ]] Position const & from ( ) const noexcept {
         return m_from;
     }
-    void from ( const Position f_ ) noexcept {
+    void from ( Position const f_ ) noexcept {
         m_from = f_;
         m_to = Position { };
         m_state = State::Move;
     }
 
-    [[ nodiscard ]] const Position & to ( ) const noexcept {
+    [[ nodiscard ]] Position const & to ( ) const noexcept {
         return m_to;
     }
-    void to ( const Position t_ ) noexcept {
+    void to ( Position const t_ ) noexcept {
         m_to = t_;
         m_state = State::select;
     }
@@ -81,12 +81,12 @@ struct NextMove {
     [[ nodiscard ]] State state ( ) const noexcept {
         return m_state;
     }
-    void state ( const State s_ ) noexcept {
+    void state ( State const s_ ) noexcept {
         m_state = std::move ( s_ );
     }
 
     template<typename Stream>
-    [[ maybe_unused ]] friend Stream & operator << ( Stream & out_, const NextMove & nm_ ) noexcept {
+    [[ maybe_unused ]] friend Stream & operator << ( Stream & out_, NextMove const & nm_ ) noexcept {
         switch ( static_cast<int> ( nm_.m_state ) ) {
         case 0:
             out_ << "select <" << nm_.m_from << nm_.m_to << ">";
@@ -150,12 +150,12 @@ class App {
 
 private:
 
-    [[ nodiscard ]] static inline float distance_squared ( const sf::Vector2f p1_, const sf::Vector2f p2_ ) noexcept {
+    [[ nodiscard ]] static inline float distance_squared ( sf::Vector2f const p1_, sf::Vector2f const p2_ ) noexcept {
         return ( ( p1_.x - p2_.x ) * ( p1_.x - p2_.x ) ) + ( ( p1_.y - p2_.y ) * ( p1_.y - p2_.y ) );
     }
 
     template<typename T>
-    [[ nodiscard ]] inline T floorf ( const float x ) const noexcept {
+    [[ nodiscard ]] inline T floorf ( float const x ) const noexcept {
         return static_cast<T> ( static_cast<int> ( x - std::numeric_limits<IdxType>::min ( ) ) + std::numeric_limits<IdxType>::min ( ) );
     }
 
@@ -222,8 +222,8 @@ public:
 [[ nodiscard] ] App::Hex App::pointToHex ( sf::Vector2f p_ ) const noexcept {
     using value_type = typename Hex::value_type;
     // https://www.redblobgames.com/grids/hexagons/#comment-1063818420
-    static const float radius { m_hori * 0.5773502588f };
-    static const sf::Vector2f center { m_center.x, m_center.y - radius };
+    static float const radius { m_hori * 0.5773502588f };
+    static sf::Vector2f const center { m_center.x, m_center.y - radius };
     p_ -= center;
     p_.x /= m_hori; p_.y /= radius;
     Hex h;
@@ -236,7 +236,7 @@ public:
 
 [[ nodiscard ]] bool App::playAreaContains ( sf::Vector2f p_ ) const noexcept {
     // http://www.playchilla.com/how-to-check-if-a-point-is-inside-a-hexagon
-    static const float hori { MadoState::Board::width ( ) * 0.5f * m_vert }, vert { hori * 0.5773502588f }, vert_2 { 2.0f * vert }, hori_vert_2 { hori * vert_2 };
+    static float const hori { MadoState::Board::width ( ) * 0.5f * m_vert }, vert { hori * 0.5773502588f }, vert_2 { 2.0f * vert }, hori_vert_2 { hori * vert_2 };
     p_ -= m_center;
     p_.x = std::abs ( p_.x ); p_.y = std::abs ( p_.y );
     // x- and y-coordinates swapped (for flat-topped hexagon).
@@ -311,19 +311,19 @@ void App::setupStartupAnimation ( ) noexcept {
     m_sprite.setPosition ( sf::Vector2f { m_window_width / 2.0f, m_window_height * 0.90f } );
     m_sprite.setColor ( sf::Color { 255u, 255u, 255u, 0u } );
     // Callbacks.
-    auto update_overlay_alpha = [ & ] ( const float v ) {
+    auto update_overlay_alpha = [ & ] ( float const v ) {
         m_overlay.setFillColor ( sf::Color { 10u, 10u, 10u, static_cast<sf::Uint8> ( v ) } );
     };
-    auto update_overlay_text_alpha = [ & ] ( const float v ) {
+    auto update_overlay_text_alpha = [ & ] ( float const v ) {
         m_sprite.setColor ( sf::Color { 255u, 255u, 255u, static_cast<sf::Uint8> ( v ) } );
     };
-    auto update_overlay_text_position = [ & ] ( const float v ) {
+    auto update_overlay_text_position = [ & ] ( float const v ) {
         m_sprite.setPosition ( sf::Vector2f { m_window_width / 2.0f, m_window_height * v } );
     };
-    auto update_overlay_text_rotate = [ & ] ( const float v ) {
+    auto update_overlay_text_rotate = [ & ] ( float const v ) {
         m_sprite.setRotation ( v );
     };
-    auto update_overlay_text_scale = [ & ] ( const float v ) {
+    auto update_overlay_text_scale = [ & ] ( float const v ) {
         m_sprite.setScale ( v, v );
     };
     // Start animation.
@@ -365,12 +365,12 @@ void App::updateWindow ( ) noexcept {
 
 // https://en.sfml-dev.org/forums/index.php?topic=9829.0
 
-void App::mouseEvents ( const sf::Event & event_ ) {
+void App::mouseEvents ( sf::Event const & event_ ) {
     // Update mouse state.
-    const sf::Vector2f & mouse_position = m_mouse.update ( );
+    sf::Vector2f const & mouse_position = m_mouse.update ( );
     if ( m_window_bounds.contains ( mouse_position ) ) {
         // In window.
-        const Hex hex_position = pointToHex ( mouse_position );
+        Hex const hex_position = pointToHex ( mouse_position );
         // if ( hex_position.valid ( ) ) {
         if ( Hex::is_valid ( hex_position.q, hex_position.r ) ) {
             if ( not ( m_play_area.agent_is_making_move ) and sf::Mouse::isButtonPressed ( sf::Mouse::Left ) ) {
