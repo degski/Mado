@@ -60,7 +60,7 @@
 struct Rng final {
 
     Rng ( Rng && ) = delete;
-    Rng ( const Rng & ) = delete;
+    Rng ( Rng const & ) = delete;
 
     Rng & operator = ( Rng && ) = delete;
     Rng & operator = ( Rng const & ) = delete;
