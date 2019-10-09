@@ -298,7 +298,7 @@ struct Mado {
     template<typename MovesContainerPtr>
     [[ nodiscard ]] bool availableMoves ( MovesContainerPtr moves_ ) const noexcept {
         // Mcts class takes/has ownership.
-        for ( int i = 0; i < static_cast<int> ( Board::size ( ) ); ++i ) {
+        for ( int s = static_cast<int> ( Board::size ( ) ), i = 0; i < s; ++i ) {
             // Find places.
             if ( m_pos.m_board [ i ].vacant ( ) ) {
                 moves_->emplace_back ( i );
