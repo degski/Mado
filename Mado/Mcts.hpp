@@ -32,8 +32,9 @@
 #include <unordered_map>
 #include <vector>
 
+#include <experimental/fixed_capacity_vector>
+
 #include <boost/container/deque.hpp>
-#include <boost/container/static_vector.hpp>
 #include <boost/dynamic_bitset.hpp>
 
 #include <cereal/cereal.hpp>
@@ -104,7 +105,7 @@ namespace mcts {
 
 
     template<typename State>
-    struct ArcData { // 1 bytes.
+    struct ArcData { // 2 bytes.
 
         using Move = typename State::Move;
 
@@ -334,9 +335,9 @@ namespace mcts {
         using Generator = sax::Rng &;
         using ZobristHash = typename State::ZobristHash;
 
-        typedef std::unordered_map<ZobristHash, Node> TranspositionTable;
-        typedef std::vector<ZobristHash> InverseTranspositionTable;
-        typedef sax::owningptr<TranspositionTable> TranspositionTablePtr;
+        using TranspositionTable = std::unordered_map<ZobristHash, Node>;
+        using InverseTranspositionTable = std::vector<ZobristHash>;
+        using TranspositionTablePtr = sax::owningptr<TranspositionTable>;
 
         // The data.
 
@@ -366,7 +367,7 @@ namespace mcts {
             m_tree [ m_tree.root_arc  ] =  ArcData ( state_ );
             m_tree [ m_tree.root_node ] = NodeData ( state_ );
             // Add root_node to transposition_table.
-            m_transposition_table->emplace ( state_.zobrist ( ) [ 0 ], m_tree.root_node );
+            m_transposition_table->emplace ( state_.zobrist ( ), m_tree.root_node );
             // Has been initialized.
             m_not_initialized = false;
             m_path.reset ( m_tree.root_arc, m_tree.root_node );
@@ -379,7 +380,7 @@ namespace mcts {
 
         [[ nodiscard ]] Link addNode ( Node const parent_, State const & state_ ) noexcept {
             Link const child = m_tree.addNode ( parent_, state_ );
-            m_transposition_table->emplace ( state_.zobrist ( ) [ 0 ], child.target );
+            m_transposition_table->emplace ( state_.zobrist ( ), child.target );
             return child;
         }
 
@@ -405,7 +406,7 @@ namespace mcts {
 
         // Moves.
 
-        [ [ nodiscard ] ] bool hasNoUntriedMoves ( Node const node_ ) const noexcept {
+        [[ nodiscard ]] bool hasNoUntriedMoves ( Node const node_ ) const noexcept {
             return nullptr == m_tree [ node_ ].m_moves;
         }
 
@@ -447,7 +448,8 @@ namespace mcts {
         }
 
         [[ nodiscard ]] Link selectChildRandom ( Node const parent_ ) const noexcept {
-            boost::container::static_vector<Link, State::max_no_moves> children;
+            using children_static_vector = std::experimental::fixed_capacity_vector<Link, State::max_no_moves>;
+            children_static_vector children;
             for ( OutIt a ( m_tree, parent_ ); OutIt::end () != a; ++a )
                 children.emplace_back ( m_tree.link ( a ) );
             return children [ std::uniform_int_distribution<ptrdiff_t> ( 0, children.size ( ) - 1 ) ( m_generator ) ];
@@ -455,7 +457,8 @@ namespace mcts {
 
         [[ nodiscard ]] Link selectChildUCT ( Node const parent_ ) const noexcept {
             OutIt a ( m_tree, parent_ );
-            boost::container::static_vector<Link, State::max_no_moves> best_children ( 1, m_tree.link ( a ) );
+            using children_static_vector = std::experimental::fixed_capacity_vector<Link, State::max_no_moves>;
+            children_static_vector best_children ( 1, m_tree.link ( a ) );
             float best_UCT_score = getUCTFromNode ( parent_, best_children.back ( ).target );
             ++a;
             for ( ; OutIt::end () != a; ++a ) {
@@ -476,7 +479,7 @@ namespace mcts {
 
         [[ nodiscard ]] Link addChild ( Node const parent_, State const & state_ ) noexcept {
             // State is updated to reflect Move.
-            Node const child = getNode ( state_.zobrist ( ) [ 0 ] );
+            Node const child = getNode ( state_.zobrist ( ) );
             return child == Tree::invalid_node ? addNode ( parent_, state_ ) : addArc ( parent_, child, state_ );
         }
 
@@ -508,7 +511,7 @@ namespace mcts {
 
         void connectStatesPath ( State const & state_ ) noexcept {
             // Adding the Move of the opponent to the path (and possibly to the tree).
-            Node const parent = m_path.back ( ).target; Node child = getNode ( state_.zobrist ( ) [ 0 ] );
+            Node const parent = m_path.back ( ).target; Node child = getNode ( state_.zobrist ( ) );
             if ( Tree::invalid_node == child )
                 child = addNode ( parent, state_ ).target;
             m_path.push ( m_tree.link ( parent, child ) );
@@ -593,7 +596,7 @@ namespace mcts {
             using Visited = std::vector<Node>; // New m_nodes by old_index.
             using Queue = Queue<Node>;
             // Prune Tree.
-            Node const old_node = getNode ( state_.zobrist ( ) [ 0 ] );
+            Node const old_node = getNode ( state_.zobrist ( ) );
             Visited visited ( m_tree.nodeNum ( ), Tree::invalid_node );
             visited [ old_node ] = m_tree.root_node;
             Queue queue ( old_node );
@@ -637,7 +640,7 @@ namespace mcts {
         }
 
         static void prune ( Mcts * & old_mcts_, State const & state_ ) noexcept {
-            if ( not ( old_mcts_->m_not_initialized ) and old_mcts_->getNode ( state_.zobrist ( ) [ 0 ] ) != Mcts::Tree::invalid_node ) {
+            if ( not ( old_mcts_->m_not_initialized ) and old_mcts_->getNode ( state_.zobrist ( ) ) != Mcts::Tree::invalid_node ) {
                 // The state exists in the tree and it's not the current root_node. i.e. now prune.
                 Mcts * new_mcts = new Mcts ( );
                 old_mcts_->prune_ ( new_mcts, state_ );
@@ -648,7 +651,7 @@ namespace mcts {
 
         static void reset ( Mcts * & mcts_, State const & state_, Player const player_ ) noexcept {
             if ( not ( mcts_->m_not_initialized ) ) {
-                Mcts::Node const new_root_node = mcts_->getNode ( state_.zobrist ( ) [ 0 ] );
+                Mcts::Node const new_root_node = mcts_->getNode ( state_.zobrist ( ) );
                 if ( Mcts::Tree::invalid_node != new_root_node ) {
                     // The state exists in the tree and it's not the current root_node. i.e. re-hang the tree.
                     mcts_->m_tree.setRoot ( new_root_node );
@@ -782,3 +785,4 @@ namespace mcts {
         delete mcts;
     }
 }
+
