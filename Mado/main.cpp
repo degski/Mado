@@ -131,14 +131,14 @@ void handleEptr ( std::exception_ptr eptr ) { // Passing by value is ok.
 int main ( ) {
     std::exception_ptr eptr;
     try {
-        std::unique_ptr<Application> app_uptr = std::make_unique<Application> ( );
+        Application app;
         sf::Pacer keep ( 60 );
         sf::Event event;
         // Startup animation.
-        while ( app_uptr->runStartupAnimation ( ) ) {
-            while ( app_uptr->pollWindowEvent ( event ) ) {
+        while ( app.runStartupAnimation ( ) ) {
+            while ( app.pollWindowEvent ( event ) ) {
                 if ( isEscapePressed ( event ) ) {
-                    app_uptr->closeWindow ( );
+                    app.closeWindow ( );
                     return EXIT_SUCCESS;
                 }
             }
@@ -146,23 +146,23 @@ int main ( ) {
         }
         // Regular game loop.
         keep.reset ( 20 );
-        while ( app_uptr->isWindowOpen ( ) ) {
-            while ( app_uptr->pollWindowEvent ( event ) ) {
+        while ( app.isWindowOpen ( ) ) {
+            while ( app.pollWindowEvent ( event ) ) {
                 if ( sf::Event::LostFocus == event.type ) {
-                    app_uptr->pause ( );
+                    app.pause ( );
                     break;
                 }
                 if ( sf::Event::GainedFocus == event.type ) {
-                    app_uptr->resume ( );
+                    app.resume ( );
                 }
                 if ( sf::Event::Closed == event.type or isEscapePressed ( event ) ) {
-                    app_uptr->closeWindow ( );
+                    app.closeWindow ( );
                     return EXIT_SUCCESS;
                 }
-                app_uptr->mouseEvents ( event );
+                app.mouseEvents ( event );
             }
-            if ( app_uptr->isRunning ( ) ) {
-                app_uptr->updateWindow ( );
+            if ( app.isRunning ( ) ) {
+                app.updateWindow ( );
                 keep.pace ( );
             }
             else {

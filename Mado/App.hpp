@@ -94,7 +94,7 @@ struct NextMove {
 
 // Default- and move-constructible and move-assignable.
 template<int R>
-class App {
+class AppImpl {
 
     using MadoState = Mado<R>;
 
@@ -132,21 +132,21 @@ class App {
     public:
     static constexpr int const radius = R;
 
-    App ( );
-    App ( App const & ) = delete;
-    App ( App && a_ ) noexcept {
+    AppImpl ( );
+    AppImpl ( AppImpl const & ) = delete;
+    AppImpl ( AppImpl && a_ ) noexcept {
         // Make shallow copy, and zap the original (i.e. 'moving' it).
-        std::memcpy ( this, &a_, sizeof ( App ) );
-        std::memset ( &a_, 0, sizeof ( App ) );
+        std::memcpy ( this, &a_, sizeof ( AppImpl ) );
+        std::memset ( &a_, 0, sizeof ( AppImpl ) );
     }
 
-    ~App ( ) noexcept {}
+    ~AppImpl ( ) noexcept {}
 
-    [[nodiscard]] App & operator= ( App const & a_ ) = delete;
-    [[nodiscard]] App & operator                     = ( App && a_ ) noexcept {
+    [[nodiscard]] AppImpl & operator= ( AppImpl const & a_ ) = delete;
+    [[nodiscard]] AppImpl & operator                         = ( AppImpl && a_ ) noexcept {
         // Make shallow copy, and zap the original (i.e. 'moving' it).
-        std::memcpy ( this, &a_, sizeof ( App ) );
-        std::memset ( &a_, 0, sizeof ( App ) );
+        std::memcpy ( this, &a_, sizeof ( AppImpl ) );
+        std::memset ( &a_, 0, sizeof ( AppImpl ) );
     }
 
     private:
@@ -210,7 +210,7 @@ class App {
 };
 
 template<int R>
-[[nodiscard]] typename App<R>::Hex App<R>::pointToHex ( sf::Vector2f p_ ) const noexcept {
+[[nodiscard]] typename AppImpl<R>::Hex AppImpl<R>::pointToHex ( sf::Vector2f p_ ) const noexcept {
     using value_type = typename Hex::value_type;
     // https://www.redblobgames.com/grids/hexagons/#comment-1063818420
     static float const radius{ m_hori * 0.5773502588f };
@@ -226,7 +226,7 @@ template<int R>
 }
 
 template<int R>
-[[nodiscard]] bool App<R>::playAreaContains ( sf::Vector2f p_ ) const noexcept {
+[[nodiscard]] bool AppImpl<R>::playAreaContains ( sf::Vector2f p_ ) const noexcept {
     // http://www.playchilla.com/how-to-check-if-a-point-is-inside-a-hexagon
     static float const hori{ MadoState::Board::width ( ) * 0.5f * m_vert }, vert{ hori * 0.5773502588f }, vert_2{ 2.0f * vert },
         hori_vert_2{ hori * vert_2 };
@@ -240,7 +240,7 @@ template<int R>
 }
 
 template<int R>
-App<R>::App ( ) :
+AppImpl<R>::AppImpl ( ) :
     // Setup parameters.
     m_state{ }, m_hori{ 74.0f }, m_vert{ 64.0f }, m_window_width{ MadoState::Board::width ( ) * m_hori + m_vert + 1.0f },
     m_window_height{ MadoState::Board::height ( ) * m_vert + m_vert + 1.0f + 12.0f },
@@ -288,7 +288,7 @@ App<R>::App ( ) :
 }
 
 template<int R>
-void App<R>::setIcon ( ) noexcept {
+void AppImpl<R>::setIcon ( ) noexcept {
     HICON hIcon = LoadIcon ( GetModuleHandle ( NULL ), MAKEINTRESOURCE ( IDI_ICON1 ) );
     if ( hIcon ) {
         SendMessage ( m_window.getSystemHandle ( ), WM_SETICON, ICON_BIG, ( LPARAM ) hIcon );
@@ -296,7 +296,7 @@ void App<R>::setIcon ( ) noexcept {
 }
 
 template<int R>
-void App<R>::setupStartupAnimation ( ) noexcept {
+void AppImpl<R>::setupStartupAnimation ( ) noexcept {
     m_overlay.setSize ( sf::Vector2f{ m_window_width, m_window_height } );
     // Text.
     sf::centreOrigin ( m_sprite );
@@ -333,7 +333,7 @@ void App<R>::setupStartupAnimation ( ) noexcept {
 }
 
 template<int R>
-bool App<R>::runStartupAnimation ( ) noexcept {
+bool AppImpl<R>::runStartupAnimation ( ) noexcept {
     Animator::instance ( ).run ( );
     m_window.clear ( sf::Color{ 10u, 10u, 10u, 255u } );
     m_window.draw ( m_play_area );
@@ -344,7 +344,7 @@ bool App<R>::runStartupAnimation ( ) noexcept {
 }
 
 template<int R>
-void App<R>::updateWindow ( ) noexcept {
+void AppImpl<R>::updateWindow ( ) noexcept {
     m_play_area.update ( );
     m_window.clear ( sf::Color{ 10u, 10u, 10u, 255u } );
     m_window.draw ( m_taskbar );
@@ -361,7 +361,7 @@ void App<R>::updateWindow ( ) noexcept {
 // https://en.sfml-dev.org/forums/index.php?topic=9829.0
 
 template<int R>
-void App<R>::mouseEvents ( sf::Event const & event_ ) {
+void AppImpl<R>::mouseEvents ( sf::Event const & event_ ) {
     // Update mouse state.
     sf::Vector2f const & mouse_position = m_mouse.update ( );
     if ( m_window_bounds.contains ( mouse_position ) ) {
@@ -449,7 +449,7 @@ void App<R>::mouseEvents ( sf::Event const & event_ ) {
 class Application {
 
     public:
-    using AppVar = std::variant<App<4>, App<5>, App<6>, App<7>, App<8>>;
+    using ApplicationType = std::variant<AppImpl<4>, AppImpl<5>, AppImpl<6>, AppImpl<7>, AppImpl<8>>;
 
     [[nodiscard]] inline bool isWindowOpen ( ) const {
         return std::visit ( [] ( auto const & inst ) noexcept { return inst.isWindowOpen ( ); }, m_instance );
@@ -497,6 +497,6 @@ class Application {
     }
 
     private:
-    AppVar m_instance;
+    ApplicationType m_instance;
     int m_radius = std::visit ( [] ( auto & inst ) noexcept { return inst.radius; }, m_instance );
 };
