@@ -177,6 +177,7 @@ int main ( ) {
                 }
                 if ( int const n = isCtrlShiftNumPressed ( event ) ) {
                     std::cout << "c+s+" << n << nl;
+                    Application::resize ( app, n );
                 }
                 app.mouseEvents ( event );
             }

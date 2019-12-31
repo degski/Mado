@@ -136,7 +136,7 @@ class App {
     App ( App const & )        = delete;
     App ( App && a_ ) noexcept = delete;
 
-    ~App ( ) noexcept {}
+    ~App ( ) noexcept { closeWindow ( ); }
 
     [[nodiscard]] App & operator= ( App const & a_ ) = delete;
     [[nodiscard]] App & operator= ( App && a_ ) noexcept = delete;
@@ -489,15 +489,20 @@ class Application {
     }
 
     static void resize ( Application & a_, int const r_ ) {
-        if ( r_ == a_.m_radius )
+        static sf::HrClock clock;
+        static DelayTimer dt ( 4 );
+        if ( r_ == a_.m_radius or r_ < 4 or r_ > 8 )
             return;
-        a_.m_radius = r_;
-        switch ( r_ ) {
-            case 4: a_.m_instance.emplace<0> ( ); break;
-            case 5: a_.m_instance.emplace<1> ( ); break;
-            case 6: a_.m_instance.emplace<2> ( ); break;
-            case 7: a_.m_instance.emplace<3> ( ); break;
-            case 8: a_.m_instance.emplace<4> ( ); break;
+        if ( dt.update ( clock.now ( ) ) ) {
+            a_.m_radius = r_;
+            switch ( r_ ) {
+                case 4: a_.m_instance.emplace<0> ( ); break;
+                case 5: a_.m_instance.emplace<1> ( ); break;
+                case 6: a_.m_instance.emplace<2> ( ); break;
+                case 7: a_.m_instance.emplace<3> ( ); break;
+                case 8: a_.m_instance.emplace<4> ( ); break;
+            }
+            dt.restart ( clock.now ( ) );
         }
     }
 

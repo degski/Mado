@@ -159,6 +159,11 @@ class Taskbar : public sf::Drawable {
 
 struct DelayTimer {
 
+    DelayTimer ( ) noexcept {}
+    // Delay d_ in seconds.
+    DelayTimer ( int const d_ ) noexcept { set ( d_ ); }
+
+    // Delay d_ in seconds.
     void set ( int const d_ ) {
         m_delay = std::chrono::milliseconds{ 1'000 * d_ };
         expired = m_delay == std::chrono::milliseconds{ 0 };
