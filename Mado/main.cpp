@@ -124,8 +124,24 @@ void handleEptr ( std::exception_ptr eptr ) { // Passing by value is ok.
     }
 }
 
-[[nodiscard]] bool isEscapePressed ( const sf::Event & event_ ) noexcept {
+[[nodiscard]] bool isEscapePressed ( sf::Event const & event_ ) noexcept {
     return sf::Event::KeyPressed == event_.type and sf::Keyboard::Escape == event_.key.code;
+}
+
+[[nodiscard]] int isCtrlShiftNumPressed ( sf::Event const & event_ ) noexcept {
+    if ( sf::Event::KeyPressed == event_.type and event_.key.control and event_.key.shift ) {
+        if ( sf::Keyboard::Num4 == event_.key.code )
+            return 4;
+        if ( sf::Keyboard::Num5 == event_.key.code )
+            return 5;
+        if ( sf::Keyboard::Num6 == event_.key.code )
+            return 6;
+        if ( sf::Keyboard::Num7 == event_.key.code )
+            return 7;
+        if ( sf::Keyboard::Num8 == event_.key.code )
+            return 8;
+    }
+    return 0;
 }
 
 int main ( ) {
@@ -158,6 +174,9 @@ int main ( ) {
                 if ( sf::Event::Closed == event.type or isEscapePressed ( event ) ) {
                     app.closeWindow ( );
                     return EXIT_SUCCESS;
+                }
+                if ( int const n = isCtrlShiftNumPressed ( event ) ) {
+                    std::cout << "c+s+" << n << nl;
                 }
                 app.mouseEvents ( event );
             }
