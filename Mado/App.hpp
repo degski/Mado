@@ -112,7 +112,7 @@ class App {
     sf::Vector2f m_center;
 
     sf::ContextSettings m_settings;
-    sf::RenderWindow m_window;
+    sf::RenderWindow & m_window;
     sf::FloatRect m_window_bounds;
 
     sf::Font m_font_regular, m_font_bold, m_font_mono, m_font_numbers, m_font_dottie;
@@ -235,8 +235,10 @@ template<int R>
 App<R>::App ( ) :
     // Setup parameters.
     m_state{ }, m_hori{ 74.0f }, m_vert{ 64.0f }, m_window_width{ MadoState::Board::width ( ) * m_hori + m_vert + 1.0f },
-    m_window_height{ MadoState::Board::height ( ) * m_vert + m_vert + 1.0f + 12.0f },
-    m_center{ sf::Vector2f{ m_window_width * 0.5f, m_window_height * 0.5f + 6.0f } }, m_taskbar{ m_window_width },
+    m_window_height{ MadoState::Board::height ( ) * m_vert + m_vert + 1.0f + 12.0f }, m_center{ sf::Vector2f{
+                                                                                          m_window_width * 0.5f,
+                                                                                          m_window_height * 0.5f + 6.0f } },
+    m_window{ Wnd::instance ( ) }, m_taskbar{ m_window_width },
     m_game_clock{ std::floorf ( ( m_window_width - ( MadoState::Board::radius ( ) + 1 ) * m_hori ) / 4 ),
                   m_window_width - std::floorf ( ( m_window_width - ( MadoState::Board::radius ( ) + 1 ) * m_hori ) / 4 ), 76.5f },
     m_play_area{ m_state, m_game_clock, m_center, m_hori, m_vert, 67.0f } {

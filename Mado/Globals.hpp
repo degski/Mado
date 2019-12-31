@@ -90,6 +90,20 @@ struct Rng final {
     }
 };
 
+struct Wnd final {
+
+    Wnd ( Wnd && )      = delete;
+    Wnd ( Wnd const & ) = delete;
+
+    Wnd & operator= ( Wnd && ) = delete;
+    Wnd & operator= ( Wnd const & ) = delete;
+
+    [[nodiscard]] static sf::RenderWindow & instance ( ) noexcept {
+        static sf::RenderWindow window{ };
+        return window;
+    }
+};
+
 #undef RANDOM
 
 namespace fs = std::filesystem;
