@@ -55,26 +55,26 @@
 #include "Hexcontainer.hpp"
 #include "Move.hpp"
 
-
 template<int R>
 struct PositionData {
 
     using value_type = Player<R>;
-    using Board = HexContainer<value_type, R, true>;
+    using Board      = HexContainer<value_type, R, true>;
 
     Board m_board;
     std::int8_t m_slides;
     value_type m_player_to_move; // = value_type::random ( );
 
-    PositionData ( ) noexcept = default;
+    PositionData ( ) noexcept                      = default;
     PositionData ( PositionData const & ) noexcept = default;
-    PositionData ( PositionData && ) noexcept = default;
-    [[ maybe_unused ]] PositionData & operator = ( const PositionData & ) noexcept = default;
-    [[ maybe_unused ]] PositionData & operator = ( PositionData && ) noexcept = default;
+    PositionData ( PositionData && ) noexcept      = default;
+
     ~PositionData ( ) noexcept = default;
 
-    private:
+    [[maybe_unused]] PositionData & operator= ( const PositionData & ) noexcept = default;
+    [[maybe_unused]] PositionData & operator= ( PositionData && ) noexcept = default;
 
+    private:
     friend class cereal::access;
 
     template<class Archive>
@@ -85,28 +85,26 @@ struct PositionData {
     }
 };
 
-
 template<int R>
 using PositionDataVector = sax::singleton<std::vector<PositionData<R>>>;
-
 
 template<int R>
 struct Mado {
 
-    using Hex = Hex<R, true>;
+    using Hex     = Hex<R, true>;
     using IdxType = typename Hex::IdxType;
 
     using Move = Move<R>;
 
-    using value = typename Player<R>::Type;
+    using value      = typename Player<R>::Type;
     using value_type = Player<R>;
 
     using PositionData = PositionData<R>;
-    using PDV = PositionDataVector<R>;
-    using Board = typename PositionData::Board;
-    using size_type = typename Board::size_type;
+    using PDV          = PositionDataVector<R>;
+    using Board        = typename PositionData::Board;
+    using size_type    = typename Board::size_type;
 
-    using Generator = sax::Rng&;
+    using Generator   = sax::Rng &;
     using ZobristHash = std::uint64_t;
 
     using SurroundedPlayerVector = std::experimental::fixed_capacity_vector<value_type, 6>;
@@ -119,52 +117,51 @@ struct Mado {
     ZobristHash m_zobrist_hash; // Hash of the current m_board, some random initial value;
     Move m_last_move;
     MoveLock m_move_lock;
+    int m_radius = R;
 
-    Mado ( ) noexcept : m_generator ( Rng::generator ( ) ) {
-        reset ( );
-    }
+    Mado ( ) noexcept : m_generator ( Rng::generator ( ) ) { reset ( ); }
+    Mado ( Mado const & m_ ) noexcept { std::memcpy ( this, &m_, sizeof ( Mado ) ); }
+    Mado ( Mado && m_ ) noexcept { std::memcpy ( this, &m_, sizeof ( Mado ) ); }
+
+    ~Mado ( ) noexcept {}
+
+    [[nodiscard]] Mado & operator= ( Mado const & m_ ) noexcept { std::memcpy ( this, &m_, sizeof ( Mado ) ); }
+    [[nodiscard]] Mado & operator= ( Mado && m_ ) noexcept { std::memcpy ( this, &m_, sizeof ( Mado ) ); }
 
     void reset ( ) noexcept {
         m_pos.m_board.reset ( );
-        m_pos.m_slides = 0;
+        m_pos.m_slides         = 0;
         m_pos.m_player_to_move = value::human;
-        m_winner = value::invalid;
-        m_zobrist_hash = 0xb735a0f5839e4e22;
+        m_winner               = value::invalid;
+        m_zobrist_hash         = 0xb735a0f5839e4e22;
     }
 
     // From SplitMix64, the mixer.
-    [[ nodiscard ]] static constexpr std::uint64_t sm_mix64 ( std::uint64_t k_ ) noexcept {
-        k_ = ( k_ ^ ( k_ >> 30 ) ) * std::uint64_t { 0xbf58476d1ce4e5b9 };
-        k_ = ( k_ ^ ( k_ >> 27 ) ) * std::uint64_t { 0x94d049bb133111eb };
+    [[nodiscard]] static constexpr std::uint64_t sm_mix64 ( std::uint64_t k_ ) noexcept {
+        k_ = ( k_ ^ ( k_ >> 30 ) ) * std::uint64_t{ 0xbf58476d1ce4e5b9 };
+        k_ = ( k_ ^ ( k_ >> 27 ) ) * std::uint64_t{ 0x94d049bb133111eb };
         return k_ ^ ( k_ >> 31 );
     }
     // My mixer.
-    [[ nodiscard ]] static constexpr std::uint64_t iu_mix64 ( std::uint64_t k_  ) noexcept {
-        k_ = ( k_ ^ ( k_ >> 32 ) ) * std::uint64_t { 0xd6e8feb86659fd93 };
+    [[nodiscard]] static constexpr std::uint64_t iu_mix64 ( std::uint64_t k_ ) noexcept {
+        k_ = ( k_ ^ ( k_ >> 32 ) ) * std::uint64_t{ 0xd6e8feb86659fd93 };
         return k_ ^ ( k_ >> 32 );
     }
     // From MurMurHash, the mixer.
-    [[ nodiscard ]] static constexpr std::uint64_t mm_mix64 ( std::uint64_t k_ ) noexcept {
-        k_ = ( k_ ^ ( k_ >> 33 ) ) * std::uint64_t { 0xff51afd7ed558ccd };
+    [[nodiscard]] static constexpr std::uint64_t mm_mix64 ( std::uint64_t k_ ) noexcept {
+        k_ = ( k_ ^ ( k_ >> 33 ) ) * std::uint64_t{ 0xff51afd7ed558ccd };
         // k_ = ( k_ ^ ( k_ >> 33 ) ) * std::uint64_t { 0xc4ceb9fe1a85ec53 };
         return k_ ^ ( k_ >> 33 );
     }
 
-    [[ nodiscard ]] static constexpr ZobristHash hash ( value_type p_, IdxType const i_ ) noexcept {
+    [[nodiscard]] static constexpr ZobristHash hash ( value_type p_, IdxType const i_ ) noexcept {
         return iu_mix64 ( static_cast<std::uint64_t> ( p_.as_index ( ) ) ^ static_cast<std::uint64_t> ( i_ ) );
     }
 
-    [[ nodiscard ]] ZobristHash zobrist ( ) const noexcept {
-        return m_zobrist_hash;
-    }
+    [[nodiscard]] ZobristHash zobrist ( ) const noexcept { return m_zobrist_hash; }
 
-    [[ nodiscard ]] value_type playerToMove ( ) const noexcept {
-        return m_pos.m_player_to_move;
-    }
-    [[ nodiscard ]] value_type playerJustMoved ( ) const noexcept {
-        return m_pos.m_player_to_move.opponent ( );
-    }
-
+    [[nodiscard]] value_type playerToMove ( ) const noexcept { return m_pos.m_player_to_move; }
+    [[nodiscard]] value_type playerJustMoved ( ) const noexcept { return m_pos.m_player_to_move.opponent ( ); }
 
     void moveHashImpl ( Move const move_ ) noexcept {
         if ( move_.is_placement ( ) ) { // Place.
@@ -177,9 +174,9 @@ struct Mado {
                 m_zobrist_hash ^= mm_mix64 ( static_cast<std::uint64_t> ( m_pos.m_slides ) );
             m_zobrist_hash ^= mm_mix64 ( static_cast<std::uint64_t> ( ++m_pos.m_slides ) );
             m_zobrist_hash ^= hash ( m_pos.m_player_to_move, move_.from );
-            m_pos.m_board [ move_.from ] = value::vacant;
+            m_pos.m_board[ move_.from ] = value::vacant;
         }
-        m_pos.m_board [ move_.to ] = m_pos.m_player_to_move;
+        m_pos.m_board[ move_.to ] = m_pos.m_player_to_move;
         m_zobrist_hash ^= hash ( m_pos.m_player_to_move, move_.to );
         // Alternatingly hash-in and hash-out this value,
         // to add-in the current player.
@@ -192,23 +189,21 @@ struct Mado {
         }
         else { // Slide.
             ++m_pos.m_slides;
-            m_pos.m_board [ move_.from ] = value::vacant;
+            m_pos.m_board[ move_.from ] = value::vacant;
         }
-        m_pos.m_board [ move_.to ] = m_pos.m_player_to_move;
+        m_pos.m_board[ move_.to ] = m_pos.m_player_to_move;
     }
 
     private:
-
     template<typename IdxType>
-    [[ nodiscard ]] inline bool isSurrounded ( IdxType const idx_ ) const noexcept {
-        for ( auto const neighbor : Board::neighbors [ idx_ ] )
-            if ( m_pos.m_board [ neighbor ].vacant ( ) )
+    [[nodiscard]] inline bool isSurrounded ( IdxType const idx_ ) const noexcept {
+        for ( auto const neighbor : Board::neighbors[ idx_ ] )
+            if ( m_pos.m_board[ neighbor ].vacant ( ) )
                 return false;
         return true;
     }
 
     public:
-
     void checkForWinner ( ) noexcept {
         // To be called before the player swap, but after m_player_to_move made his Move.
         // If both players slide three turns in a row (three slides for each player makes
@@ -227,9 +222,9 @@ struct Mado {
             m_winner = m_pos.m_player_to_move.opponent ( );
             return;
         }
-        for ( auto const neighbor : Board::neighbors [ m_last_move.to ] ) {
-            if ( m_pos.m_board [ neighbor ].occupied ( ) and isSurrounded ( neighbor ) ) {
-                if ( m_pos.m_player_to_move == m_pos.m_board [ neighbor ] ) {
+        for ( auto const neighbor : Board::neighbors[ m_last_move.to ] ) {
+            if ( m_pos.m_board[ neighbor ].occupied ( ) and isSurrounded ( neighbor ) ) {
+                if ( m_pos.m_player_to_move == m_pos.m_board[ neighbor ] ) {
                     m_winner = m_pos.m_player_to_move.opponent ( );
                     return;
                 }
@@ -246,7 +241,8 @@ struct Mado {
 
     template<typename T>
     void saveToFileBin ( T const & t_, sf::Path && path_, std::string_view && file_name_, bool const append_ = false ) noexcept {
-        std::ofstream ostream ( path_ / file_name_, append_ ? std::ios::binary | std::ios::app | std::ios::out : std::ios::binary | std::ios::out );
+        std::ofstream ostream ( path_ / file_name_,
+                                append_ ? std::ios::binary | std::ios::app | std::ios::out : std::ios::binary | std::ios::out );
         {
             cereal::BinaryOutputArchive archive ( ostream );
             archive ( t_ );
@@ -258,8 +254,9 @@ struct Mado {
     void writePositionData ( ) {
         if ( std::bernoulli_distribution ( 0.0025 ) ( m_generator ) ) {
             static std::array<char, 21> str;
-            if ( auto [ p, ec ] = std::to_chars ( str.data ( ), str.data ( ) + str.size ( ), sax::uniform_int_distribution<std::uint64_t> ( ) ( m_generator ) );
-                ec == std::errc ( ) )
+            if ( auto [ p, ec ] = std::to_chars ( str.data ( ), str.data ( ) + str.size ( ),
+                                                  sax::uniform_int_distribution<std::uint64_t> ( ) ( m_generator ) );
+                 ec == std::errc ( ) )
                 saveToFileBin ( m_pos, "y://dict//", std::string_view ( str.data ( ), p - str.data ( ) ) );
         }
     }
@@ -296,65 +293,54 @@ struct Mado {
     }
 
     template<typename MovesContainerPtr>
-    [[ nodiscard ]] bool availableMoves ( MovesContainerPtr moves_ ) const noexcept {
+    [[nodiscard]] bool availableMoves ( MovesContainerPtr moves_ ) const noexcept {
         // Mcts class takes/has ownership.
         for ( int s = static_cast<int> ( Board::size ( ) ), i = 0; i < s; ++i ) {
             // Find places.
-            if ( m_pos.m_board [ i ].vacant ( ) ) {
+            if ( m_pos.m_board[ i ].vacant ( ) ) {
                 moves_->emplace_back ( i );
                 continue;
             }
             // Find slides.
-            if ( m_pos.m_player_to_move == m_pos.m_board [ i ] ) {
-                for ( auto const to : Board::neighbors [ i ] )
-                    if ( m_pos.m_board [ to ].vacant ( ) )
+            if ( m_pos.m_player_to_move == m_pos.m_board[ i ] ) {
+                for ( auto const to : Board::neighbors[ i ] )
+                    if ( m_pos.m_board[ to ].vacant ( ) )
                         moves_->emplace_back ( i, to );
             }
         }
         return moves_->size ( );
     }
 
-    [[ nodiscard ]] Move randomMove ( ) noexcept {
+    [[nodiscard]] Move randomMove ( ) noexcept {
         static std::experimental::fixed_capacity_vector<Move, Board::size ( ) * 2> available_moves;
         available_moves.clear ( );
-        if ( nonterminal ( ) and availableMoves ( &available_moves ) ) {
-            return available_moves [ sax::uniform_int_distribution<size_type> ( 0, available_moves.size ( ) - 1 ) ( m_generator ) ];
-        }
-        else {
-            return Move { };
-        }
+        return nonterminal ( ) and availableMoves ( &available_moves )
+                   ? available_moves[ sax::uniform_int_distribution<size_type> ( 0, available_moves.size ( ) - 1 ) ( m_generator ) ]
+                   : Move{ };
     }
-    [[ nodiscard ]] Move randomMoveDelayed ( ) noexcept {
+    [[nodiscard]] Move randomMoveDelayed ( ) noexcept {
         sf::sleep ( sf::milliseconds ( sax::uniform_int_distribution<size_type> ( 500, 1'500 ) ( m_generator ) ) );
         return randomMove ( );
     }
 
-    [[ nodiscard ]] std::optional<value_type> ended ( ) const noexcept {
-        return m_winner.invalid ( ) ? std::optional<value_type> { } : std::optional<value_type> { m_winner };
+    [[nodiscard]] std::optional<value_type> ended ( ) const noexcept {
+        return m_winner.invalid ( ) ? std::optional<value_type>{ } : std::optional<value_type>{ m_winner };
     }
 
-    [[ nodiscard ]] float result ( value_type const player_just_moved_ ) const noexcept {
+    [[nodiscard]] float result ( value_type const player_just_moved_ ) const noexcept {
         // Determine result: last player of path is the player to Move.
         return m_winner.vacant ( ) ? 0.0f : ( m_winner == player_just_moved_ ? 1.0f : -1.0f );
     }
 
-    [[ nodiscard ]] bool terminal ( ) const noexcept {
-        return m_winner.valid ( );
-    }
-    [[ nodiscard ]] bool nonterminal ( ) const noexcept {
-        return m_winner.invalid ( );
-    }
+    [[nodiscard]] bool terminal ( ) const noexcept { return m_winner.valid ( ); }
+    [[nodiscard]] bool nonterminal ( ) const noexcept { return m_winner.invalid ( ); }
 
-    [[ nodiscard ]] value_type winner ( ) const noexcept {
-        return m_winner;
-    }
+    [[nodiscard]] value_type winner ( ) const noexcept { return m_winner; }
 
-    [[ nodiscard ]] Move lastMove ( ) const noexcept {
-        return m_last_move;
-    }
+    [[nodiscard]] Move lastMove ( ) const noexcept { return m_last_move; }
 
     template<typename Stream>
-    [[ maybe_unused ]] friend Stream & operator << ( Stream & out_, Mado const & b_ ) noexcept {
+    [[maybe_unused]] friend Stream & operator<< ( Stream & out_, Mado const & b_ ) noexcept {
         out_ << b_.m_pos.m_board << nl;
         out_ << nl << "  hash 0x" << std::hex << b_.m_zobrist_hash << " slides " << b_.m_pos.m_slides << nl;
         return out_;

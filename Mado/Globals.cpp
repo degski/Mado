@@ -29,28 +29,25 @@
 #include <string>
 #include <thread>
 
-
 namespace fs = std::filesystem;
 
-
-[[ nodiscard ]] fs::path appDataPath ( std::string && name_ ) {
-	char *value;
-	std::size_t len;
-	_dupenv_s ( &value, &len, "USERPROFILE" );
-	fs::path return_value ( std::string ( value ) + std::string ( "\\AppData\\Roaming\\" + name_ ) );
-	fs::create_directory ( return_value ); // No error if directory exists.
-	return return_value;
+[[nodiscard]] fs::path appDataPath ( std::string && name_ ) {
+    char * value;
+    std::size_t len;
+    _dupenv_s ( &value, &len, "USERPROFILE" );
+    fs::path return_value ( std::string ( value ) + std::string ( "\\AppData\\Roaming\\" + name_ ) );
+    fs::create_directory ( return_value ); // No error if directory exists.
+    return return_value;
 }
 
-fs::path app_data_path_ = appDataPath ( "Mado" );
+fs::path app_data_path_          = appDataPath ( "Mado" );
 fs::path const & g_app_data_path = app_data_path_;
 
-
-[[ nodiscard ]] fs::path getExePath ( ) noexcept {
-	TCHAR exename [ 1024 ];
-	GetModuleFileName ( NULL, exename, 1024 );
-	return fs::path ( exename ).parent_path ( );
+[[nodiscard]] fs::path getExePath ( ) noexcept {
+    TCHAR exename[ 1024 ];
+    GetModuleFileName ( NULL, exename, 1024 );
+    return fs::path ( exename ).parent_path ( );
 }
 
-fs::path app_path_ = getExePath ( );
+fs::path app_path_          = getExePath ( );
 fs::path const & g_app_path = app_path_;

@@ -57,18 +57,16 @@
 // #include "../../KD-Tree/KD-Tree/sorted_vector_set.hpp"
 #include "../../MCTSSearchTree/include/flat_search_tree.hpp"
 
-
 #if 1
 
-#include "App.hpp"
+#    include "App.hpp"
 
-
-#include <lemon/smart_graph.h>
+#    include <lemon/smart_graph.h>
 
 template<typename RadBase>
 struct HexGrid : public RadBase {
 
-    using rad = RadBase;
+    using rad       = RadBase;
     using size_type = typename rad::size_type;
 
     lemon::SmartDigraph m_grid;
@@ -80,15 +78,15 @@ struct HexGrid : public RadBase {
     }
     void add_neighbor_arcs ( size_type const q_, size_type const r_ ) noexcept {
         size_type const i = rad::index ( q_, r_ );
-        add_valid_neighbor_arc ( i, q_    , r_ - 1 );
+        add_valid_neighbor_arc ( i, q_, r_ - 1 );
         add_valid_neighbor_arc ( i, q_ + 1, r_ - 1 );
-        add_valid_neighbor_arc ( i, q_ - 1, r_     );
-        add_valid_neighbor_arc ( i, q_ + 1, r_     );
+        add_valid_neighbor_arc ( i, q_ - 1, r_ );
+        add_valid_neighbor_arc ( i, q_ + 1, r_ );
         add_valid_neighbor_arc ( i, q_ - 1, r_ + 1 );
-        add_valid_neighbor_arc ( i, q_    , r_ + 1 );
+        add_valid_neighbor_arc ( i, q_, r_ + 1 );
     }
 
-    HexGrid ( ) : RadBase { } {
+    HexGrid ( ) : RadBase{ } {
 
         // Add nodes.
         for ( size_type i = 0; i < rad::size ( ); ++i )
@@ -97,7 +95,7 @@ struct HexGrid : public RadBase {
         size_type q = rad::centre_idx ( ), r = rad::centre_idx ( );
         add_neighbor_arcs ( q, r );
         for ( size_type ring = 1; ring <= rad::radius ( ); ++ring ) {
-            ++q; // Move to next ring, east.
+            ++q;                                   // Move to next ring, east.
             for ( size_type j = 0; j < ring; ++j ) // nw.
                 add_neighbor_arcs ( q, --r );
             for ( size_type j = 0; j < ring; ++j ) // w.
@@ -113,12 +111,8 @@ struct HexGrid : public RadBase {
         }
     }
 
-    [[ nodiscard ]] lemon::SmartDigraph & grid ( ) noexcept {
-        return m_grid;
-    }
-
+    [[nodiscard]] lemon::SmartDigraph & grid ( ) noexcept { return m_grid; }
 };
-
 
 void handleEptr ( std::exception_ptr eptr ) { // Passing by value is ok.
     try {
@@ -130,16 +124,14 @@ void handleEptr ( std::exception_ptr eptr ) { // Passing by value is ok.
     }
 }
 
-
-[[ nodiscard ]] bool isEscapePressed ( const sf::Event & event_ ) noexcept {
+[[nodiscard]] bool isEscapePressed ( const sf::Event & event_ ) noexcept {
     return sf::Event::KeyPressed == event_.type and sf::Keyboard::Escape == event_.key.code;
 }
-
 
 int main ( ) {
     std::exception_ptr eptr;
     try {
-        std::unique_ptr<App> app_uptr = std::make_unique<App> ( );
+        std::unique_ptr<Application> app_uptr = std::make_unique<Application> ( );
         sf::Pacer keep ( 60 );
         sf::Event event;
         // Startup animation.
@@ -187,10 +179,9 @@ int main ( ) {
 
 #else
 
-#include "Hexcontainer.hpp"
+#    include "Hexcontainer.hpp"
 
 using board_type = HexContainer<int, 2, true>;
-
 
 int main7686787 ( ) {
 
@@ -216,15 +207,14 @@ int main7686787 ( ) {
     return EXIT_SUCCESS;
 }
 
-
-#include "Mado.hpp"
+#    include "Mado.hpp"
 
 struct Hash64 {
-    size_t operator()( uint64_t k ) const { return ( k ^ 14695981039346656037ULL ) * 1099511628211ULL; }
+    size_t operator( ) ( uint64_t k ) const { return ( k ^ 14695981039346656037ULL ) * 1099511628211ULL; }
 };
 
 struct Hash32 {
-    size_t operator()( uint32_t k ) const { return ( k ^ 2166136261U ) * 16777619UL; }
+    size_t operator( ) ( uint32_t k ) const { return ( k ^ 2166136261U ) * 16777619UL; }
 };
 
 // 3 >  68 - 37, 1.84
@@ -243,7 +233,7 @@ int main ( ) {
 
     for ( int i = 0; i < 10'000; ++i ) {
         while ( true ) {
-            auto const m = state.randomMove (  );
+            auto const m = state.randomMove ( );
             if ( state.terminal ( ) )
                 break;
             state.moveWinner ( m );
@@ -258,11 +248,11 @@ int main ( ) {
 
 int main8768678 ( ) {
 
-    std::vector<int> a { 1,2,3,4,5,6,7,8 };
+    std::vector<int> a{ 1, 2, 3, 4, 5, 6, 7, 8 };
 
     sf::saveToFileLZ4 ( a, "y://tmp//", "csv_test", true );
 
-    std::vector<int> b { 11,12,13,14,15,16,17,18 };
+    std::vector<int> b{ 11, 12, 13, 14, 15, 16, 17, 18 };
 
     sf::saveToFileLZ4 ( b, "y://tmp//", "csv_test", true );
 
@@ -285,27 +275,26 @@ int main8768678 ( ) {
     return EXIT_SUCCESS;
 }
 
-
 // LZ4 API example : Dictionary Random Access
 
-#if defined(_MSC_VER) && (_MSC_VER <= 1800)  /* Visual Studio <= 2013 */
-#  define _CRT_SECURE_NO_WARNINGS
-#  define snprintf sprintf_s
-#endif
-#include <lz4.h>
-#include <lz4frame.h>
+#    if defined( _MSC_VER ) && ( _MSC_VER <= 1800 ) /* Visual Studio <= 2013 */
+#        define _CRT_SECURE_NO_WARNINGS
+#        define snprintf sprintf_s
+#    endif
+#    include <lz4.h>
+#    include <lz4frame.h>
 
-#include <cstdio>
-#include <cstdint>
-#include <cstdlib>
-#include <cstring>
+#    include <cstdio>
+#    include <cstdint>
+#    include <cstdlib>
+#    include <cstring>
 
-#define MIN(x, y)  ((x) < (y) ? (x) : (y))
+#    define MIN( x, y ) ( ( x ) < ( y ) ? ( x ) : ( y ) )
 
 enum {
-    BLOCK_BYTES = 1024,  /* 1 KiB of uncompressed data in a block */
+    BLOCK_BYTES      = 1024, /* 1 KiB of uncompressed data in a block */
     DICTIONARY_BYTES = 1024, /* Load a 1 KiB dictionary */
-    MAX_BLOCKS = 1024 /* For simplicity of implementation */
+    MAX_BLOCKS       = 1024  /* For simplicity of implementation */
 };
 
 /**
@@ -313,43 +302,50 @@ enum {
  * This is not a great magic number because it is a common word in ASCII.
  * However, it is important to have some versioning system in your format.
  */
-const char kTestMagic [ ] = { 'T', 'E', 'S', 'T' };
+const char kTestMagic[] = { 'T', 'E', 'S', 'T' };
 
-
-void write_int ( FILE* fp, int i ) {
+void write_int ( FILE * fp, int i ) {
     size_t written = fwrite ( &i, sizeof ( i ), 1, fp );
-    if ( written != 1 ) { exit ( 10 ); }
+    if ( written != 1 ) {
+        exit ( 10 );
+    }
 }
 
-void write_bin ( FILE* fp, const void* array, size_t arrayBytes ) {
+void write_bin ( FILE * fp, const void * array, size_t arrayBytes ) {
     size_t written = fwrite ( array, 1, arrayBytes, fp );
-    if ( written != arrayBytes ) { exit ( 11 ); }
+    if ( written != arrayBytes ) {
+        exit ( 11 );
+    }
 }
 
-void read_int ( FILE* fp, int* i ) {
+void read_int ( FILE * fp, int * i ) {
     size_t read = fread ( i, sizeof ( *i ), 1, fp );
-    if ( read != 1 ) { exit ( 12 ); }
+    if ( read != 1 ) {
+        exit ( 12 );
+    }
 }
 
-size_t read_bin ( FILE* fp, void* array, size_t arrayBytes ) {
+size_t read_bin ( FILE * fp, void * array, size_t arrayBytes ) {
     size_t read = fread ( array, 1, arrayBytes, fp );
-    if ( ferror ( fp ) ) { exit ( 12 ); }
+    if ( ferror ( fp ) ) {
+        exit ( 12 );
+    }
     return read;
 }
 
-void seek_bin ( FILE* fp, long offset, int origin ) {
-    if ( fseek ( fp, offset, origin ) ) { exit ( 14 ); }
+void seek_bin ( FILE * fp, long offset, int origin ) {
+    if ( fseek ( fp, offset, origin ) ) {
+        exit ( 14 );
+    }
 }
 
-
-void test_compress ( FILE* outFp, FILE* inpFp, const char *dict, int dictSize ) {
+void test_compress ( FILE * outFp, FILE * inpFp, const char * dict, int dictSize ) {
     LZ4_stream_t lz4Stream_body;
-    LZ4_stream_t* lz4Stream = &lz4Stream_body;
+    LZ4_stream_t * lz4Stream = &lz4Stream_body;
 
-    char inpBuf [ BLOCK_BYTES ];
-    int offsets [ MAX_BLOCKS ];
-    int *offsetsEnd = offsets;
-
+    char inpBuf[ BLOCK_BYTES ];
+    int offsets[ MAX_BLOCKS ];
+    int * offsetsEnd = offsets;
 
     LZ4_initStream ( lz4Stream, sizeof ( *lz4Stream ) );
 
@@ -359,7 +355,7 @@ void test_compress ( FILE* outFp, FILE* inpFp, const char *dict, int dictSize ) 
     *offsetsEnd++ = sizeof ( kTestMagic );
     /* Write compressed data blocks.  Each block contains BLOCK_BYTES of plain
        data except possibly the last. */
-    for ( ;;) {
+    for ( ;; ) {
         int const inpBytes = ( int ) read_bin ( inpFp, inpBuf, BLOCK_BYTES );
         if ( 0 == inpBytes ) {
             break;
@@ -368,20 +364,23 @@ void test_compress ( FILE* outFp, FILE* inpFp, const char *dict, int dictSize ) 
         /* Forget previously compressed data and load the dictionary */
         LZ4_loadDict ( lz4Stream, dict, dictSize );
         {
-            char cmpBuf [ LZ4_COMPRESSBOUND ( BLOCK_BYTES ) ];
-            int const cmpBytes = LZ4_compress_fast_continue (
-                lz4Stream, inpBuf, cmpBuf, inpBytes, sizeof ( cmpBuf ), 1 );
-            if ( cmpBytes <= 0 ) { exit ( 1 ); }
+            char cmpBuf[ LZ4_COMPRESSBOUND ( BLOCK_BYTES ) ];
+            int const cmpBytes = LZ4_compress_fast_continue ( lz4Stream, inpBuf, cmpBuf, inpBytes, sizeof ( cmpBuf ), 1 );
+            if ( cmpBytes <= 0 ) {
+                exit ( 1 );
+            }
             write_bin ( outFp, cmpBuf, ( size_t ) cmpBytes );
             /* Keep track of the offsets */
             *offsetsEnd = *( offsetsEnd - 1 ) + cmpBytes;
             ++offsetsEnd;
         }
-        if ( offsetsEnd - offsets > MAX_BLOCKS ) { exit ( 2 ); }
+        if ( offsetsEnd - offsets > MAX_BLOCKS ) {
+            exit ( 2 );
+        }
     }
     /* Write the tailing jump table */
     {
-        int *ptr = offsets;
+        int * ptr = offsets;
         while ( ptr != offsetsEnd ) {
             write_int ( outFp, *ptr++ );
         }
@@ -389,62 +388,72 @@ void test_compress ( FILE* outFp, FILE* inpFp, const char *dict, int dictSize ) 
     }
 }
 
-
-void test_decompress ( FILE* outFp, FILE* inpFp, const char *dict, int dictSize, int offset, int length ) {
+void test_decompress ( FILE * outFp, FILE * inpFp, const char * dict, int dictSize, int offset, int length ) {
     LZ4_streamDecode_t lz4StreamDecode_body;
-    LZ4_streamDecode_t* lz4StreamDecode = &lz4StreamDecode_body;
+    LZ4_streamDecode_t * lz4StreamDecode = &lz4StreamDecode_body;
 
     /* The blocks [currentBlock, endBlock) contain the data we want */
     int currentBlock = offset / BLOCK_BYTES;
-    int endBlock = ( ( offset + length - 1 ) / BLOCK_BYTES ) + 1;
+    int endBlock     = ( ( offset + length - 1 ) / BLOCK_BYTES ) + 1;
 
-    char decBuf [ BLOCK_BYTES ];
-    int offsets [ MAX_BLOCKS ];
+    char decBuf[ BLOCK_BYTES ];
+    int offsets[ MAX_BLOCKS ];
 
     /* Special cases */
-    if ( length == 0 ) { return; }
+    if ( length == 0 ) {
+        return;
+    }
 
     /* Read the magic bytes */
     {
-        char magic [ sizeof ( kTestMagic ) ];
+        char magic[ sizeof ( kTestMagic ) ];
         size_t read = read_bin ( inpFp, magic, sizeof ( magic ) );
-        if ( read != sizeof ( magic ) ) { exit ( 1 ); }
-        if ( memcmp ( kTestMagic, magic, sizeof ( magic ) ) ) { exit ( 2 ); }
+        if ( read != sizeof ( magic ) ) {
+            exit ( 1 );
+        }
+        if ( memcmp ( kTestMagic, magic, sizeof ( magic ) ) ) {
+            exit ( 2 );
+        }
     }
 
     /* Read the offsets tail */
     {
         int numOffsets;
         int block;
-        int *offsetsPtr = offsets;
+        int * offsetsPtr = offsets;
         seek_bin ( inpFp, -4, SEEK_END );
         read_int ( inpFp, &numOffsets );
-        if ( numOffsets <= endBlock ) { exit ( 3 ); }
+        if ( numOffsets <= endBlock ) {
+            exit ( 3 );
+        }
         seek_bin ( inpFp, -4 * ( numOffsets + 1 ), SEEK_END );
         for ( block = 0; block <= endBlock; ++block ) {
             read_int ( inpFp, offsetsPtr++ );
         }
     }
     /* Seek to the first block to read */
-    seek_bin ( inpFp, offsets [ currentBlock ], SEEK_SET );
+    seek_bin ( inpFp, offsets[ currentBlock ], SEEK_SET );
     offset = offset % BLOCK_BYTES;
 
     /* Start decoding */
     for ( ; currentBlock < endBlock; ++currentBlock ) {
-        char cmpBuf [ LZ4_COMPRESSBOUND ( BLOCK_BYTES ) ];
+        char cmpBuf[ LZ4_COMPRESSBOUND ( BLOCK_BYTES ) ];
         /* The difference in offsets is the size of the block */
-        int  cmpBytes = offsets [ currentBlock + 1 ] - offsets [ currentBlock ];
+        int cmpBytes = offsets[ currentBlock + 1 ] - offsets[ currentBlock ];
         {
             const size_t read = read_bin ( inpFp, cmpBuf, ( size_t ) cmpBytes );
-            if ( read != ( size_t ) cmpBytes ) { exit ( 4 ); }
+            if ( read != ( size_t ) cmpBytes ) {
+                exit ( 4 );
+            }
         }
 
         /* Load the dictionary */
         LZ4_setStreamDecode ( lz4StreamDecode, dict, dictSize );
         {
-            int const decBytes = LZ4_decompress_safe_continue (
-                lz4StreamDecode, cmpBuf, decBuf, cmpBytes, BLOCK_BYTES );
-            if ( decBytes <= 0 ) { exit ( 5 ); }
+            int const decBytes = LZ4_decompress_safe_continue ( lz4StreamDecode, cmpBuf, decBuf, cmpBytes, BLOCK_BYTES );
+            if ( decBytes <= 0 ) {
+                exit ( 5 );
+            }
             {
                 /* Write out the part of the data we care about */
                 int blockLength = MIN ( length, ( decBytes - offset ) );
@@ -456,15 +465,14 @@ void test_decompress ( FILE* outFp, FILE* inpFp, const char *dict, int dictSize,
     }
 }
 
-
-int compare ( FILE* fp0, FILE* fp1, int length ) {
+int compare ( FILE * fp0, FILE * fp1, int length ) {
     int result = 0;
 
     while ( 0 == result ) {
-        char b0 [ 4096 ];
-        char b1 [ 4096 ];
-        const size_t r0 = read_bin ( fp0, b0, MIN ( length, ( int )sizeof ( b0 ) ) );
-        const size_t r1 = read_bin ( fp1, b1, MIN ( length, ( int )sizeof ( b1 ) ) );
+        char b0[ 4096 ];
+        char b1[ 4096 ];
+        const size_t r0 = read_bin ( fp0, b0, MIN ( length, ( int ) sizeof ( b0 ) ) );
+        const size_t r1 = read_bin ( fp1, b1, MIN ( length, ( int ) sizeof ( b1 ) ) );
 
         result = ( int ) r0 - ( int ) r1;
 
@@ -480,28 +488,27 @@ int compare ( FILE* fp0, FILE* fp1, int length ) {
     return result;
 }
 
-
-int main869689 ( int argc, char* argv [ ] ) {
-    char inpFilename [ 256 ] = { 0 };
-    char lz4Filename [ 256 ] = { 0 };
-    char decFilename [ 256 ] = { 0 };
-    char dictFilename [ 256 ] = { 0 };
+int main869689 ( int argc, char * argv[] ) {
+    char inpFilename[ 256 ]  = { 0 };
+    char lz4Filename[ 256 ]  = { 0 };
+    char decFilename[ 256 ]  = { 0 };
+    char dictFilename[ 256 ] = { 0 };
     int offset;
     int length;
-    char dict [ DICTIONARY_BYTES ];
+    char dict[ DICTIONARY_BYTES ];
     int dictSize;
 
     if ( argc < 5 ) {
-        printf ( "Usage: %s input dictionary offset length", argv [ 0 ] );
+        printf ( "Usage: %s input dictionary offset length", argv[ 0 ] );
         return 0;
     }
 
-    snprintf ( inpFilename, 256, "%s", argv [ 1 ] );
-    snprintf ( lz4Filename, 256, "%s.lz4s-%d", argv [ 1 ], BLOCK_BYTES );
-    snprintf ( decFilename, 256, "%s.lz4s-%d.dec", argv [ 1 ], BLOCK_BYTES );
-    snprintf ( dictFilename, 256, "%s", argv [ 2 ] );
-    offset = atoi ( argv [ 3 ] );
-    length = atoi ( argv [ 4 ] );
+    snprintf ( inpFilename, 256, "%s", argv[ 1 ] );
+    snprintf ( lz4Filename, 256, "%s.lz4s-%d", argv[ 1 ], BLOCK_BYTES );
+    snprintf ( decFilename, 256, "%s.lz4s-%d.dec", argv[ 1 ], BLOCK_BYTES );
+    snprintf ( dictFilename, 256, "%s", argv[ 2 ] );
+    offset = atoi ( argv[ 3 ] );
+    length = atoi ( argv[ 4 ] );
 
     printf ( "inp    = [%s]\n", inpFilename );
     printf ( "lz4    = [%s]\n", lz4Filename );
@@ -512,15 +519,15 @@ int main869689 ( int argc, char* argv [ ] ) {
 
     /* Load dictionary */
     {
-        FILE* dictFp = fopen ( dictFilename, "rb" );
-        dictSize = ( int ) read_bin ( dictFp, dict, DICTIONARY_BYTES );
+        FILE * dictFp = fopen ( dictFilename, "rb" );
+        dictSize      = ( int ) read_bin ( dictFp, dict, DICTIONARY_BYTES );
         fclose ( dictFp );
     }
 
     /* compress */
     {
-        FILE* inpFp = fopen ( inpFilename, "rb" );
-        FILE* outFp = fopen ( lz4Filename, "wb" );
+        FILE * inpFp = fopen ( inpFilename, "rb" );
+        FILE * outFp = fopen ( lz4Filename, "wb" );
 
         printf ( "compress : %s -> %s\n", inpFilename, lz4Filename );
         test_compress ( outFp, inpFp, dict, dictSize );
@@ -532,8 +539,8 @@ int main869689 ( int argc, char* argv [ ] ) {
 
     /* decompress */
     {
-        FILE* inpFp = fopen ( lz4Filename, "rb" );
-        FILE* outFp = fopen ( decFilename, "wb" );
+        FILE * inpFp = fopen ( lz4Filename, "rb" );
+        FILE * outFp = fopen ( decFilename, "wb" );
 
         printf ( "decompress : %s -> %s\n", lz4Filename, decFilename );
         test_decompress ( outFp, inpFp, dict, DICTIONARY_BYTES, offset, length );
@@ -545,8 +552,8 @@ int main869689 ( int argc, char* argv [ ] ) {
 
     /* verify */
     {
-        FILE* inpFp = fopen ( inpFilename, "rb" );
-        FILE* decFp = fopen ( decFilename, "rb" );
+        FILE * inpFp = fopen ( inpFilename, "rb" );
+        FILE * decFp = fopen ( decFilename, "rb" );
         seek_bin ( inpFp, offset, SEEK_SET );
 
         printf ( "verify : %s <-> %s\n", inpFilename, decFilename );
@@ -564,7 +571,6 @@ int main869689 ( int argc, char* argv [ ] ) {
 
     return 0;
 }
-
 
 #endif
 
@@ -601,10 +607,10 @@ static T* hashLookup2(T* table, size_t buckets, const Hash& hash, T const& key, 
 
 #if 0
 
-#include <iostream>
-#include <vector>
-#include <utility>
-#include <algorithm>
+#    include <iostream>
+#    include <vector>
+#    include <utility>
+#    include <algorithm>
 
 template<typename TFuncSignature>
 class Callback;

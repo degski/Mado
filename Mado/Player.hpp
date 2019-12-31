@@ -37,90 +37,65 @@
 #include "Globals.hpp"
 #include "Hexcontainer.hpp"
 
-
 template<int R>
 struct Player {
 
     private:
-
     using IdxType = typename Hex<R, true>::IdxType;
 
     public:
-
-    enum class Type : IdxType { invalid = -2, agent = -1, vacant = 0, human = 1 }; // Keep numbering this way, vacant **has** to be 0.
+    enum class Type : IdxType {
+        invalid = -2,
+        agent   = -1,
+        vacant  = 0,
+        human   = 1
+    }; // Keep numbering this way, vacant **has** to be 0.
 
     Type value = Type::vacant;
 
-    Player ( ) noexcept = default;
+    Player ( ) noexcept                   = default;
     Player ( Player const & p_ ) noexcept = default;
-    Player ( Player && p_ ) noexcept = default;
+    Player ( Player && p_ ) noexcept      = default;
 
-    [[ maybe_unused ]] Player & operator = ( Player const & ) noexcept = default;
-    [[ maybe_unused ]] Player & operator = ( Player && ) noexcept = default;
+    [[maybe_unused]] Player & operator= ( Player const & ) noexcept = default;
+    [[maybe_unused]] Player & operator= ( Player && ) noexcept = default;
 
-    Player ( const Type & p_ ) noexcept :
-        value ( p_ ) {
-    }
-    Player ( Type && p_ ) noexcept :
-        value ( std::move ( p_ ) ) {
-    }
+    Player ( const Type & p_ ) noexcept : value ( p_ ) {}
+    Player ( Type && p_ ) noexcept : value ( std::move ( p_ ) ) {}
 
     ~Player ( ) noexcept = default;
 
-    [[ nodiscard ]] Type opponent ( ) const noexcept {
-        return static_cast<Type> ( -static_cast<IdxType> ( value ) );
-    }
+    [[nodiscard]] Type opponent ( ) const noexcept { return static_cast<Type> ( -static_cast<IdxType> ( value ) ); }
 
-    void next ( ) noexcept {
-        value = opponent ( );
-    }
+    void next ( ) noexcept { value = opponent ( ); }
 
-    [[ nodiscard ]] Type get ( ) const noexcept {
-        return value;
-    }
+    [[nodiscard]] Type get ( ) const noexcept { return value; }
 
-    [[ nodiscard ]] IdxType as_index ( ) const noexcept {
-        return static_cast<IdxType> ( value );
-    }
+    [[nodiscard]] IdxType as_index ( ) const noexcept { return static_cast<IdxType> ( value ); }
 
-    [[ nodiscard ]] IdxType as_01index ( ) const noexcept {
-        return ( as_index ( ) + 1 ) / 2;
-    }
+    [[nodiscard]] IdxType as_01index ( ) const noexcept { return ( as_index ( ) + 1 ) / 2; }
 
     template<typename Rng>
-    [[ nodiscard ]] static Type random ( ) noexcept {
+    [[nodiscard]] static Type random ( ) noexcept {
         return Rng::bernoulli ( ) ? Type::agent : Type::human;
     }
 
-    [[ nodiscard ]] bool valid ( ) const noexcept {
-        return Type::invalid != value;
-    }
-    [[ nodiscard ]] bool invalid ( ) const noexcept {
-        return Type::invalid == value;
-    }
-    [[ nodiscard ]] bool vacant ( ) const noexcept {
-        return Type::vacant == value;
-    }
-    [[ nodiscard ]] bool occupied ( ) const noexcept {
-        return static_cast<int> ( value ) & 1;
-    }
+    [[nodiscard]] bool valid ( ) const noexcept { return Type::invalid != value; }
+    [[nodiscard]] bool invalid ( ) const noexcept { return Type::invalid == value; }
+    [[nodiscard]] bool vacant ( ) const noexcept { return Type::vacant == value; }
+    [[nodiscard]] bool occupied ( ) const noexcept { return static_cast<int> ( value ) & 1; }
 
     template<typename Stream>
-    [[ maybe_unused ]] friend Stream & operator << ( Stream & out_, Player const & p_ ) noexcept {
-        constexpr char name [ 4 ] { ' ', 'A', '*', 'H' };
-        out_ << name [ static_cast<int> ( p_.value ) + 2 ];
+    [[maybe_unused]] friend Stream & operator<< ( Stream & out_, Player const & p_ ) noexcept {
+        constexpr char name[ 4 ]{ ' ', 'A', '*', 'H' };
+        out_ << name[ static_cast<int> ( p_.value ) + 2 ];
         return out_;
     }
 
-    [[ nodiscard ]] bool operator == ( Player const p_ ) const noexcept {
-        return value == p_.value;
-    }
-    [[ nodiscard ]] bool operator != ( Player const p_ ) const noexcept {
-        return value != p_.value;
-    }
+    [[nodiscard]] bool operator== ( Player const p_ ) const noexcept { return value == p_.value; }
+    [[nodiscard]] bool operator!= ( Player const p_ ) const noexcept { return value != p_.value; }
 
     private:
-
     friend class cereal::access;
 
     template<class Archive>
