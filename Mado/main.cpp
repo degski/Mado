@@ -129,7 +129,7 @@ void handleEptr ( std::exception_ptr eptr ) { // Passing by value is ok.
 }
 
 [[nodiscard]] int isCtrlShiftNumPressed ( sf::Event const & event_ ) noexcept {
-    if ( sf::Event::KeyPressed == event_.type and event_.key.control and event_.key.shift ) {
+    if ( event_.key.control and event_.key.shift and sf::Event::KeyPressed == event_.type ) {
         if ( sf::Keyboard::Num4 == event_.key.code )
             return 4;
         if ( sf::Keyboard::Num5 == event_.key.code )
