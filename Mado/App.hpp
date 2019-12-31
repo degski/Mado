@@ -488,19 +488,19 @@ class Application {
         return std::visit ( [ &event_ ] ( auto & inst ) noexcept { return inst.mouseEvents ( event_ ); }, m_instance );
     }
 
-    static void resize ( Application & a_, int const r_ ) {
+    static void resize ( Application & a_, int const r_ ) noexcept {
         static sf::HrClock clock;
         static DelayTimer dt ( 4 );
         if ( r_ == a_.m_radius or r_ < 4 or r_ > 8 )
             return;
-        if ( dt.update ( clock.now ( ) ) ) {
+        if ( dt.expired or dt.update ( clock.now ( ) ) ) {
             a_.m_radius = r_;
             switch ( r_ ) {
-                case 4: a_.m_instance.emplace<0> ( ); break;
-                case 5: a_.m_instance.emplace<1> ( ); break;
-                case 6: a_.m_instance.emplace<2> ( ); break;
-                case 7: a_.m_instance.emplace<3> ( ); break;
-                case 8: a_.m_instance.emplace<4> ( ); break;
+                case 4: a_.m_instance.emplace<App<4>> ( ); break;
+                case 5: a_.m_instance.emplace<App<5>> ( ); break;
+                case 6: a_.m_instance.emplace<App<6>> ( ); break;
+                case 7: a_.m_instance.emplace<App<7>> ( ); break;
+                case 8: a_.m_instance.emplace<App<8>> ( ); break;
             }
             dt.restart ( clock.now ( ) );
         }
