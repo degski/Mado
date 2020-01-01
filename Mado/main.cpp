@@ -147,7 +147,8 @@ void handleEptr ( std::exception_ptr eptr ) { // Passing by value is ok.
 int main ( ) {
     std::exception_ptr eptr;
     try {
-        Application app;
+        // Application app;
+        A app;
         sf::Pacer keep ( 60 );
         sf::Event event;
         // Startup animation.
@@ -177,7 +178,7 @@ int main ( ) {
                 }
                 if ( int const n = isCtrlShiftNumPressed ( event ) ) {
                     std::cout << "c+s+" << n << nl;
-                    Application::resize ( app, n );
+                    A::resize ( app, n );
                 }
                 app.mouseEvents ( event );
             }

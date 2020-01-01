@@ -512,3 +512,80 @@ class Application {
     AppType m_instance;
     int m_radius = std::visit ( [] ( auto & inst ) noexcept { return inst.radius; }, m_instance );
 };
+
+#define VISIT0( F )                                                                                                                \
+    switch ( radius ) {                                                                                                            \
+        case 4: return reinterpret_cast<AppImpl<4> *> ( mem )->F ( );                                                              \
+        case 5: return reinterpret_cast<AppImpl<5> *> ( mem )->F ( );                                                              \
+        case 6: return reinterpret_cast<AppImpl<6> *> ( mem )->F ( );                                                              \
+        case 7: return reinterpret_cast<AppImpl<7> *> ( mem )->F ( );                                                              \
+        case 8: return reinterpret_cast<AppImpl<8> *> ( mem )->F ( );                                                              \
+    }
+#define VISIT1( F, A )                                                                                                             \
+    switch ( radius ) {                                                                                                            \
+        case 4: return reinterpret_cast<AppImpl<4> *> ( mem )->F ( A );                                                            \
+        case 5: return reinterpret_cast<AppImpl<5> *> ( mem )->F ( A );                                                            \
+        case 6: return reinterpret_cast<AppImpl<6> *> ( mem )->F ( A );                                                            \
+        case 7: return reinterpret_cast<AppImpl<7> *> ( mem )->F ( A );                                                            \
+        case 8: return reinterpret_cast<AppImpl<8> *> ( mem )->F ( A );                                                            \
+    }
+
+struct A {
+
+    alignas ( 16 ) char mem[ sizeof ( AppImpl<8> ) ];
+    int radius = 0;
+
+    A ( int const r_ = 4 ) { construct ( r_ ); }
+    ~A ( ) noexcept { destruct ( ); }
+
+    [[nodiscard]] inline bool isWindowOpen ( ) { VISIT0 ( isWindowOpen ) }
+    [[nodiscard]] inline bool pollWindowEvent ( sf::Event & event_ ) { VISIT1 ( pollWindowEvent, event_ ) }
+    inline void closeWindow ( ) noexcept { VISIT0 ( closeWindow ); }
+    inline void minimizeWindow ( ) noexcept { VISIT0 ( minimizeWindow ) }
+    inline void pause ( ) noexcept { VISIT0 ( pause ) }
+    inline void resume ( ) noexcept { VISIT0 ( resume ) }
+    [[nodiscard]] inline bool isPaused ( ) noexcept { VISIT0 ( isPaused ) }
+    [[nodiscard]] inline bool isRunning ( ) noexcept { VISIT0 ( isRunning ) }
+    void setupStartupAnimation ( ) noexcept { VISIT0 ( setupStartupAnimation ) }
+    bool runStartupAnimation ( ) noexcept { VISIT0 ( runStartupAnimation ) }
+    void updateWindow ( ) noexcept { VISIT0 ( updateWindow ) }
+    void mouseEvents ( sf::Event const & event_ ) { VISIT1 ( mouseEvents, event_ ) }
+
+    static void resize ( A & a_, int const r_ ) {
+        static sf::HrClock & clock{ Clock::instance ( ) };
+        static DelayTimer dt ( 4 );
+        if ( r_ == a_.radius or r_ < 4 or r_ > 8 )
+            return;
+        if ( dt.expired or dt.update ( clock.now ( ) ) ) {
+            a_.destruct ( );
+            a_.construct ( r_ );
+            dt.restart ( clock.now ( ) );
+        }
+    }
+
+    private:
+    void construct ( int const r_ ) {
+        switch ( r_ ) {
+            case 4: new ( mem ) AppImpl<4> ( ); break;
+            case 5: new ( mem ) AppImpl<5> ( ); break;
+            case 6: new ( mem ) AppImpl<6> ( ); break;
+            case 7: new ( mem ) AppImpl<7> ( ); break;
+            case 8: new ( mem ) AppImpl<8> ( ); break;
+        }
+        radius = r_;
+    }
+
+    void destruct ( ) noexcept {
+        switch ( radius ) {
+            case 4: reinterpret_cast<AppImpl<4> *> ( mem )->~AppImpl<4> ( ); break;
+            case 5: reinterpret_cast<AppImpl<5> *> ( mem )->~AppImpl<5> ( ); break;
+            case 6: reinterpret_cast<AppImpl<6> *> ( mem )->~AppImpl<6> ( ); break;
+            case 7: reinterpret_cast<AppImpl<7> *> ( mem )->~AppImpl<7> ( ); break;
+            case 8: reinterpret_cast<AppImpl<8> *> ( mem )->~AppImpl<8> ( ); break;
+        }
+        radius = 0;
+    }
+};
+
+#undef VISIT1
+#undef VISIT0
