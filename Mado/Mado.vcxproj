@@ -215,14 +215,14 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Globals.cpp" />
-    <ClCompile Include="main.cpp" />
+    <ClCompile Include="Main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\LICENSE.md" />
     <None Include="..\README.md" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="App.hpp" />
+    <ClInclude Include="Application.hpp" />
     <ClInclude Include="Globals.hpp" />
     <ClInclude Include="Drawables.hpp" />
     <ClInclude Include="Hexcontainer.hpp" />

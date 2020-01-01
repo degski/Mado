@@ -94,7 +94,7 @@ struct NextMove {
 
 // Default- and move-constructible and move-assignable.
 template<int R>
-class App {
+class AppImpl {
 
     using MadoState = Mado<R>;
 
@@ -132,14 +132,14 @@ class App {
     public:
     static constexpr int const radius = R;
 
-    App ( );
-    App ( App const & )        = delete;
-    App ( App && a_ ) noexcept = delete;
+    AppImpl ( );
+    AppImpl ( AppImpl const & )        = delete;
+    AppImpl ( AppImpl && a_ ) noexcept = delete;
 
-    ~App ( ) noexcept { closeWindow ( ); }
+    ~AppImpl ( ) noexcept { closeWindow ( ); }
 
-    [[nodiscard]] App & operator= ( App const & a_ ) = delete;
-    [[nodiscard]] App & operator= ( App && a_ ) noexcept = delete;
+    [[nodiscard]] AppImpl & operator= ( AppImpl const & a_ ) = delete;
+    [[nodiscard]] AppImpl & operator= ( AppImpl && a_ ) noexcept = delete;
 
     private:
     [[nodiscard]] static inline float distance_squared ( sf::Vector2f const p1_, sf::Vector2f const p2_ ) noexcept {
@@ -202,7 +202,7 @@ class App {
 };
 
 template<int R>
-[[nodiscard]] typename App<R>::Hex App<R>::pointToHex ( sf::Vector2f p_ ) const noexcept {
+[[nodiscard]] typename AppImpl<R>::Hex AppImpl<R>::pointToHex ( sf::Vector2f p_ ) const noexcept {
     using value_type = typename Hex::value_type;
     // https://www.redblobgames.com/grids/hexagons/#comment-1063818420
     static float const radius{ m_hori * 0.5773502588f };
@@ -218,7 +218,7 @@ template<int R>
 }
 
 template<int R>
-[[nodiscard]] bool App<R>::playAreaContains ( sf::Vector2f p_ ) const noexcept {
+[[nodiscard]] bool AppImpl<R>::playAreaContains ( sf::Vector2f p_ ) const noexcept {
     // http://www.playchilla.com/how-to-check-if-a-point-is-inside-a-hexagon
     static float const hori{ MadoState::Board::width ( ) * 0.5f * m_vert }, vert{ hori * 0.5773502588f }, vert_2{ 2.0f * vert },
         hori_vert_2{ hori * vert_2 };
@@ -232,13 +232,13 @@ template<int R>
 }
 
 template<int R>
-App<R>::App ( ) :
+AppImpl<R>::AppImpl ( ) :
     // Setup parameters.
     m_state{ }, m_hori{ 74.0f }, m_vert{ 64.0f }, m_window_width{ MadoState::Board::width ( ) * m_hori + m_vert + 1.0f },
     m_window_height{ MadoState::Board::height ( ) * m_vert + m_vert + 1.0f + 12.0f }, m_center{ sf::Vector2f{
                                                                                           m_window_width * 0.5f,
                                                                                           m_window_height * 0.5f + 6.0f } },
-    m_window{ Wnd::instance ( ) }, m_taskbar{ m_window_width },
+    m_window{ Window::instance ( ) }, m_taskbar{ m_window_width },
     m_game_clock{ std::floorf ( ( m_window_width - ( MadoState::Board::radius ( ) + 1 ) * m_hori ) / 4 ),
                   m_window_width - std::floorf ( ( m_window_width - ( MadoState::Board::radius ( ) + 1 ) * m_hori ) / 4 ), 76.5f },
     m_play_area{ m_state, m_game_clock, m_center, m_hori, m_vert, 67.0f } {
@@ -282,7 +282,7 @@ App<R>::App ( ) :
 }
 
 template<int R>
-void App<R>::setIcon ( ) noexcept {
+void AppImpl<R>::setIcon ( ) noexcept {
     HICON hIcon = LoadIcon ( GetModuleHandle ( NULL ), MAKEINTRESOURCE ( IDI_ICON1 ) );
     if ( hIcon ) {
         SendMessage ( m_window.getSystemHandle ( ), WM_SETICON, ICON_BIG, ( LPARAM ) hIcon );
@@ -290,7 +290,7 @@ void App<R>::setIcon ( ) noexcept {
 }
 
 template<int R>
-void App<R>::setupStartupAnimation ( ) noexcept {
+void AppImpl<R>::setupStartupAnimation ( ) noexcept {
     m_overlay.setSize ( sf::Vector2f{ m_window_width, m_window_height } );
     // Text.
     sf::centreOrigin ( m_sprite );
@@ -327,7 +327,7 @@ void App<R>::setupStartupAnimation ( ) noexcept {
 }
 
 template<int R>
-bool App<R>::runStartupAnimation ( ) noexcept {
+bool AppImpl<R>::runStartupAnimation ( ) noexcept {
     Animator::instance ( ).run ( );
     m_window.clear ( sf::Color{ 10u, 10u, 10u, 255u } );
     m_window.draw ( m_play_area );
@@ -338,7 +338,7 @@ bool App<R>::runStartupAnimation ( ) noexcept {
 }
 
 template<int R>
-void App<R>::updateWindow ( ) noexcept {
+void AppImpl<R>::updateWindow ( ) noexcept {
     m_play_area.update ( );
     m_window.clear ( sf::Color{ 10u, 10u, 10u, 255u } );
     m_window.draw ( m_taskbar );
@@ -355,7 +355,7 @@ void App<R>::updateWindow ( ) noexcept {
 // https://en.sfml-dev.org/forums/index.php?topic=9829.0
 
 template<int R>
-void App<R>::mouseEvents ( sf::Event const & event_ ) {
+void AppImpl<R>::mouseEvents ( sf::Event const & event_ ) {
     // Update mouse state.
     sf::Vector2f const & mouse_position = m_mouse.update ( );
     if ( m_window_bounds.contains ( mouse_position ) ) {
@@ -443,7 +443,7 @@ void App<R>::mouseEvents ( sf::Event const & event_ ) {
 class Application {
 
     public:
-    using AppVar = std::variant<App<4>, App<5>, App<6>, App<7>, App<8>>;
+    using AppType = std::variant<AppImpl<4>, AppImpl<5>, AppImpl<6>, AppImpl<7>, AppImpl<8>>;
 
     [[nodiscard]] inline bool isWindowOpen ( ) const {
         return std::visit ( [] ( auto const & inst ) noexcept { return inst.isWindowOpen ( ); }, m_instance );
@@ -498,17 +498,17 @@ class Application {
         if ( dt.expired or dt.update ( clock.now ( ) ) ) {
             a_.m_radius = r_;
             switch ( r_ ) {
-                case 4: a_.m_instance.emplace<App<4>> ( ); break;
-                case 5: a_.m_instance.emplace<App<5>> ( ); break;
-                case 6: a_.m_instance.emplace<App<6>> ( ); break;
-                case 7: a_.m_instance.emplace<App<7>> ( ); break;
-                case 8: a_.m_instance.emplace<App<8>> ( ); break;
+                case 4: a_.m_instance.emplace<AppImpl<4>> ( ); break;
+                case 5: a_.m_instance.emplace<AppImpl<5>> ( ); break;
+                case 6: a_.m_instance.emplace<AppImpl<6>> ( ); break;
+                case 7: a_.m_instance.emplace<AppImpl<7>> ( ); break;
+                case 8: a_.m_instance.emplace<AppImpl<8>> ( ); break;
             }
             dt.restart ( clock.now ( ) );
         }
     }
 
     private:
-    AppVar m_instance;
+    AppType m_instance;
     int m_radius = std::visit ( [] ( auto & inst ) noexcept { return inst.radius; }, m_instance );
 };
