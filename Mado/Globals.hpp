@@ -99,8 +99,22 @@ struct Wnd final {
     Wnd & operator= ( Wnd const & ) = delete;
 
     [[nodiscard]] static sf::RenderWindow & instance ( ) noexcept {
-        static sf::RenderWindow window{ };
+        static sf::RenderWindow window;
         return window;
+    }
+};
+
+struct Clock final {
+
+    Clock ( Clock && )      = delete;
+    Clock ( Clock const & ) = delete;
+
+    Clock & operator= ( Clock && ) = delete;
+    Clock & operator= ( Clock const & ) = delete;
+
+    [[nodiscard]] static sf::HrClock & instance ( ) noexcept {
+        static sf::HrClock clock;
+        return clock;
     }
 };
 

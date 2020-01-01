@@ -491,7 +491,7 @@ class Application {
     }
 
     static void resize ( Application & a_, int const r_ ) noexcept {
-        static sf::HrClock clock;
+        static sf::HrClock & clock{ Clock::instance ( ) };
         static DelayTimer dt ( 4 );
         if ( r_ == a_.m_radius or r_ < 4 or r_ > 8 )
             return;

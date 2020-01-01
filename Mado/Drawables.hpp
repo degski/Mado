@@ -195,7 +195,9 @@ struct GameClock : public sf::Drawable, public sf::Transformable {
     }
 
     public:
-    GameClock ( float const left_, float const right_, float const height_ ) noexcept {
+    GameClock ( float const left_, float const right_, float const height_ ) noexcept :
+
+        m_clock{ Clock::instance ( ) } {
         sf::loadFromResource ( m_font_numbers, __NUMBERS_FONT__ );
         init ( m_text[ Player::human ] );
         m_text[ Player::human ].setPosition ( left_, height_ );
@@ -275,7 +277,7 @@ struct GameClock : public sf::Drawable, public sf::Transformable {
     // The clock.
 
     mutable sf::HrClock::time_point m_start;
-    sf::HrClock m_clock;
+    sf::HrClock & m_clock;
     mutable std::array<sf::fseconds, 2> m_time;
     mutable DelayTimer m_delay_timer;
     Player m_player_to_move = Player::human;
