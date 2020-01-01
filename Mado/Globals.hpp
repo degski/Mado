@@ -91,36 +91,6 @@ struct Rng final {
     }
 };
 
-struct Window final {
-
-    Window ( )                = delete;
-    Window ( Window && )      = delete;
-    Window ( Window const & ) = delete;
-
-    Window & operator= ( Window && ) = delete;
-    Window & operator= ( Window const & ) = delete;
-
-    [[nodiscard]] static sf::RenderWindow & instance ( ) noexcept {
-        static sf::RenderWindow window;
-        return window;
-    }
-};
-
-struct Clock final {
-
-    Clock ( )               = delete;
-    Clock ( Clock && )      = delete;
-    Clock ( Clock const & ) = delete;
-
-    Clock & operator= ( Clock && ) = delete;
-    Clock & operator= ( Clock const & ) = delete;
-
-    [[nodiscard]] static sf::HrClock & instance ( ) noexcept {
-        static sf::HrClock clock;
-        return clock;
-    }
-};
-
 #undef RANDOM
 
 namespace fs = std::filesystem;
@@ -130,4 +100,6 @@ extern fs::path const & g_app_path;
 
 [[nodiscard]] inline std::uint32_t getNumberOfProcessors ( ) noexcept { return std::thread::hardware_concurrency ( ); }
 
+using Window   = sax::singleton<sf::RenderWindow>;
+using Clock    = sax::singleton<sf::HrClock>;
 using Animator = sax::singleton<sf::CallbackAnimator>;
