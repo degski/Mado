@@ -56,6 +56,7 @@
 
 struct Rng final {
 
+    Rng ( )             = delete;
     Rng ( Rng && )      = delete;
     Rng ( Rng const & ) = delete;
 
@@ -92,6 +93,7 @@ struct Rng final {
 
 struct Wnd final {
 
+    Wnd ( )             = delete;
     Wnd ( Wnd && )      = delete;
     Wnd ( Wnd const & ) = delete;
 
@@ -106,6 +108,7 @@ struct Wnd final {
 
 struct Clock final {
 
+    Clock ( )               = delete;
     Clock ( Clock && )      = delete;
     Clock ( Clock const & ) = delete;
 
