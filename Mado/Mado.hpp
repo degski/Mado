@@ -94,7 +94,8 @@ struct Mado {
     using Hex     = Hex<R, true>;
     using IdxType = typename Hex::IdxType;
 
-    using Move = Move<R>;
+    using Move  = Move<R>;
+    using Moves = Moves<R>;
 
     using value      = typename Player<R>::Type;
     using value_type = Player<R>;
@@ -313,18 +314,25 @@ struct Mado {
     }
 
     [[nodiscard]] Move randomMove ( ) noexcept {
-        static std::experimental::fixed_capacity_vector<Move, Board::size ( ) * 2> available_moves;
-        available_moves.clear ( );
+        std::experimental::fixed_capacity_vector<Move, Board::size ( ) * 2> available_moves;
         return nonterminal ( ) and availableMoves ( &available_moves )
                    ? available_moves[ sax::uniform_int_distribution<size_type> ( 0, available_moves.size ( ) - 1 ) ( m_generator ) ]
                    : Move{ };
     }
+
     [[nodiscard]] Move randomMoveDelayed ( ) noexcept {
         sf::sleep ( sf::milliseconds ( sax::uniform_int_distribution<size_type> ( 500, 1'500 ) ( m_generator ) ) );
         return randomMove ( );
     }
 
-    void simulate ( ) {}
+    void simulate ( ) noexcept {
+        // std::experimental::fixed_capacity_vector<Move, Board::size ( ) * 2> available_moves;
+        Moves available_moves;
+        while ( nonterminal ( ) and availableMoves ( &available_moves ) ) {
+            moveWinner (
+                available_moves[ sax::uniform_int_distribution<size_type> ( 0, available_moves.size ( ) - 1 ) ( m_generator ) ] );
+        }
+    }
 
     [[nodiscard]] std::optional<value_type> ended ( ) const noexcept {
         return m_winner.invalid ( ) ? std::optional<value_type>{ } : std::optional<value_type>{ m_winner };
@@ -345,7 +353,7 @@ struct Mado {
     template<typename Stream>
     [[maybe_unused]] friend Stream & operator<< ( Stream & out_, Mado const & b_ ) noexcept {
         out_ << b_.m_pos.m_board << nl;
-        out_ << nl << "  hash 0x" << std::hex << b_.m_zobrist_hash << " slides " << b_.m_pos.m_slides << nl;
+        out_ << nl << "  hash 0x" << std::hex << b_.m_zobrist_hash << " slides " << static_cast<int> ( b_.m_pos.m_slides ) << nl;
         return out_;
     }
 

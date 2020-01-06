@@ -200,7 +200,7 @@ int main786 ( ) {
 
 #    include "Mcts.hpp"
 
-int main ( ) {
+int main78678678 ( ) {
     using State  = Mado<6>;
     using Player = typename State::value_type;
     using Mcts   = mcts::Mcts<State>;
@@ -250,6 +250,15 @@ int main ( ) {
                  std::chrono::duration_cast<std::chrono::milliseconds> ( elapsed ).count ( ) / ( ( float ) matches * 1'000.0f ),
                  std::chrono::duration_cast<std::chrono::milliseconds> ( elapsed ).count ( ) / 1'000.0f );
     }
+
+    return EXIT_SUCCESS;
+}
+
+int main ( ) {
+
+    Mado<6> mado;
+
+    mado.simulate ( );
 
     return EXIT_SUCCESS;
 }
