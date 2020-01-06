@@ -365,14 +365,14 @@ class Mcts {
     }
 
     [[nodiscard]] Link addArc ( NodeID const parent_, NodeID const child_, State const & state_ ) noexcept {
-        return m_tree.addArc ( parent_, child_, state_ );
+        return { m_tree.addArc ( parent_, child_, state_ ), child_ };
     }
 
     [[nodiscard]] Link addNode ( NodeID const parent_, State const & state_ ) noexcept {
         NodeID child = m_tree.addNode ( state_ );
         m_transposition_table->emplace ( state_.zobrist ( ), child );
         ArcID arc = m_tree.addArc ( parent_, child, state_ );
-        return Link{ std::move ( arc ), std::move ( child ) };
+        return { std::move ( arc ), std::move ( child ) };
     }
 
     void printMoves ( NodeID const n_ ) const noexcept {
@@ -684,36 +684,37 @@ class Mcts {
         using Queue   = Queue<NodeID>;
         Visited s_visited ( s_t.nodeNum ( ) );
         Queue s_queue ( s_t.root_node );
-        s_visited[ s_t.root_node ] = true;
+        s_visited[ s_t.root_node.value ] = true;
         // Walk the tree, breadth first.
         while ( s_queue.not_empty ( ) ) {
             // The t_source (target parent) does always exist, as we are going at it breadth first.
-            NodeID const s_source = s_queue.pop ( ), t_source = t_tt.find ( s_itt[ s_source ] )->second;
+            NodeID const s_source = s_queue.pop ( ), t_source = t_tt.find ( s_itt[ s_source.value ] )->second;
             // Iterate over children (targets) of the parent (source).
-            for ( OutIt soi ( s_t, s_source ); OutIt::end ( ) != soi; ++soi ) { // Source Out Iterator (soi).
+            for ( OutIt soi ( s_t, s_source ); soi.is_valid ( ); ++soi ) { // Source Out Iterator (soi).
                 Link const s_link = s_t.link ( soi );
-                if ( not s_visited[ s_link.target ] ) {
-                    s_visited[ s_link.target ] = true;
+                if ( not s_visited[ s_link.target.value ] ) {
+                    s_visited[ s_link.target.value ] = true;
                     s_queue.push ( s_link.target );
                     // Now do something. If child in s_mcts_ doesn't exist in t_mcts_, add child.
-                    auto const t_it = t_tt.find ( s_itt[ s_link.target ] );
+                    auto const t_it = t_tt.find ( s_itt[ s_link.target.value ] );
                     if ( t_it != t_tt.cend ( ) ) { // Child exists. The arc does or does not exist.
                         // NodeID t_it->second corresponds to NodeID target child.
                         Link const t_link ( t_t.link ( t_source, t_it->second ) );
                         if ( Tree::ArcID::invalid ( ) != t_link.arc ) // The arc does exist.
                             t_t[ t_link.arc ] += s_t[ s_link.arc ];
                         else // The arc does not exist.
-                            t_t[ t_t.addArcUnsafe ( t_source, t_link.target ).arc ] = std::move ( s_t[ s_link.arc ] );
+                            t_t[ t_t.addArc ( t_source, t_link.target ) ] = std::move ( s_t[ s_link.arc ] );
                         // Update the values of the target.
                         t_t[ t_link.target ] += s_t[ s_link.target ];
                     }
                     else { // Child does not exist.
-                        Link const t_link = t_t.addNodeUnsafe ( t_source );
+                        NodeID const target = t_t.addNode ( );
+                        ArcID const arc     = t_t.addArc ( t_source, target );
                         // m_tree.
-                        t_t[ t_link.arc ]    = std::move ( s_t[ s_link.arc ] );
-                        t_t[ t_link.target ] = std::move ( s_t[ s_link.target ] );
+                        t_t[ arc ]    = std::move ( s_t[ arc ] );
+                        t_t[ target ] = std::move ( s_t[ target ] );
                         // m_transposition_table.
-                        t_tt.emplace ( s_itt[ s_link.target ], t_link.target );
+                        t_tt.emplace ( s_itt[ target ], target );
                     }
                 }
             }
@@ -734,7 +735,7 @@ class Mcts {
         while ( stack.not_empty ( ) ) {
             NodeID const parent = stack.pop ( );
             for ( OutIt a ( m_tree, parent ); a.is_valid ( ); ++a ) {
-                NodeID const child = m_tree.target ( a );
+                NodeID const child = ( *a ).target;
                 if ( false == visited[ child ] ) {
                     visited[ child ] = true;
                     stack.push ( child );
