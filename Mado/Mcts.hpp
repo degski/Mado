@@ -368,7 +368,8 @@ class Mcts {
     void printMoves ( Node const n_ ) const noexcept {
         std::cout << "moves of " << ( int ) n_ << ": ";
         for ( OutIt a ( m_tree, n_ ); a != OutIt::end ( ); ++a )
-            std::cout << "[" << ( int ) a.get ( ) << ", " << ( int ) m_tree[ a ].m_move.m_loc << "]" putchar ( '\n' );
+            std::cout << "[" << ( int ) a.get ( ) << ", " << ( int ) m_tree[ a ].m_move.m_loc << "]";
+        putchar ( '\n' );
     }
 
     [[nodiscard]] Move getMove ( const Arc arc_ ) const noexcept { return m_tree[ arc_ ].m_move; }
@@ -713,7 +714,7 @@ class Mcts {
     std::size_t numTranspositions ( ) const noexcept {
         std::size_t nt = 0;
         using Visited  = boost::dynamic_bitset<>;
-        using stack    = Stack<Node>;
+        using Stack    = Stack<Node>;
         Visited visited ( m_tree.nodeNum ( ) );
         Stack stack ( m_tree.root_node );
         visited[ m_tree.root_node ] = true;

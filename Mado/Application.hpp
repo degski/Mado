@@ -257,9 +257,9 @@ AppImpl<R>::AppImpl ( ) :
     sf::loadFromResource ( m_font_numbers, __NUMBERS_FONT__ );
     sf::loadFromResource ( m_font_dottie, __DOTTIE_FONT__ );
     // Load sound.
-    sf::loadFromResource ( m_music, MUSIC );
-    m_music.setVolume ( 10.0f );
-    m_music.setLoop ( true );
+    // sf::loadFromResource ( m_music, MUSIC );
+    // m_music.setVolume ( 10.0f );
+    // m_music.setLoop ( true );
     sf::Music::TimeSpan loop;
     loop.offset = sf::seconds ( 3.0f );
     loop.length = sf::seconds ( 192.0f );
@@ -513,7 +513,7 @@ class Application {
     int m_radius = std::visit ( [] ( auto & inst ) noexcept { return inst.radius; }, m_instance );
 };
 
-#define VISIT0( F )                                                                                                                \
+#define VISIT_0( F )                                                                                                               \
     switch ( radius ) {                                                                                                            \
         case 4: return reinterpret_cast<AppImpl<4> *> ( mem )->F ( );                                                              \
         case 5: return reinterpret_cast<AppImpl<5> *> ( mem )->F ( );                                                              \
@@ -521,7 +521,7 @@ class Application {
         case 7: return reinterpret_cast<AppImpl<7> *> ( mem )->F ( );                                                              \
         case 8: return reinterpret_cast<AppImpl<8> *> ( mem )->F ( );                                                              \
     }
-#define VISIT1( F, A )                                                                                                             \
+#define VISIT_1( F, A )                                                                                                            \
     switch ( radius ) {                                                                                                            \
         case 4: return reinterpret_cast<AppImpl<4> *> ( mem )->F ( A );                                                            \
         case 5: return reinterpret_cast<AppImpl<5> *> ( mem )->F ( A );                                                            \
@@ -532,24 +532,24 @@ class Application {
 
 struct A {
 
-    alignas ( 16 ) char mem[ sizeof ( AppImpl<8> ) ];
+    alignas ( 4096 ) char mem[ sizeof ( AppImpl<8> ) ];
     int radius = 0;
 
     A ( int const r_ = 4 ) { construct ( r_ ); }
     ~A ( ) noexcept { destruct ( ); }
 
-    [[nodiscard]] inline bool isWindowOpen ( ) { VISIT0 ( isWindowOpen ) }
-    [[nodiscard]] inline bool pollWindowEvent ( sf::Event & event_ ) { VISIT1 ( pollWindowEvent, event_ ) }
-    inline void closeWindow ( ) noexcept { VISIT0 ( closeWindow ); }
-    inline void minimizeWindow ( ) noexcept { VISIT0 ( minimizeWindow ) }
-    inline void pause ( ) noexcept { VISIT0 ( pause ) }
-    inline void resume ( ) noexcept { VISIT0 ( resume ) }
-    [[nodiscard]] inline bool isPaused ( ) noexcept { VISIT0 ( isPaused ) }
-    [[nodiscard]] inline bool isRunning ( ) noexcept { VISIT0 ( isRunning ) }
-    void setupStartupAnimation ( ) noexcept { VISIT0 ( setupStartupAnimation ) }
-    bool runStartupAnimation ( ) noexcept { VISIT0 ( runStartupAnimation ) }
-    void updateWindow ( ) noexcept { VISIT0 ( updateWindow ) }
-    void mouseEvents ( sf::Event const & event_ ) { VISIT1 ( mouseEvents, event_ ) }
+    [[nodiscard]] inline bool isWindowOpen ( ) { VISIT_0 ( isWindowOpen ) }
+    [[nodiscard]] inline bool pollWindowEvent ( sf::Event & event_ ) { VISIT_1 ( pollWindowEvent, event_ ) }
+    inline void closeWindow ( ) noexcept { VISIT_0 ( closeWindow ) }
+    inline void minimizeWindow ( ) noexcept { VISIT_0 ( minimizeWindow ) }
+    inline void pause ( ) noexcept { VISIT_0 ( pause ) }
+    inline void resume ( ) noexcept { VISIT_0 ( resume ) }
+    [[nodiscard]] inline bool isPaused ( ) noexcept { VISIT_0 ( isPaused ) }
+    [[nodiscard]] inline bool isRunning ( ) noexcept { VISIT_0 ( isRunning ) }
+    void setupStartupAnimation ( ) noexcept { VISIT_0 ( setupStartupAnimation ) }
+    bool runStartupAnimation ( ) noexcept { VISIT_0 ( runStartupAnimation ) }
+    void updateWindow ( ) noexcept { VISIT_0 ( updateWindow ) }
+    void mouseEvents ( sf::Event const & event_ ) { VISIT_1 ( mouseEvents, event_ ) }
 
     static void resize ( A & a_, int const r_ ) {
         static sf::HrClock & clock{ Clock::instance ( ) };
@@ -587,5 +587,5 @@ struct A {
     }
 };
 
-#undef VISIT1
-#undef VISIT0
+#undef VISIT_1
+#undef VISIT_0

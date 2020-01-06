@@ -144,7 +144,7 @@ void handleEptr ( std::exception_ptr eptr ) { // Passing by value is ok.
     return 0;
 }
 
-int main ( ) {
+int main786 ( ) {
     std::exception_ptr eptr;
     try {
         // Application app;
@@ -195,6 +195,15 @@ int main ( ) {
         eptr = std::current_exception ( ); // Capture.
     }
     handleEptr ( eptr );
+    return EXIT_SUCCESS;
+}
+
+#    include "Mcts.hpp"
+
+int main ( ) {
+
+    mcts::Mcts<Mado<6>> mcts;
+
     return EXIT_SUCCESS;
 }
 

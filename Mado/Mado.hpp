@@ -117,7 +117,6 @@ struct Mado {
     ZobristHash m_zobrist_hash; // Hash of the current m_board, some random initial value;
     Move m_last_move;
     MoveLock m_move_lock;
-    int m_radius = R;
 
     Mado ( ) noexcept : m_generator ( Rng::generator ( ) ) { reset ( ); }
     Mado ( Mado const & m_ ) noexcept { std::memcpy ( this, &m_, sizeof ( Mado ) ); }
