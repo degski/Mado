@@ -201,8 +201,55 @@ int main786 ( ) {
 #    include "Mcts.hpp"
 
 int main ( ) {
-
-    mcts::Mcts<Mado<6>> mcts;
+    using State  = Mado<6>;
+    using Player = typename State::value_type;
+    using Mcts   = mcts::Mcts<State>;
+    std::optional<Player> winner;
+    std::uint32_t matches = 0u, agent_wins = 0u, human_wins = 0u;
+    putchar ( '\n' );
+    sf::HrClock::duration elapsed;
+    sf::HrTimePoint match_start;
+    for ( int i = 0; i < 1000; ++i ) {
+        {
+            State state;
+            Mcts *mcts_agent = new Mcts ( ), *mcts_human = new Mcts ( );
+            match_start = Clock::instance ( ).now ( );
+            do {
+                state.moveHashWinner ( state.playerToMove ( ) == Player::Type::agent ? mcts_agent->compute ( state, 20'000 )
+                                                                                     : mcts_human->compute ( state, 2'000 ) );
+                Mcts::prune ( state.playerToMove ( ) == Player::Type::agent ? mcts_agent : mcts_human, state );
+            } while ( not( winner = state.ended ( ) ) );
+#    if 0
+            state.print ( );
+            if ( winner.get ( ) == Player::Type::agent ) {
+                std::wcout << L" Winner: Agent\n";
+            }
+            else if ( winner.get ( ) == Player::Type::human ) {
+                std::wcout << L" Winner: Human\n";
+            }
+            else {
+                std::wcout << L" Draw\n";
+            }
+#    endif
+            // saveToFile ( * mcts_human, "human" );
+            delete mcts_human;
+            // saveToFile ( * mcts_agent, "agent" );
+            delete mcts_agent;
+        }
+        elapsed += since ( match_start );
+        ++matches;
+        switch ( winner->as_index ( ) ) {
+            case ( int ) Player::Type::agent: ++agent_wins; break;
+            case ( int ) Player::Type::human: ++human_wins; break;
+        }
+        float a = ( 1000.0f * agent_wins ) / float ( agent_wins + human_wins );
+        a       = ( ( int ) a ) / 10.0f;
+        float h = ( 1000.0f * human_wins ) / float ( agent_wins + human_wins );
+        h       = ( ( int ) h ) / 10.0f;
+        printf ( "\r Match %i: Agent%6.1f%% - Human%6.1f%% (%.1f Sec./Match - %.1f Sec.)", matches, a, h,
+                 std::chrono::duration_cast<std::chrono::milliseconds> ( elapsed ).count ( ) / ( ( float ) matches * 1'000.0f ),
+                 std::chrono::duration_cast<std::chrono::milliseconds> ( elapsed ).count ( ) / 1'000.0f );
+    }
 
     return EXIT_SUCCESS;
 }

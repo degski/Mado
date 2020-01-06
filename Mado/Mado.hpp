@@ -118,9 +118,11 @@ struct Mado {
     Move m_last_move;
     MoveLock m_move_lock;
 
+    static constexpr int max_no_moves = 4096;
+
     Mado ( ) noexcept : m_generator ( Rng::generator ( ) ) { reset ( ); }
-    Mado ( Mado const & m_ ) noexcept { std::memcpy ( this, &m_, sizeof ( Mado ) ); }
-    Mado ( Mado && m_ ) noexcept { std::memcpy ( this, &m_, sizeof ( Mado ) ); }
+    Mado ( Mado const & m_ ) noexcept : m_generator ( Rng::generator ( ) ) { std::memcpy ( this, &m_, sizeof ( Mado ) ); }
+    Mado ( Mado && m_ ) noexcept : m_generator ( Rng::generator ( ) ) { std::memcpy ( this, &m_, sizeof ( Mado ) ); }
 
     ~Mado ( ) noexcept {}
 
@@ -321,6 +323,8 @@ struct Mado {
         sf::sleep ( sf::milliseconds ( sax::uniform_int_distribution<size_type> ( 500, 1'500 ) ( m_generator ) ) );
         return randomMove ( );
     }
+
+    void simulate ( ) {}
 
     [[nodiscard]] std::optional<value_type> ended ( ) const noexcept {
         return m_winner.invalid ( ) ? std::optional<value_type>{ } : std::optional<value_type>{ m_winner };

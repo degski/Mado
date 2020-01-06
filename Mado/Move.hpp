@@ -41,7 +41,7 @@ struct Move {
 
     using value_type = typename Hex<R, true>::IdxType;
 
-    enum class Type : value_type { place = 0, slide = 1 };
+    enum class Type : value_type { none = std::numeric_limits<value_type>::lowest ( ), place = 1, slide = 2 };
 
     value_type from, to;
 

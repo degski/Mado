@@ -103,3 +103,7 @@ extern fs::path const & g_app_path;
 using Window   = sax::singleton<sf::RenderWindow>;
 using Clock    = sax::singleton<sf::HrClock>;
 using Animator = sax::singleton<sf::CallbackAnimator>;
+
+[[nodiscard]] inline sf::HrClock::duration since ( sf::HrTimePoint const start_ ) noexcept {
+    return ( Clock::instance ( ).now ( ) - start_ );
+}

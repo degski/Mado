@@ -538,16 +538,16 @@ struct A {
     A ( int const r_ = 4 ) { construct ( r_ ); }
     ~A ( ) noexcept { destruct ( ); }
 
-    [[nodiscard]] inline bool isWindowOpen ( ) { VISIT_0 ( isWindowOpen ) }
-    [[nodiscard]] inline bool pollWindowEvent ( sf::Event & event_ ) { VISIT_1 ( pollWindowEvent, event_ ) }
+    [[nodiscard]] inline bool isWindowOpen ( ) { VISIT_0 ( isWindowOpen ) return false; }
+    [[nodiscard]] inline bool pollWindowEvent ( sf::Event & event_ ) { VISIT_1 ( pollWindowEvent, event_ ) return false; }
     inline void closeWindow ( ) noexcept { VISIT_0 ( closeWindow ) }
     inline void minimizeWindow ( ) noexcept { VISIT_0 ( minimizeWindow ) }
     inline void pause ( ) noexcept { VISIT_0 ( pause ) }
     inline void resume ( ) noexcept { VISIT_0 ( resume ) }
-    [[nodiscard]] inline bool isPaused ( ) noexcept { VISIT_0 ( isPaused ) }
-    [[nodiscard]] inline bool isRunning ( ) noexcept { VISIT_0 ( isRunning ) }
+    [[nodiscard]] inline bool isPaused ( ) noexcept { VISIT_0 ( isPaused ) return false; }
+    [[nodiscard]] inline bool isRunning ( ) noexcept { VISIT_0 ( isRunning ) return false; }
     void setupStartupAnimation ( ) noexcept { VISIT_0 ( setupStartupAnimation ) }
-    bool runStartupAnimation ( ) noexcept { VISIT_0 ( runStartupAnimation ) }
+    bool runStartupAnimation ( ) noexcept { VISIT_0 ( runStartupAnimation ) return false; }
     void updateWindow ( ) noexcept { VISIT_0 ( updateWindow ) }
     void mouseEvents ( sf::Event const & event_ ) { VISIT_1 ( mouseEvents, event_ ) }
 
