@@ -313,9 +313,15 @@ struct Mado {
         return moves_->size ( );
     }
 
+    template<typename MovesContainerPtr>
+    [[nodiscard]] bool clearAndAvailableMoves ( MovesContainerPtr moves_ ) const noexcept {
+        moves_->clear ( );
+        return availableMoves ( moves_ );
+    }
+
     [[nodiscard]] Move randomMove ( ) noexcept {
         std::experimental::fixed_capacity_vector<Move, Board::size ( ) * 2> available_moves;
-        return nonterminal ( ) and availableMoves ( &available_moves )
+        return nonterminal ( ) and clearAndAvailableMoves ( &available_moves )
                    ? available_moves[ sax::uniform_int_distribution<size_type> ( 0, available_moves.size ( ) - 1 ) ( m_generator ) ]
                    : Move{ };
     }
@@ -326,14 +332,13 @@ struct Mado {
     }
 
     void simulate ( ) noexcept {
-        // std::experimental::fixed_capacity_vector<Move, Board::size ( ) * 2> available_moves;
-        std::cout << *this << nl;
-        Moves available_moves;
-        while ( nonterminal ( ) and availableMoves ( &available_moves ) ) {
+        std::experimental::fixed_capacity_vector<Move, Board::size ( ) * 2> available_moves;
+        while ( nonterminal ( ) and clearAndAvailableMoves ( &available_moves ) ) {
+            std::cout << *this << nl;
             moveWinner (
                 available_moves[ sax::uniform_int_distribution<size_type> ( 0, available_moves.size ( ) - 1 ) ( m_generator ) ] );
-            std::cout << *this << nl;
         }
+        std::cout << *this << nl;
     }
 
     [[nodiscard]] std::optional<value_type> ended ( ) const noexcept {
@@ -356,6 +361,8 @@ struct Mado {
     [[maybe_unused]] friend Stream & operator<< ( Stream & out_, Mado const & b_ ) noexcept {
         out_ << b_.m_pos.m_board << nl << "  hash 0x" << std::hex << b_.m_zobrist_hash << " slides "
              << static_cast<int> ( b_.m_pos.m_slides ) << " last move " << b_.m_last_move << nl;
+        if ( b_.terminal ( ) )
+            std::cout << "  winner: " << b_.winner ( ) << nl;
         return out_;
     }
 

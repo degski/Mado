@@ -29,6 +29,7 @@
 #include <cstdlib>
 
 #include <sax/iostream.hpp>
+#include <string>
 #include <random>
 
 #include <cereal/cereal.hpp>
@@ -84,6 +85,11 @@ struct Player {
     [[nodiscard]] bool invalid ( ) const noexcept { return Type::invalid == value; }
     [[nodiscard]] bool vacant ( ) const noexcept { return Type::vacant == value; }
     [[nodiscard]] bool occupied ( ) const noexcept { return static_cast<int> ( value ) & 1; }
+
+    [[nodiscard]] std::string str ( ) const noexcept {
+        constexpr char name[ 4 ]{ ' ', 'A', '*', 'H' };
+        return { name[ static_cast<int> ( value ) + 2 ] };
+    }
 
     template<typename Stream>
     [[maybe_unused]] friend Stream & operator<< ( Stream & out_, Player const & p_ ) noexcept {
