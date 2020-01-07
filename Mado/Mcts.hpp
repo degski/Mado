@@ -369,10 +369,10 @@ class Mcts {
     }
 
     [[nodiscard]] Link addNode ( NodeID const parent_, State const & state_ ) noexcept {
-        NodeID child = m_tree.addNode ( state_ );
-        m_transposition_table->emplace ( state_.zobrist ( ), child );
-        ArcID arc = m_tree.addArc ( parent_, child, state_ );
-        return { std::move ( arc ), std::move ( child ) };
+        NodeID target = m_tree.addNode ( state_ );
+        m_transposition_table->emplace ( state_.zobrist ( ), target );
+        ArcID arc = m_tree.addArc ( parent_, target, state_ );
+        return { std::move ( arc ), std::move ( target ) };
     }
 
     void printMoves ( NodeID const n_ ) const noexcept {
