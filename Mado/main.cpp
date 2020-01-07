@@ -253,12 +253,25 @@ int main78678678 ( ) {
 
     return EXIT_SUCCESS;
 }
-
+//-fsanitize=address
 int main ( ) {
 
     Mado<6> mado;
 
-    mado.simulate ( );
+    int c[ 3 ]{ };
+
+    plf::nanotimer timer;
+
+    timer.start ( );
+
+    for ( int i = 0; i < 10'000; ++i ) {
+        ( ( c + 1 )[ mado.simulate ( ).as_index ( ) ] ) += 1;
+        mado.reset ( );
+    }
+
+    std::cout << ( ( int ) ( timer.get_elapsed_us ( ) ) / 10'000 ) << " usecs/sim" << nl;
+
+    std::cout << c[ 0 ] << " " << c[ 1 ] << " " << c[ 2 ] << nl;
 
     return EXIT_SUCCESS;
 }

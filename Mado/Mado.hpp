@@ -137,6 +137,7 @@ struct Mado {
         m_pos.m_player_to_move = value::human;
         m_winner               = value::invalid;
         m_zobrist_hash         = 0xb735a0f5839e4e22;
+        move_no                = 0;
     }
 
     // From SplitMix64, the mixer.
@@ -301,7 +302,7 @@ struct Mado {
     [[nodiscard]] bool availableMoves ( MovesContainerPtr moves_ ) const noexcept {
         // Mcts class takes/has ownership.
         for ( int s = static_cast<int> ( Board::size ( ) ), i = 0; i < s; ++i ) {
-            // Find places.
+            // Find placements.
             if ( m_pos.m_board[ i ].vacant ( ) ) {
                 moves_->emplace_back ( i );
                 continue;
@@ -328,15 +329,16 @@ struct Mado {
         return randomMove ( );
     }
 
-    void simulate ( ) noexcept {
+    [[maybe_unused]] value_type simulate ( ) noexcept {
         std::experimental::fixed_capacity_vector<Move, Board::size ( ) * 2> available_moves;
         while ( nonterminal ( ) and availableMoves ( &available_moves ) ) {
-            std::cout << *this << nl;
+            // std::cout << *this << nl;
             moveWinner (
                 available_moves[ sax::uniform_int_distribution<size_type> ( 0, available_moves.size ( ) - 1 ) ( m_generator ) ] );
             available_moves.clear ( );
         }
-        std::cout << *this << nl;
+        // std::cout << *this << nl;
+        return m_winner;
     }
 
     [[nodiscard]] std::optional<value_type> ended ( ) const noexcept {

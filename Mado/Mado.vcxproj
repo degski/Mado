@@ -202,7 +202,7 @@
       <PrecompiledHeaderOutputFile />
       <DebugInformationFormat>None</DebugInformationFormat>
       <FloatingPointModel>Fast</FloatingPointModel>
-      <AdditionalOptions>-fsanitize=address -Xclang -fconstexpr-steps -Xclang 10000000 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>-Xclang -fconstexpr-steps -Xclang 10000000 %(AdditionalOptions)</AdditionalOptions>
       <BufferSecurityCheck>false</BufferSecurityCheck>
     </ClCompile>
     <Link>
