@@ -66,9 +66,10 @@ struct Move {
     template<typename Stream>
     [[maybe_unused]] friend Stream & operator<< ( Stream & out_, Move const & m_ ) noexcept {
         if ( std::numeric_limits<value_type>::lowest ( ) == m_.from )
-            std::cout << '<' << static_cast<std::uint64_t> ( m_.to ) << '>';
+            std::cout << std::dec << '<' << static_cast<std::uint64_t> ( m_.to ) << '>';
         else
-            std::cout << '<' << static_cast<std::uint64_t> ( m_.from ) << ' ' << static_cast<std::uint64_t> ( m_.to ) << '>';
+            std::cout << std::dec << '<' << static_cast<std::uint64_t> ( m_.from ) << ' ' << static_cast<std::uint64_t> ( m_.to )
+                      << '>';
         return out_;
     }
 
