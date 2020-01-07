@@ -120,6 +120,7 @@ struct Mado {
     MoveLock m_move_lock;
 
     static constexpr int max_no_moves = 4096;
+    int move_no                       = 0;
 
     Mado ( ) noexcept : m_generator ( Rng::generator ( ) ) { reset ( ); }
     Mado ( Mado const & m_ ) noexcept : m_generator ( Rng::generator ( ) ) { std::memcpy ( this, &m_, sizeof ( Mado ) ); }
@@ -183,6 +184,7 @@ struct Mado {
         // Alternatingly hash-in and hash-out this value,
         // to add-in the current player.
         m_zobrist_hash ^= 0xa9063818575b53b7;
+        ++move_no;
     }
 
     void moveImpl ( Move const move_ ) noexcept {
@@ -194,6 +196,7 @@ struct Mado {
             m_pos.m_board[ move_.from ] = value::vacant;
         }
         m_pos.m_board[ move_.to ] = m_pos.m_player_to_move;
+        ++move_no;
     }
 
     private:
@@ -313,15 +316,9 @@ struct Mado {
         return moves_->size ( );
     }
 
-    template<typename MovesContainerPtr>
-    [[nodiscard]] bool clearAndAvailableMoves ( MovesContainerPtr moves_ ) const noexcept {
-        moves_->clear ( );
-        return availableMoves ( moves_ );
-    }
-
     [[nodiscard]] Move randomMove ( ) noexcept {
         std::experimental::fixed_capacity_vector<Move, Board::size ( ) * 2> available_moves;
-        return nonterminal ( ) and clearAndAvailableMoves ( &available_moves )
+        return nonterminal ( ) and availableMoves ( &available_moves )
                    ? available_moves[ sax::uniform_int_distribution<size_type> ( 0, available_moves.size ( ) - 1 ) ( m_generator ) ]
                    : Move{ };
     }
@@ -333,10 +330,11 @@ struct Mado {
 
     void simulate ( ) noexcept {
         std::experimental::fixed_capacity_vector<Move, Board::size ( ) * 2> available_moves;
-        while ( nonterminal ( ) and clearAndAvailableMoves ( &available_moves ) ) {
+        while ( nonterminal ( ) and availableMoves ( &available_moves ) ) {
             std::cout << *this << nl;
             moveWinner (
                 available_moves[ sax::uniform_int_distribution<size_type> ( 0, available_moves.size ( ) - 1 ) ( m_generator ) ] );
+            available_moves.clear ( );
         }
         std::cout << *this << nl;
     }
@@ -359,10 +357,11 @@ struct Mado {
 
     template<typename Stream>
     [[maybe_unused]] friend Stream & operator<< ( Stream & out_, Mado const & b_ ) noexcept {
-        out_ << b_.m_pos.m_board << nl << "  hash 0x" << std::hex << b_.m_zobrist_hash << " slides "
+        out_ << b_.m_pos.m_board << "  move " << b_.move_no << " hash 0x" << std::hex << b_.m_zobrist_hash << " slides "
              << static_cast<int> ( b_.m_pos.m_slides ) << " last move " << b_.m_last_move << nl;
         if ( b_.terminal ( ) )
-            std::cout << "  winner: " << b_.winner ( ) << nl;
+            out_ << "  winner: " << b_.winner ( ) << nl;
+        out_ << nl;
         return out_;
     }
 
