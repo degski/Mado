@@ -253,10 +253,14 @@ int main78678678 ( ) {
 
     return EXIT_SUCCESS;
 }
-//-fsanitize=address
+
+// Possible additional flags Clang/LLVM:
+// -fsanitize=address
+// -Xclang -fconstexpr-steps -Xclang 10000000
+
 int main ( ) {
 
-    Mado<6> mado;
+    Mado<4> mado;
 
     int c[ 3 ]{ };
 

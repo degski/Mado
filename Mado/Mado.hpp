@@ -89,8 +89,9 @@ template<int R>
 using PositionDataVector = sax::singleton<std::vector<PositionData<R>>>;
 
 template<int R>
-struct Mado {
+class Mado {
 
+    public:
     using Hex     = Hex<R, true>;
     using IdxType = typename Hex::IdxType;
 
@@ -109,9 +110,11 @@ struct Mado {
     using ZobristHash = std::uint64_t;
 
     using SurroundedPlayerVector = std::experimental::fixed_capacity_vector<value_type, 6>;
+    using SurroundCountVector    = std::experimental::fixed_capacity_vector<value_type, 6>;
 
     using MoveLock = sax::SRWLock;
 
+    private:
     PositionData m_pos;
     value_type m_winner;
     Generator m_generator;
@@ -119,6 +122,7 @@ struct Mado {
     Move m_last_move;
     MoveLock m_move_lock;
 
+    public:
     static constexpr int max_no_moves = 4096;
     int move_no                       = 0;
 
@@ -140,24 +144,6 @@ struct Mado {
         move_no                = 0;
     }
 
-    // From SplitMix64, the mixer.
-    [[nodiscard]] static constexpr std::uint64_t sm_mix64 ( std::uint64_t k_ ) noexcept {
-        k_ = ( k_ ^ ( k_ >> 30 ) ) * std::uint64_t{ 0xbf58476d1ce4e5b9 };
-        k_ = ( k_ ^ ( k_ >> 27 ) ) * std::uint64_t{ 0x94d049bb133111eb };
-        return k_ ^ ( k_ >> 31 );
-    }
-    // My mixer.
-    [[nodiscard]] static constexpr std::uint64_t iu_mix64 ( std::uint64_t k_ ) noexcept {
-        k_ = ( k_ ^ ( k_ >> 32 ) ) * std::uint64_t{ 0xd6e8feb86659fd93 };
-        return k_ ^ ( k_ >> 32 );
-    }
-    // From MurMurHash, the mixer.
-    [[nodiscard]] static constexpr std::uint64_t mm_mix64 ( std::uint64_t k_ ) noexcept {
-        k_ = ( k_ ^ ( k_ >> 33 ) ) * std::uint64_t{ 0xff51afd7ed558ccd };
-        // k_ = ( k_ ^ ( k_ >> 33 ) ) * std::uint64_t { 0xc4ceb9fe1a85ec53 };
-        return k_ ^ ( k_ >> 33 );
-    }
-
     [[nodiscard]] static constexpr ZobristHash hash ( value_type p_, IdxType const i_ ) noexcept {
         return iu_mix64 ( static_cast<std::uint64_t> ( p_.as_index ( ) ) ^ static_cast<std::uint64_t> ( i_ ) );
     }
@@ -167,94 +153,9 @@ struct Mado {
     [[nodiscard]] value_type playerToMove ( ) const noexcept { return m_pos.m_player_to_move; }
     [[nodiscard]] value_type playerJustMoved ( ) const noexcept { return m_pos.m_player_to_move.opponent ( ); }
 
-    void moveHashImpl ( Move const move_ ) noexcept {
-        if ( move_.is_placement ( ) ) { // Place.
-            if ( m_pos.m_slides )
-                m_zobrist_hash ^= mm_mix64 ( static_cast<std::uint64_t> ( m_pos.m_slides ) );
-            m_pos.m_slides = 0;
-        }
-        else { // Slide.
-            if ( m_pos.m_slides )
-                m_zobrist_hash ^= mm_mix64 ( static_cast<std::uint64_t> ( m_pos.m_slides ) );
-            m_zobrist_hash ^= mm_mix64 ( static_cast<std::uint64_t> ( ++m_pos.m_slides ) );
-            m_zobrist_hash ^= hash ( m_pos.m_player_to_move, move_.from );
-            m_pos.m_board[ move_.from ] = value::vacant;
-        }
-        m_pos.m_board[ move_.to ] = m_pos.m_player_to_move;
-        m_zobrist_hash ^= hash ( m_pos.m_player_to_move, move_.to );
-        // Alternatingly hash-in and hash-out this value,
-        // to add-in the current player.
-        m_zobrist_hash ^= 0xa9063818575b53b7;
-        ++move_no;
-    }
-
-    void moveImpl ( Move const move_ ) noexcept {
-        if ( move_.is_placement ( ) ) { // Place.
-            m_pos.m_slides = 0;
-        }
-        else { // Slide.
-            ++m_pos.m_slides;
-            m_pos.m_board[ move_.from ] = value::vacant;
-        }
-        m_pos.m_board[ move_.to ] = m_pos.m_player_to_move;
-        ++move_no;
-    }
-
-    private:
-    template<typename IdxType>
-    [[nodiscard]] inline bool isSurrounded ( IdxType const idx_ ) const noexcept {
-        for ( auto const neighbor : Board::neighbors[ idx_ ] )
-            if ( m_pos.m_board[ neighbor ].vacant ( ) )
-                return false;
-        return true;
-    }
-
-    public:
-    void checkForWinner ( ) noexcept {
-        // To be called before the player swap, but after m_player_to_move made his Move.
-        // If both players slide three turns in a row (three slides for each player makes
-        // six total), the game is a draw.
-        if ( 6 == m_pos.m_slides ) {
-            m_winner = value::vacant;
-            return;
-        }
-        // The object of the game is to surround any one of your opponent's stones. You
-        // surround a stone by filling in the spaces around it - a stone can be surrounded
-        // by any combination of your stones, your opponent's stones and the edge of the
-        // Board. But be careful; if one of your stones is surrounded on your own turn
-        // (even if you surround one of your opponent's stones at the same time), you lose
-        // the game!
-        if ( isSurrounded ( m_last_move.to ) ) {
-            m_winner = m_pos.m_player_to_move.opponent ( );
-            return;
-        }
-        for ( auto const neighbor : Board::neighbors[ m_last_move.to ] ) {
-            if ( m_pos.m_board[ neighbor ].occupied ( ) and isSurrounded ( neighbor ) ) {
-                if ( m_pos.m_player_to_move == m_pos.m_board[ neighbor ] ) {
-                    m_winner = m_pos.m_player_to_move.opponent ( );
-                    return;
-                }
-                // Continue to verify that the current player did not surround himself.
-                m_winner = m_pos.m_player_to_move;
-            }
-        }
-    }
-
     void addPositionData ( ) {
         if ( std::bernoulli_distribution ( 0.0025 ) ( m_generator ) )
             PDV::instance ( ).push_back ( m_pos );
-    }
-
-    template<typename T>
-    void saveToFileBin ( T const & t_, sf::Path && path_, std::string_view && file_name_, bool const append_ = false ) noexcept {
-        std::ofstream ostream ( path_ / file_name_,
-                                append_ ? std::ios::binary | std::ios::app | std::ios::out : std::ios::binary | std::ios::out );
-        {
-            cereal::BinaryOutputArchive archive ( ostream );
-            archive ( t_ );
-        }
-        ostream.flush ( );
-        ostream.close ( );
     }
 
     void writePositionData ( ) {
@@ -318,23 +219,22 @@ struct Mado {
     }
 
     [[nodiscard]] Move randomMove ( ) noexcept {
-        std::experimental::fixed_capacity_vector<Move, Board::size ( ) * 2> available_moves;
+        std::experimental::fixed_capacity_vector<Move, std::size_t{ Board::size ( ) } * std::size_t{ 2 }> available_moves;
         return nonterminal ( ) and availableMoves ( &available_moves )
-                   ? available_moves[ sax::uniform_int_distribution<size_type> ( 0, available_moves.size ( ) - 1 ) ( m_generator ) ]
+                   ? available_moves[ bounded_integer ( available_moves.size ( ) ) ]
                    : Move{ };
     }
 
     [[nodiscard]] Move randomMoveDelayed ( ) noexcept {
-        sf::sleep ( sf::milliseconds ( sax::uniform_int_distribution<size_type> ( 500, 1'500 ) ( m_generator ) ) );
+        sf::sleep ( sf::milliseconds ( bounded_integer ( std::size_t{ 500 }, std::size_t{ 1'500 } ) ) );
         return randomMove ( );
     }
 
     [[maybe_unused]] value_type simulate ( ) noexcept {
-        std::experimental::fixed_capacity_vector<Move, Board::size ( ) * 2> available_moves;
+        std::experimental::fixed_capacity_vector<Move, std::size_t{ Board::size ( ) } * std::size_t{ 2 }> available_moves;
         while ( nonterminal ( ) and availableMoves ( &available_moves ) ) {
             // std::cout << *this << nl;
-            moveWinner (
-                available_moves[ sax::uniform_int_distribution<size_type> ( 0, available_moves.size ( ) - 1 ) ( m_generator ) ] );
+            moveWinner ( available_moves[ bounded_integer ( available_moves.size ( ) ) ] );
             available_moves.clear ( );
         }
         // std::cout << *this << nl;
@@ -345,6 +245,11 @@ struct Mado {
         return m_winner.invalid ( ) ? std::optional<value_type>{ } : std::optional<value_type>{ m_winner };
     }
 
+    [[nodiscard]] float result ( ) const noexcept {
+        // Determine result: last player of path is the player to Move. The role of the minus 1? By now the player to make
+        // a move has be updated (has moved, the state is ready for the next move, including the player to move).
+        return static_cast<float> ( static_cast<int> ( m_winner.as_index ( ) ) * ( -1 ) );
+    }
     [[nodiscard]] float result ( value_type const player_just_moved_ ) const noexcept {
         // Determine result: last player of path is the player to Move.
         return m_winner.vacant ( ) ? 0.0f : ( m_winner == player_just_moved_ ? 1.0f : -1.0f );
@@ -365,6 +270,119 @@ struct Mado {
             out_ << "  winner: " << b_.winner ( ) << nl;
         out_ << nl;
         return out_;
+    }
+
+    private:
+    // From SplitMix64, the mixer.
+    [[nodiscard]] static constexpr std::uint64_t sm_mix64 ( std::uint64_t k_ ) noexcept {
+        k_ = ( k_ ^ ( k_ >> 30 ) ) * std::uint64_t{ 0xbf58476d1ce4e5b9 };
+        k_ = ( k_ ^ ( k_ >> 27 ) ) * std::uint64_t{ 0x94d049bb133111eb };
+        return k_ ^ ( k_ >> 31 );
+    }
+    // My mixer.
+    [[nodiscard]] static constexpr std::uint64_t iu_mix64 ( std::uint64_t k_ ) noexcept {
+        k_ = ( k_ ^ ( k_ >> 32 ) ) * std::uint64_t{ 0xd6e8feb86659fd93 };
+        return k_ ^ ( k_ >> 32 );
+    }
+    // From MurMurHash, the mixer.
+    [[nodiscard]] static constexpr std::uint64_t mm_mix64 ( std::uint64_t k_ ) noexcept {
+        k_ = ( k_ ^ ( k_ >> 33 ) ) * std::uint64_t{ 0xff51afd7ed558ccd };
+        // k_ = ( k_ ^ ( k_ >> 33 ) ) * std::uint64_t { 0xc4ceb9fe1a85ec53 };
+        return k_ ^ ( k_ >> 33 );
+    }
+
+    void checkForWinner ( ) noexcept {
+        // To be called before the player swap, but after m_player_to_move made his Move.
+        // If both players slide three turns in a row (three slides for each player makes
+        // six total), the game is a draw.
+        if ( 6 == m_pos.m_slides ) {
+            m_winner = value::vacant;
+            return;
+        }
+        // The object of the game is to surround any one of your opponent's stones. You
+        // surround a stone by filling in the spaces around it - a stone can be surrounded
+        // by any combination of your stones, your opponent's stones and the edge of the
+        // Board. But be careful; if one of your stones is surrounded on your own turn
+        // (even if you surround one of your opponent's stones at the same time), you lose
+        // the game!
+        if ( isSurrounded ( m_last_move.to ) ) {
+            m_winner = m_pos.m_player_to_move.opponent ( );
+            return;
+        }
+        for ( auto const neighbor : Board::neighbors[ m_last_move.to ] ) {
+            if ( m_pos.m_board[ neighbor ].occupied ( ) and isSurrounded ( neighbor ) ) {
+                if ( m_pos.m_player_to_move == m_pos.m_board[ neighbor ] ) {
+                    m_winner = m_pos.m_player_to_move.opponent ( );
+                    return;
+                }
+                // Continue to verify that the current player did not surround himself.
+                m_winner = m_pos.m_player_to_move;
+            }
+        }
+    }
+
+    // Move and update zobrist-hash.
+    void moveHashImpl ( Move const move_ ) noexcept {
+        if ( move_.is_placement ( ) ) { // Place.
+            if ( m_pos.m_slides )
+                m_zobrist_hash ^= mm_mix64 ( static_cast<std::uint64_t> ( m_pos.m_slides ) );
+            m_pos.m_slides = 0;
+        }
+        else { // Slide.
+            if ( m_pos.m_slides )
+                m_zobrist_hash ^= mm_mix64 ( static_cast<std::uint64_t> ( m_pos.m_slides ) );
+            m_zobrist_hash ^= mm_mix64 ( static_cast<std::uint64_t> ( ++m_pos.m_slides ) );
+            m_zobrist_hash ^= hash ( m_pos.m_player_to_move, move_.from );
+            m_pos.m_board[ move_.from ] = value::vacant;
+        }
+        m_pos.m_board[ move_.to ] = m_pos.m_player_to_move;
+        m_zobrist_hash ^= hash ( m_pos.m_player_to_move, move_.to );
+        // Alternatingly hash-in and hash-out this value,
+        // to add-in the current player.
+        m_zobrist_hash ^= 0xa9063818575b53b7;
+        ++move_no;
+    }
+
+    // Move (no update zobrist-hash).
+    void moveImpl ( Move const move_ ) noexcept {
+        if ( move_.is_placement ( ) ) { // Place.
+            m_pos.m_slides = 0;
+        }
+        else { // Slide.
+            ++m_pos.m_slides;
+            m_pos.m_board[ move_.from ] = value::vacant;
+        }
+        m_pos.m_board[ move_.to ] = m_pos.m_player_to_move;
+        ++move_no;
+    }
+
+    template<typename IdxType>
+    [[nodiscard]] inline bool isSurrounded ( IdxType const idx_ ) const noexcept {
+        for ( auto const neighbor : Board::neighbors[ idx_ ] )
+            if ( m_pos.m_board[ neighbor ].vacant ( ) )
+                return false;
+        return true;
+    }
+
+    template<typename T>
+    [[nodiscard]] inline T bounded_integer ( T const u_ ) const noexcept {
+        return sax::uniform_int_distribution<T> ( 0, u_ - T{ 1 } ) ( m_generator );
+    }
+    template<typename T>
+    [[nodiscard]] inline T bounded_integer ( T const l_, T const u_ ) const noexcept {
+        return sax::uniform_int_distribution<T> ( l_, u_ - T{ 1 } ) ( m_generator );
+    }
+
+    template<typename T>
+    void saveToFileBin ( T const & t_, sf::Path && path_, std::string_view && file_name_, bool const append_ = false ) noexcept {
+        std::ofstream ostream ( path_ / file_name_,
+                                append_ ? std::ios::binary | std::ios::app | std::ios::out : std::ios::binary | std::ios::out );
+        {
+            cereal::BinaryOutputArchive archive ( ostream );
+            archive ( t_ );
+        }
+        ostream.flush ( );
+        ostream.close ( );
     }
 
     friend class cereal::access;

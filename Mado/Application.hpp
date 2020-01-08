@@ -38,8 +38,6 @@
 #include <SFML/Audio.hpp>
 #include <SFML/Extensions.hpp>
 
-#include <fsmlite/fsm.hpp>
-
 // #include <lz4frame.h>
 
 #include <sax/singleton.hpp>
