@@ -110,9 +110,7 @@ class Mado {
     using ZobristHash = std::uint64_t;
 
     using SurroundedPlayerVector = std::experimental::fixed_capacity_vector<value_type, 6>;
-    using SurroundCountVector    = std::experimental::fixed_capacity_vector<value_type, 6>;
-
-    using MoveLock = sax::SRWLock;
+    using MoveLock               = sax::SRWLock;
 
     private:
     PositionData m_pos;
@@ -120,27 +118,37 @@ class Mado {
     Generator m_generator;
     ZobristHash m_zobrist_hash; // Hash of the current m_board, some random initial value;
     Move m_last_move;
-    MoveLock m_move_lock;
 
     public:
-    static constexpr int max_no_moves = 4096;
-    int move_no                       = 0;
+    static constexpr int const max_no_moves                 = 4096;
+    static constexpr ZobristHash const zobrist_hash_default = 0xb735a0f5839e4e22;
+    int move_no                                             = 0;
+
+    static int max_moves_size;
 
     Mado ( ) noexcept : m_generator ( Rng::generator ( ) ) { reset ( ); }
-    Mado ( Mado const & m_ ) noexcept : m_generator ( Rng::generator ( ) ) { std::memcpy ( this, &m_, sizeof ( Mado ) ); }
-    Mado ( Mado && m_ ) noexcept : m_generator ( Rng::generator ( ) ) { std::memcpy ( this, &m_, sizeof ( Mado ) ); }
+    Mado ( Mado const & m_ ) noexcept :
+        m_pos ( m_.m_pos ), m_winner ( m_.m_winner ), m_generator ( Rng::generator ( ) ), m_zobrist_hash ( m_.m_zobrist_hash ),
+        m_last_move ( m_.m_last_move ), move_no ( m_.move_no ) {}
+    Mado ( Mado && m_ ) noexcept = delete;
 
     ~Mado ( ) noexcept {}
 
-    [[nodiscard]] Mado & operator= ( Mado const & m_ ) noexcept { std::memcpy ( this, &m_, sizeof ( Mado ) ); }
-    [[nodiscard]] Mado & operator= ( Mado && m_ ) noexcept { std::memcpy ( this, &m_, sizeof ( Mado ) ); }
+    [[nodiscard]] Mado & operator= ( Mado const & m_ ) noexcept {
+        m_pos          = m_.m_pos;
+        m_winner       = m_.m_winner;
+        m_zobrist_hash = m_.m_zobrist_hash;
+        m_last_move    = m_.m_last_move;
+        move_no        = m_.move_no;
+    }
+    [[nodiscard]] Mado & operator= ( Mado && m_ ) noexcept = delete;
 
     void reset ( ) noexcept {
         m_pos.m_board.reset ( );
         m_pos.m_slides         = 0;
         m_pos.m_player_to_move = value::human;
         m_winner               = value::invalid;
-        m_zobrist_hash         = 0xb735a0f5839e4e22;
+        m_zobrist_hash         = zobrist_hash_default;
         move_no                = 0;
     }
 
@@ -185,18 +193,15 @@ class Mado {
     }
 
     void moveHashWinner ( Move const move_ ) noexcept {
+        if ( m_pos.m_board[ move_.to ] != value::vacant ) {
+            std::cout << " to not valid\n";
+            exit ( 0 );
+        }
         m_last_move = move_;
         moveHashImpl ( move_ );
         checkForWinner ( );
-        std::cout << *this << nl;
         // writePositionData ( );
         m_pos.m_player_to_move.next ( );
-    }
-
-    void lockedMoveHashWinner ( Move const move_ ) noexcept {
-        m_move_lock.lock ( );
-        moveHashWinner ( move_ );
-        m_move_lock.unlock ( );
     }
 
     template<typename MovesContainerPtr>
@@ -234,7 +239,10 @@ class Mado {
         std::experimental::fixed_capacity_vector<Move, std::size_t{ Board::size ( ) } * std::size_t{ 2 }> available_moves;
         while ( nonterminal ( ) and availableMoves ( &available_moves ) ) {
             // std::cout << *this << nl;
-            moveWinner ( available_moves[ bounded_integer ( available_moves.size ( ) ) ] );
+            auto const s = available_moves.size ( );
+            moveWinner ( available_moves[ bounded_integer ( s ) ] );
+            if ( max_moves_size < s )
+                max_moves_size = s;
             available_moves.clear ( );
         }
         // std::cout << *this << nl;
@@ -291,8 +299,8 @@ class Mado {
         return k_ ^ ( k_ >> 33 );
     }
 
+    // To be called before the player swap, but after m_player_to_move made his Move.
     void checkForWinner ( ) noexcept {
-        // To be called before the player swap, but after m_player_to_move made his Move.
         // If both players slide three turns in a row (three slides for each player makes
         // six total), the game is a draw.
         if ( 6 == m_pos.m_slides ) {
@@ -302,7 +310,7 @@ class Mado {
         // The object of the game is to surround any one of your opponent's stones. You
         // surround a stone by filling in the spaces around it - a stone can be surrounded
         // by any combination of your stones, your opponent's stones and the edge of the
-        // Board. But be careful; if one of your stones is surrounded on your own turn
+        // board. But be careful; if one of your stones is surrounded on your own turn
         // (even if you surround one of your opponent's stones at the same time), you lose
         // the game!
         if ( isSurrounded ( m_last_move.to ) ) {
@@ -392,3 +400,6 @@ class Mado {
         ar_ ( m_pos );
     }
 };
+
+template<int R>
+int Mado<R>::max_moves_size = 0;
