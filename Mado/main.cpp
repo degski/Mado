@@ -200,8 +200,8 @@ int main786 ( ) {
 
 #    include "Mcts.hpp"
 
-int main78678678 ( ) {
-    using State  = Mado<6>;
+int main ( ) {
+    using State  = Mado<4>;
     using Player = typename State::value_type;
     using Mcts   = mcts::Mcts<State>;
     std::optional<Player> winner;
@@ -209,7 +209,7 @@ int main78678678 ( ) {
     putchar ( '\n' );
     sf::HrClock::duration elapsed;
     sf::HrTimePoint match_start;
-    for ( int i = 0; i < 1000; ++i ) {
+    for ( int i = 0; i < 1; ++i ) {
         {
             State state;
             Mcts *mcts_agent = new Mcts ( ), *mcts_human = new Mcts ( );
@@ -217,7 +217,8 @@ int main78678678 ( ) {
             do {
                 state.moveHashWinner ( state.playerToMove ( ) == Player::Type::agent ? mcts_agent->compute ( state, 20'000 )
                                                                                      : mcts_human->compute ( state, 2'000 ) );
-                Mcts::prune ( state.playerToMove ( ) == Player::Type::agent ? mcts_agent : mcts_human, state );
+                // Mcts::prune ( state.playerToMove ( ) == Player::Type::agent ? mcts_agent : mcts_human, state );
+                std::cout << state << nl;
             } while ( not( winner = state.ended ( ) ) );
 #    if 0
             state.print ( );
@@ -258,7 +259,7 @@ int main78678678 ( ) {
 // -fsanitize=address
 // -Xclang -fconstexpr-steps -Xclang 10000000
 
-int main ( ) {
+int main7867878 ( ) {
 
     Mado<4> mado;
 
@@ -268,14 +269,37 @@ int main ( ) {
 
     timer.start ( );
 
-    for ( int i = 0; i < 10'000; ++i ) {
+    for ( int i = 0; i < 1'000'000; ++i ) {
         ( ( c + 1 )[ mado.simulate ( ).as_index ( ) ] ) += 1;
         mado.reset ( );
     }
 
-    std::cout << ( ( int ) ( timer.get_elapsed_us ( ) ) / 10'000 ) << " usecs/sim" << nl;
-
+    std::cout << ( ( int ) ( timer.get_elapsed_us ( ) ) / 1'000'000 ) << " usecs/sim" << nl;
+    std::cout << Mado<4>::max_moves_size << nl;
     std::cout << c[ 0 ] << " " << c[ 1 ] << " " << c[ 2 ] << nl;
+
+    return EXIT_SUCCESS;
+}
+
+int main87989 ( ) {
+
+    Mado<4> mado0;
+
+    mado0.moveHashWinner ( Move<4>{ std::int8_t{ 22 } } );
+    mado0.moveHashWinner ( Move<4>{ std::int8_t{ 38 } } );
+
+    Mado<4> mado = mado0;
+
+    mado.moveHashWinner ( Move<4>{ std::int8_t{ 27 } } );
+    mado.moveHashWinner ( Move<4>{ std::int8_t{ 34 } } );
+
+    std::cout << mado << nl;
+
+    Moves<4> moves;
+
+    mado.availableMoves ( &moves );
+
+    print_moves ( moves );
 
     return EXIT_SUCCESS;
 }

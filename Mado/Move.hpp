@@ -45,6 +45,12 @@ struct Move {
 
     value_type from, to;
 
+    [[nodiscard]] bool operator< ( Move const & rhs_ ) const noexcept {
+        return from < rhs_.from or ( from == rhs_.from and to < rhs_.to );
+    }
+    [[nodiscard]] bool operator== ( Move const & rhs_ ) const noexcept { return from == rhs_.from and to == rhs_.to; }
+    [[nodiscard]] bool operator!= ( Move const & rhs_ ) const noexcept { return not operator== ( rhs_ ); }
+
     constexpr Move ( ) noexcept :
         from{ std::numeric_limits<value_type>::lowest ( ) }, to{ std::numeric_limits<value_type>::lowest ( ) } {}
     constexpr Move ( value_type const & to_ ) noexcept : from{ std::numeric_limits<value_type>::lowest ( ) }, to{ to_ } {}
@@ -85,3 +91,10 @@ struct Move {
 
 template<std::size_t R>
 using Moves = std::vector<Move<R>>;
+
+template<typename Moves>
+void print_moves ( Moves const & moves_ ) noexcept {
+    for ( auto const m : moves_ )
+        std::cout << m;
+    std::cout << nl;
+}

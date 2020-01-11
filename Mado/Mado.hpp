@@ -194,8 +194,7 @@ class Mado {
 
     void moveHashWinner ( Move const move_ ) noexcept {
         if ( m_pos.m_board[ move_.to ] != value::vacant ) {
-            std::cout << " to not valid\n";
-            exit ( 0 );
+            std::cout << " to not valid " << move_ << nl;
         }
         m_last_move = move_;
         moveHashImpl ( move_ );
@@ -205,7 +204,7 @@ class Mado {
     }
 
     template<typename MovesContainerPtr>
-    [[nodiscard]] bool availableMoves ( MovesContainerPtr moves_ ) const noexcept {
+    [[nodiscard]] int availableMoves ( MovesContainerPtr moves_ ) const noexcept {
         // Mcts class takes/has ownership.
         for ( int s = static_cast<int> ( Board::size ( ) ), i = 0; i < s; ++i ) {
             // Find placements.
@@ -220,7 +219,7 @@ class Mado {
                         moves_->emplace_back ( i, to );
             }
         }
-        return moves_->size ( );
+        return static_cast<int> ( moves_->size ( ) );
     }
 
     [[nodiscard]] Move randomMove ( ) noexcept {

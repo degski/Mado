@@ -166,11 +166,9 @@ struct NodeData { // 17 bytes.
     using PlayerValue = typename State::value;
     using Player      = typename State::value_type;
 
-    Moves * m_moves = nullptr; // 8 bytes.
-
-    float m_score         = 0.0f; // 4 bytes.
-    std::int32_t m_visits = 0;    // 4 bytes.
-
+    Moves * m_moves            = nullptr;              // 8 bytes.
+    float m_score              = 0.0f;                 // 4 bytes.
+    std::int32_t m_visits      = 0;                    // 4 bytes.
     Player m_player_just_moved = PlayerValue::invalid; // 1 byte.
 
     // Constructors.
@@ -181,8 +179,12 @@ struct NodeData { // 17 bytes.
 
     NodeData ( State const & state_ ) noexcept {
         // std::cout << "nodedata constructed from state\n";
-        m_moves = new ( m_moves_pool->allocate ( ) ) Moves ( );
-        if ( not state_.availableMoves ( m_moves ) ) {
+        m_moves       = new ( m_moves_pool->allocate ( ) ) Moves ( );
+        int has_moves = state_.availableMoves ( m_moves );
+        if ( has_moves < 10 )
+            std::cout << state_ << "\n\n player " << state_.playerToMove ( ) << nl << nl;
+        if ( not has_moves ) {
+            m_moves->~vector ( );
             m_moves_pool->deallocate ( m_moves );
             m_moves = nullptr;
         }
@@ -211,13 +213,16 @@ struct NodeData { // 17 bytes.
     ~NodeData ( ) noexcept {
         if ( nullptr != m_moves ) {
             // std::cout << "moves deallocated\n";
+            m_moves->~vector ( );
             m_moves_pool->deallocate ( m_moves );
         }
     }
 
     [[nodiscard]] Move getUntriedMove ( ) noexcept {
+        // print_moves ( *m_moves );
         if ( 1 == m_moves->size ( ) ) {
             Move const m = m_moves->front ( );
+            m_moves->~vector ( );
             m_moves_pool->deallocate ( m_moves );
             m_moves = nullptr;
             return m;
@@ -255,6 +260,12 @@ struct NodeData { // 17 bytes.
         m_visits            = std::move ( nd_.m_visits );
         m_player_just_moved = std::move ( nd_.m_player_just_moved );
         return *this;
+    }
+
+    void printMoves ( ) {
+        for ( auto const & m : *m_moves )
+            std::cout << m;
+        std::cout << nl;
     }
 
     static MovesPoolPtr m_moves_pool;
@@ -394,10 +405,9 @@ class Mcts {
     // Moves.
 
     [[nodiscard]] bool hasNoUntriedMoves ( NodeID const node_ ) const noexcept { return nullptr == m_tree[ node_ ].m_moves; }
-
     [[nodiscard]] bool hasUntriedMoves ( NodeID const node_ ) const noexcept { return nullptr != m_tree[ node_ ].m_moves; }
-
     [[nodiscard]] Move getUntriedMove ( NodeID const node_ ) noexcept { return m_tree[ node_ ].getUntriedMove ( ); }
+    void printMoves ( NodeID const node_ ) noexcept { m_tree[ node_ ].printMoves ( ); }
 
     // Data.
 
@@ -517,8 +527,9 @@ class Mcts {
         }
         // max_iterations_ -= m_tree.nodeNum ( );
         while ( max_iterations_-- > 0 ) {
+            // std::cout << "count " << max_iterations_ << nl;
             NodeID node = m_tree.root_node;
-            State state ( state_ );
+            State state ( state );
             // Select a path through the tree to a leaf node.
             while ( hasNoUntriedMoves ( node ) and hasChildren ( node ) ) {
                 // UCT is only applied in nodes of which the visit count
@@ -551,30 +562,35 @@ class Mcts {
             // children of a node when a node's visit count equals T.
             if ( hasUntriedMoves ( node ) ) {
                 // if ( player == Player::Type::agent and m_tree [ node ].m_visits < threshold )
-                state.moveHashWinner ( getUntriedMove ( node ) ); // State update.
+                auto const l = getUntriedMove ( node );
+                state.moveHashWinner ( l ); // State update.
                 m_path.push ( addChild ( node, state ) );
             }
             // The player in back of path is player ( the player to Move ).We now play
             // randomly until the game ends.
-            if ( Player::Type::human == player.value ) {
-                state.simulate ( );
-                for ( Link link : m_path ) {
-                    // We have now reached a final state. Backpropagate the result up the
-                    // tree to the root node.
-                    updateData ( std::move ( link ), state );
-                }
+            // if ( Player::Type::human == player.value ) {
+            state.simulate ( );
+            for ( Link link : m_path ) {
+                // We have now reached a final state. Backpropagate the result up the
+                // tree to the root node.
+                updateData ( std::move ( link ), state );
             }
-            else {
-                for ( int i = 0; i < 10; ++i ) {
-                    State sim_state ( state );
-                    sim_state.simulate ( );
-                    // We have now reached a final state. Backpropagate the result up the
-                    // tree to the root node.
-                    for ( Link link : m_path )
-                        updateData ( std::move ( link ), sim_state );
-                }
+
+            /*
+        }
+        else {
+            for ( int i = 0; i < 10; ++i ) {
+                State sim_state ( state );
+                sim_state.simulate ( );
+                // We have now reached a final state. Backpropagate the result up the
+                // tree to the root node.
+                for ( Link link : m_path )
+                    updateData ( std::move ( link ), sim_state );
             }
-            m_path.resize ( m_path_size );
+        }
+
+        */
+            // m_path.resize ( m_path_size );
         }
         return getBestMove ( );
     }
