@@ -513,12 +513,9 @@ class Mcts {
 
     void connectStatesPath ( State const & state_ ) noexcept {
         // Adding the Move of the opponent to the path (and possibly to the tree).
-        std::cout << "connectStatesPath" << nl;
+        // std::cout << "connectStatesPath" << nl;
         NodeID const parent = m_path.back ( ).target;
-        NodeID child        = getNode ( state_.zobrist ( ) );
-        if ( Tree::NodeID::invalid ( ) == child )
-            child = addNode ( parent, state_ ).target;
-        m_path.push ( m_tree.link ( parent, child ) );
+        m_path.push ( m_tree.link ( parent, addChild ( parent, state_ ).target ) );
         ++m_path_size;
         std::cout << " size " << m_path_size << nl;
     }

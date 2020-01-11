@@ -281,7 +281,7 @@ int main7867878 ( ) {
     return EXIT_SUCCESS;
 }
 
-int main87989 ( ) {
+int main567657 ( ) {
 
     Mado<4> mado0;
 
