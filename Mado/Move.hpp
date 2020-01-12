@@ -92,6 +92,13 @@ struct Move {
 template<std::size_t R>
 using Moves = std::vector<Move<R>>;
 
+// R Max Av. Moves
+// 4     102
+// 5     150
+// 6     204
+// 7     272
+// 8     334
+
 template<typename Moves>
 void print_moves ( Moves const & moves_ ) noexcept {
     for ( auto const m : moves_ )
