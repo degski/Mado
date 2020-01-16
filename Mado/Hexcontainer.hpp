@@ -275,14 +275,16 @@ struct HexContainer : public HexBase<R, zero_base> {
     using const_reference = value_type const &;
     using rv_reference    = value_type &&;
 
-    using data_array = std::array<value_type, rad::size ( )>;
+    using data_array  = std::array<value_type, rad::size ( )>;
+    using color_array = std::array<sax::string_literal_t, size ( )>;
 
     using iterator       = typename data_array::iterator;
     using const_iterator = typename data_array::const_iterator;
 
     using const_neighbor_iterator = typename hex_base::const_iterator;
 
-    data_array m_data = { }; // value initialized, default is indeterminate.
+    data_array m_data    = { }; // value initialized, default is indeterminate.
+    color_array m_colors = { };
 
     HexContainer ( ) noexcept                      = default;
     HexContainer ( HexContainer const & ) noexcept = default;
@@ -306,6 +308,8 @@ struct HexContainer : public HexBase<R, zero_base> {
 
     [[nodiscard]] pointer data ( ) noexcept { return m_data.data ( ); }
     [[nodiscard]] const_pointer data ( ) const noexcept { return m_data.data ( ); }
+
+    [[nodiscard]] color_array & colors ( ) noexcept { return m_colors; }
 
     [[nodiscard]] iterator begin ( ) noexcept { return std::begin ( m_data ); }
     [[nodiscard]] const_iterator begin ( ) const noexcept { return std::cbegin ( m_data ); }
@@ -342,13 +346,16 @@ struct HexContainer : public HexBase<R, zero_base> {
     [[maybe_unused]] friend Stream & operator<< ( Stream & out_, HexContainer const & hc_ ) noexcept {
         constexpr int width = 1;
         size_type r         = 0;
-        const_pointer p     = hc_.m_data.data ( );
+        size_type i         = 0;
+        const_pointer d     = hc_.m_data.data ( );
+
         for ( ; r <= radius ( ); ++r ) {
             out_ << std::setw ( width ) << ' ';
             for ( size_type s = 0; s < radius ( ) - r; ++s )
                 out_ << std::setw ( width ) << ' ';
-            for ( size_type q = 0; q <= radius ( ) + r; ++q )
-                out_ << std::setw ( width ) << *p++ << ' ';
+            for ( size_type q = 0; q <= radius ( ) + r; ++q, ++i ) {
+                out_ << std::setw ( width ) << d[ i ] << ' ';
+            }
             out_ << nl;
         }
         --r;
@@ -356,8 +363,9 @@ struct HexContainer : public HexBase<R, zero_base> {
             out_ << std::setw ( width ) << ' ';
             for ( size_type s = 0; s < radius ( ) - r + 1; ++s )
                 out_ << std::setw ( width ) << ' ';
-            for ( size_type q = 0; q < radius ( ) + r; ++q )
-                out_ << std::setw ( width ) << *p++ << ' ';
+            for ( size_type q = 0; q < radius ( ) + r; ++q, ++i ) {
+                out_ << std::setw ( width ) << d[ i ] << ' ';
+            }
             out_ << nl;
         }
         out_ << nl;

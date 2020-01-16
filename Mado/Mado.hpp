@@ -122,7 +122,8 @@ class Mado {
     public:
     static constexpr int const max_no_moves                 = 4096;
     static constexpr ZobristHash const zobrist_hash_default = 0xb735a0f5839e4e22;
-    int move_no                                             = 0;
+
+    int move_no = 0;
 
     static int max_moves_size;
 
@@ -237,14 +238,14 @@ class Mado {
     [[maybe_unused]] value_type simulate ( ) noexcept {
         std::experimental::fixed_capacity_vector<Move, std::size_t{ Board::size ( ) } * std::size_t{ 2 }> available_moves;
         while ( nonterminal ( ) and availableMoves ( &available_moves ) ) {
-            // std::cout << *this << nl;
+            std::cout << *this << nl;
             auto const s = available_moves.size ( );
             moveWinner ( available_moves[ bounded_integer ( s ) ] );
             if ( max_moves_size < s )
                 max_moves_size = s;
             available_moves.clear ( );
         }
-        // std::cout << *this << nl;
+        std::cout << *this << nl;
         return m_winner;
     }
 

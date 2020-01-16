@@ -200,7 +200,7 @@ int main786 ( ) {
 
 #    include "Mcts.hpp"
 
-int main ( ) {
+int main96768 ( ) {
     using State  = Mado<4>;
     using Player = typename State::value_type;
     using Mcts   = mcts::Mcts<State>;
@@ -259,7 +259,7 @@ int main ( ) {
 // -fsanitize=address
 // -Xclang -fconstexpr-steps -Xclang 10000000
 
-int main7867878 ( ) {
+int main ( ) {
 
     Mado<4> mado;
 
@@ -269,7 +269,7 @@ int main7867878 ( ) {
 
     timer.start ( );
 
-    for ( int i = 0; i < 1'000'000; ++i ) {
+    for ( int i = 0; i < 1; ++i ) {
         ( ( c + 1 )[ mado.simulate ( ).as_index ( ) ] ) += 1;
         mado.reset ( );
     }
