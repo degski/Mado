@@ -274,12 +274,8 @@ class Mado {
     void set_board_colors ( ) const noexcept {
         std::transform ( std::begin ( m_pos.m_board ), std::end ( m_pos.m_board ), std::begin ( Board::color_codes ),
                          [] ( value_type field ) noexcept {
-                             switch ( static_cast<int> ( field.as_index ( ) ) ) {
-                                 case static_cast<int> ( value_type::Type::agent ): return sax::fg::blue;
-                                 case static_cast<int> ( value_type::Type::vacant ): return sax::fg::white;
-                                 case static_cast<int> ( value_type::Type::human ): return sax::fg::red;
-                                 default: return sax::none;
-                             }
+                             constexpr sax::string_literal_t const code[ 3 ]{ sax::fg::blue, sax::fg::white, sax::fg::red };
+                             return code[ field.as_index ( ) + 1 ];
                          } );
         if ( m_last_move.is_slide ( ) )
             Board::color_codes[ m_last_move.from ] = sax::fg::bright_white;
