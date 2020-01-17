@@ -277,9 +277,9 @@ class Mado {
                              constexpr sax::string_literal_t const code[ 3 ]{ sax::fg::blue, sax::fg::white, sax::fg::red };
                              return code[ field.as_index ( ) + 1 ];
                          } );
-        if ( m_last_move.is_slide ( ) )
-            Board::color_codes[ m_last_move.from ] = sax::fg::bright_white;
         Board::color_codes[ m_last_move.to ] = playerJustMoved ( ).agent ( ) ? sax::fg::bright_blue : sax::fg::bright_red;
+        if ( m_last_move.is_slide ( ) )
+            Board::color_codes[ m_last_move.from ] = Board::color_codes[ m_last_move.to ];
     }
 
     public:
@@ -287,9 +287,12 @@ class Mado {
     [[maybe_unused]] friend Stream & operator<< ( Stream & out_, Mado const & b_ ) noexcept {
         b_.set_board_colors ( );
         out_ << b_.m_pos.m_board << "  move " << b_.move_no << " hash 0x" << std::hex << b_.m_zobrist_hash << " slides "
-             << static_cast<int> ( b_.m_pos.m_slides ) << " last move " << b_.m_last_move << nl;
+             << static_cast<int> ( b_.m_pos.m_slides ) << " last move "
+             << ( b_.playerJustMoved ( ).agent ( ) ? sax::fg::bright_blue : sax::fg::bright_red ) << b_.m_last_move << sax::reset
+             << nl;
         if ( b_.terminal ( ) )
-            out_ << "  winner: " << b_.winner ( ) << nl;
+            out_ << "  winner: " << ( b_.playerJustMoved ( ).agent ( ) ? sax::fg::bright_blue : sax::fg::bright_red )
+                 << b_.winner ( ) << sax::reset << nl;
         out_ << nl;
         return out_;
     }
