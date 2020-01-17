@@ -283,7 +283,6 @@ struct HexContainer : public HexBase<R, zero_base> {
 
     using const_neighbor_iterator = typename hex_base::const_iterator;
 
-    data_array m_data = { };        // value initialized, default is indeterminate.
     static color_array color_codes; // Allows for thread_local.
 
     HexContainer ( ) noexcept                      = default;
@@ -382,6 +381,8 @@ struct HexContainer : public HexBase<R, zero_base> {
     void serialize ( Archive & ar_ ) {
         ar_ ( m_data );
     }
+
+    data_array m_data = { }; // value initialized, default is indeterminate.
 };
 
 template<typename Type, int R, bool zero_base>

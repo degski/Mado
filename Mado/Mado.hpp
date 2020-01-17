@@ -291,8 +291,8 @@ class Mado {
              << ( b_.playerJustMoved ( ).agent ( ) ? sax::fg::bright_blue : sax::fg::bright_red ) << b_.m_last_move << sax::reset
              << nl;
         if ( b_.terminal ( ) )
-            out_ << "  winner: " << ( b_.playerJustMoved ( ).agent ( ) ? sax::fg::bright_blue : sax::fg::bright_red )
-                 << b_.winner ( ) << sax::reset << nl;
+            out_ << "  winner: " << ( b_.winner ( ).agent ( ) ? sax::fg::bright_blue : sax::fg::bright_red ) << b_.winner ( )
+                 << sax::reset << nl;
         out_ << nl;
         return out_;
     }
