@@ -270,8 +270,26 @@ class Mado {
 
     [[nodiscard]] Move lastMove ( ) const noexcept { return m_last_move; }
 
+    private:
+    void set_board_colors ( ) const noexcept {
+        std::transform ( std::begin ( m_pos.m_board ), std::end ( m_pos.m_board ), std::begin ( Board::color_codes ),
+                         [] ( value_type field ) noexcept {
+                             switch ( static_cast<int> ( field.as_index ( ) ) ) {
+                                 case static_cast<int> ( value_type::Type::agent ): return sax::fg::blue;
+                                 case static_cast<int> ( value_type::Type::vacant ): return sax::fg::white;
+                                 case static_cast<int> ( value_type::Type::human ): return sax::fg::red;
+                                 default: return sax::none;
+                             }
+                         } );
+        if ( m_last_move.is_slide ( ) )
+            Board::color_codes[ m_last_move.from ] = sax::fg::bright_white;
+        Board::color_codes[ m_last_move.to ] = playerJustMoved ( ).agent ( ) ? sax::fg::bright_blue : sax::fg::bright_red;
+    }
+
+    public:
     template<typename Stream>
     [[maybe_unused]] friend Stream & operator<< ( Stream & out_, Mado const & b_ ) noexcept {
+        b_.set_board_colors ( );
         out_ << b_.m_pos.m_board << "  move " << b_.move_no << " hash 0x" << std::hex << b_.m_zobrist_hash << " slides "
              << static_cast<int> ( b_.m_pos.m_slides ) << " last move " << b_.m_last_move << nl;
         if ( b_.terminal ( ) )

@@ -86,6 +86,9 @@ struct Player {
     [[nodiscard]] bool vacant ( ) const noexcept { return Type::vacant == value; }
     [[nodiscard]] bool occupied ( ) const noexcept { return static_cast<int> ( value ) & 1; }
 
+    [[nodiscard]] bool agent ( ) const noexcept { return Type::agent == value; }
+    [[nodiscard]] bool human ( ) const noexcept { return Type::human == value; }
+
     [[nodiscard]] std::string str ( ) const noexcept {
         constexpr char name[ 4 ]{ ' ', 'A', '*', 'H' };
         return { name[ static_cast<int> ( value ) + 2 ] };

@@ -283,8 +283,8 @@ struct HexContainer : public HexBase<R, zero_base> {
 
     using const_neighbor_iterator = typename hex_base::const_iterator;
 
-    data_array m_data    = { }; // value initialized, default is indeterminate.
-    color_array m_colors = { };
+    data_array m_data = { };        // value initialized, default is indeterminate.
+    static color_array color_codes; // Allows for thread_local.
 
     HexContainer ( ) noexcept                      = default;
     HexContainer ( HexContainer const & ) noexcept = default;
@@ -308,8 +308,6 @@ struct HexContainer : public HexBase<R, zero_base> {
 
     [[nodiscard]] pointer data ( ) noexcept { return m_data.data ( ); }
     [[nodiscard]] const_pointer data ( ) const noexcept { return m_data.data ( ); }
-
-    [[nodiscard]] color_array & colors ( ) noexcept { return m_colors; }
 
     [[nodiscard]] iterator begin ( ) noexcept { return std::begin ( m_data ); }
     [[nodiscard]] const_iterator begin ( ) const noexcept { return std::cbegin ( m_data ); }
@@ -348,13 +346,15 @@ struct HexContainer : public HexBase<R, zero_base> {
         size_type r         = 0;
         size_type i         = 0;
         const_pointer d     = hc_.m_data.data ( );
-
         for ( ; r <= radius ( ); ++r ) {
             out_ << std::setw ( width ) << ' ';
             for ( size_type s = 0; s < radius ( ) - r; ++s )
                 out_ << std::setw ( width ) << ' ';
             for ( size_type q = 0; q <= radius ( ) + r; ++q, ++i ) {
-                out_ << std::setw ( width ) << d[ i ] << ' ';
+                if ( color_codes[ i ] )
+                    out_ << std::setw ( width ) << color_codes[ i ] << d[ i ] << sax::reset << ' ';
+                else
+                    out_ << std::setw ( width ) << d[ i ] << ' ';
             }
             out_ << nl;
         }
@@ -364,7 +364,10 @@ struct HexContainer : public HexBase<R, zero_base> {
             for ( size_type s = 0; s < radius ( ) - r + 1; ++s )
                 out_ << std::setw ( width ) << ' ';
             for ( size_type q = 0; q < radius ( ) + r; ++q, ++i ) {
-                out_ << std::setw ( width ) << d[ i ] << ' ';
+                if ( color_codes[ i ] )
+                    out_ << std::setw ( width ) << color_codes[ i ] << d[ i ] << sax::reset << ' ';
+                else
+                    out_ << std::setw ( width ) << d[ i ] << ' ';
             }
             out_ << nl;
         }
@@ -380,3 +383,6 @@ struct HexContainer : public HexBase<R, zero_base> {
         ar_ ( m_data );
     }
 };
+
+template<typename Type, int R, bool zero_base>
+typename HexContainer<Type, R, zero_base>::color_array HexContainer<Type, R, zero_base>::color_codes = { };

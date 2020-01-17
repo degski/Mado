@@ -297,7 +297,7 @@ int main567657 ( ) {
 
     Moves<4> moves;
 
-    mado.availableMoves ( &moves );
+    bool N = mado.availableMoves ( &moves );
 
     print_moves ( moves );
 

@@ -596,8 +596,8 @@ class Mcts {
     private:
     void prune_impl ( Mcts * new_mcts_, const State & state_ ) noexcept {
         using Visited = typename Tree::Visited; // New m_nodes by old_index.
-        using Stack   = typename Tree::Stack;
-        using Queue   = Queue<NodeID>;
+        // using Stack   = typename Tree::Stack;
+        using Queue = Queue<NodeID>;
         // Prune Tree.
         NodeID const old_node          = getNode ( state_.zobrist ( ) );
         Tree & new_tree                = new_mcts_->m_tree;
