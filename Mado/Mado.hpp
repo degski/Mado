@@ -194,9 +194,8 @@ class Mado {
     }
 
     void moveHashWinner ( Move const move_ ) noexcept {
-        if ( m_pos.m_board[ move_.to ] != value::vacant ) {
+        if ( m_pos.m_board[ move_.to ] != value::vacant )
             std::cout << " to not valid " << move_ << nl;
-        }
         m_last_move = move_;
         moveHashImpl ( move_ );
         checkForWinner ( );
@@ -277,9 +276,11 @@ class Mado {
                              constexpr sax::string_literal_t const code[ 3 ]{ sax::fg::blue, sax::fg::white, sax::fg::red };
                              return code[ field.as_index ( ) + 1 ];
                          } );
-        Board::color_codes[ m_last_move.to ] = playerJustMoved ( ).agent ( ) ? sax::fg::bright_blue : sax::fg::bright_red;
-        if ( m_last_move.is_slide ( ) )
-            Board::color_codes[ m_last_move.from ] = Board::color_codes[ m_last_move.to ];
+        if ( m_last_move.is_valid ( ) ) {
+            Board::color_codes[ m_last_move.to ] = playerJustMoved ( ).agent ( ) ? sax::fg::bright_blue : sax::fg::bright_red;
+            if ( m_last_move.is_slide ( ) )
+                Board::color_codes[ m_last_move.from ] = Board::color_codes[ m_last_move.to ];
+        }
     }
 
     public:
