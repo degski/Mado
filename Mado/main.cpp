@@ -144,7 +144,7 @@ void handleEptr ( std::exception_ptr eptr ) { // Passing by value is ok.
     return 0;
 }
 
-int main786 ( ) {
+int main986 ( ) {
     std::exception_ptr eptr;
     try {
         // Application app;
@@ -259,7 +259,28 @@ int main96768 ( ) {
 // -fsanitize=address
 // -Xclang -fconstexpr-steps -Xclang 10000000
 
+#include <fcntl.h>
+#include <io.h>
+
+void set_mode_unicode ( ) noexcept { _setmode ( _fileno ( stdout ), _O_U8TEXT ); }
+
 int main ( ) {
+
+// Set output mode to handle virtual terminal sequences
+    HANDLE hOut = GetStdHandle ( STD_OUTPUT_HANDLE );
+    if ( hOut == INVALID_HANDLE_VALUE ) {
+        return GetLastError ( );
+    }
+
+    DWORD dwMode = 0;
+    if ( !GetConsoleMode ( hOut, &dwMode ) ) {
+        return GetLastError ( );
+    }
+
+    dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+    if ( !SetConsoleMode ( hOut, dwMode ) ) {
+        return GetLastError ( );
+    }
 
     Mado<4> mado;
 

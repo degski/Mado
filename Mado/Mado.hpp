@@ -270,7 +270,7 @@ class Mado {
     [[nodiscard]] Move lastMove ( ) const noexcept { return m_last_move; }
 
     private:
-    void set_board_colors ( ) const noexcept {
+    void update_board_colors ( ) const noexcept {
         std::transform ( std::begin ( m_pos.m_board ), std::end ( m_pos.m_board ), std::begin ( Board::color_codes ),
                          [] ( value_type field ) noexcept {
                              constexpr sax::string_literal_t const code[ 3 ]{ sax::fg::blue, sax::fg::white, sax::fg::red };
@@ -286,7 +286,7 @@ class Mado {
     public:
     template<typename Stream>
     [[maybe_unused]] friend Stream & operator<< ( Stream & out_, Mado const & b_ ) noexcept {
-        b_.set_board_colors ( );
+        b_.update_board_colors ( );
         out_ << b_.m_pos.m_board << "  move " << b_.move_no << " hash 0x" << std::hex << b_.m_zobrist_hash << " slides "
              << static_cast<int> ( b_.m_pos.m_slides ) << " last move "
              << ( b_.playerJustMoved ( ).agent ( ) ? sax::fg::bright_blue : sax::fg::bright_red ) << b_.m_last_move << sax::reset
