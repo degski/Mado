@@ -255,9 +255,9 @@ AppImpl<R>::AppImpl ( ) :
     sf::loadFromResource ( m_font_numbers, __NUMBERS_FONT__ );
     sf::loadFromResource ( m_font_dottie, __DOTTIE_FONT__ );
     // Load sound.
-    // sf::loadFromResource ( m_music, MUSIC );
-    // m_music.setVolume ( 10.0f );
-    // m_music.setLoop ( true );
+    sf::loadFromResource ( m_music, MUSIC );
+    m_music.setVolume ( 10.0f );
+    m_music.setLoop ( true );
     sf::Music::TimeSpan loop;
     loop.offset = sf::seconds ( 3.0f );
     loop.length = sf::seconds ( 192.0f );
@@ -272,7 +272,7 @@ AppImpl<R>::AppImpl ( ) :
     m_music.play ( );
     // Player to Move.
     // m_player_to_move.what = display::in_active_green;
-    // Ge started.
+    // Get started.
     m_mouse.initialize ( m_window );
     Animator::instance ( ).reserve ( 32 );
     setupStartupAnimation ( );
