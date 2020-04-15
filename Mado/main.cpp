@@ -1,7 +1,7 @@
 
 // MIT License
 //
-// Copyright (c) 2019 degski
+// Copyright (c) 2019, 2020 degski
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -144,7 +144,7 @@ void handleEptr ( std::exception_ptr eptr ) { // Passing by value is ok.
     return 0;
 }
 
-int main ( ) {
+int main65675 ( ) {
     std::exception_ptr eptr;
     try {
         // Application app;
@@ -259,7 +259,7 @@ int main96768 ( ) {
 // -fsanitize=address
 // -Xclang -fconstexpr-steps -Xclang 10000000
 
-int main857857 ( ) {
+int main67567 ( ) {
 
     sax::enable_virtual_terminal_sequences ( );
 
@@ -283,7 +283,9 @@ int main857857 ( ) {
     return EXIT_SUCCESS;
 }
 
-int main567657 ( ) {
+int main ( ) {
+
+    sax::enable_virtual_terminal_sequences ( );
 
     Mado<4> mado0;
 

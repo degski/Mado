@@ -1,7 +1,7 @@
 
 // MIT License
 //
-// Copyright (c) 2019 degski
+// Copyright (c) 2019, 2020 degski
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -859,7 +859,7 @@ void computeMove ( State & state_, int max_iterations_ = 100'000 ) noexcept {
 #if 0
 // MIT License
 //
-// Copyright (c) 2019 degski
+// Copyright (c) 2019, 2020 degski
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
