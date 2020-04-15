@@ -282,9 +282,8 @@ AppImpl<R>::AppImpl ( ) :
 template<int R>
 void AppImpl<R>::setIcon ( ) noexcept {
     HICON hIcon = LoadIcon ( GetModuleHandle ( NULL ), MAKEINTRESOURCE ( IDI_ICON1 ) );
-    if ( hIcon ) {
+    if ( hIcon )
         SendMessage ( m_window.getSystemHandle ( ), WM_SETICON, ICON_BIG, ( LPARAM ) hIcon );
-    }
 }
 
 template<int R>
@@ -361,7 +360,7 @@ void AppImpl<R>::mouseEvents ( sf::Event const & event_ ) {
         Hex const hex_position = pointToHex ( mouse_position );
         // if ( hex_position.valid ( ) ) {
         if ( Hex::is_valid ( hex_position.q, hex_position.r ) ) {
-            if ( not( m_play_area.agent_is_making_move ) and sf::Mouse::isButtonPressed ( sf::Mouse::Left ) ) {
+            if ( not m_play_area.agent_is_making_move and sf::Mouse::isButtonPressed ( sf::Mouse::Left ) ) {
                 // Selected a circle.
                 bool no_reset = false;
                 switch ( m_human_move.state ( ) ) {
@@ -379,7 +378,7 @@ void AppImpl<R>::mouseEvents ( sf::Event const & event_ ) {
                             m_human_move.to ( hex_position );
                         break;
                 }
-                if ( not( no_reset ) )
+                if ( not no_reset )
                     m_human_move.reset ( );
             }
             else {
@@ -397,7 +396,7 @@ void AppImpl<R>::mouseEvents ( sf::Event const & event_ ) {
                         std::cout << "clock clicked\n";
                     }
                     else {
-                        if ( not( m_play_area.agent_is_making_move ) ) {
+                        if ( not m_play_area.agent_is_making_move ) {
                             // Clicked the new area, after selecting where to Move from.
                             if ( NextMove::State::Move == m_human_move.state ( ) ) {
                                 m_human_move.reset ( );
