@@ -217,7 +217,6 @@ struct NodeData { // 25 bytes.
     }
 
     [[nodiscard]] Move getUntriedMove ( ) noexcept {
-        std::cout << "um " << m_moves->size ( ) << nl;
         if ( 1 == m_moves->size ( ) ) {
             Move const m = m_moves->front ( );
             m_moves->~vector ( );
@@ -231,6 +230,17 @@ struct NodeData { // 25 bytes.
         m_moves->operator[] ( i ) = m_moves->back ( );
         m_moves->pop_back ( );
         return m;
+    }
+
+    void removeMove ( Move const m_ ) noexcept {
+        m_moves->erase (
+            std::remove_if ( std::begin ( *m_moves ), std::end ( *m_moves ), [ m_ ] ( Move const & m ) { return m_.to == m.to; } ),
+            std::end ( *m_moves ) );
+        if ( m_moves->empty ( ) ) {
+            m_moves->~vector ( );
+            m_moves_pool.deallocate ( m_moves );
+            m_moves = nullptr;
+        }
     }
 
     [[nodiscard]] NodeData & operator+= ( NodeData const & rhs_ ) noexcept {
@@ -365,7 +375,6 @@ class Mcts {
 
     private:
     void initialize ( State const & state_ ) noexcept {
-        std::cout << "initing 0";
         if ( nullptr == m_transposition_table.get ( ) )
             m_transposition_table.reset ( new TranspositionTable ( ) );
         // Set root_arc and root_node data.
@@ -513,11 +522,11 @@ class Mcts {
 
     void connectStatesPath ( State const & state_ ) noexcept {
         // Adding the Move of the opponent to the path (and possibly to the tree).
-        // std::cout << "connectStatesPath" << nl;
+        std::cout << "connectStatesPath" << nl;
         NodeID const parent = m_path.back ( ).target;
+        m_tree[ parent ].removeMove ( state_.lastMove ( ) );
         m_path.push ( m_tree.link ( parent, addChild ( parent, state_ ).target ) );
         ++m_path_size;
-        std::cout << " size " << m_path_size << nl;
     }
 
     [[nodiscard]] Move compute ( State const & state_, int max_iterations_ = 100'000 ) noexcept {
@@ -545,28 +554,28 @@ class Mcts {
                 m_path.push ( child );
                 node = child.target;
             }
-            /*
 
-            static int cnt = 0;
-
-            if ( state != m_tree [ node ].m_state ) {
-
-                state.print ( );
-                m_tree [ node ].m_state.print ( );
-
-                ++cnt;
-
-                if ( cnt == 100 ) exit ( 0 );
-            }
-
-            */
             // If we are not already at the final state, expand the tree with a new
             // node and Move there.
             // In addition to expanding one node per simulated game, we also expand all the
             // children of a node when a node's visit count equals T.
             if ( hasUntriedMoves ( node ) ) {
-                // if ( player == Player::Type::agent and m_tree [ node ].m_visits < threshold )
-                state.moveHashWinner ( getUntriedMove ( node ) ); // State update.
+
+                auto m = getUntriedMove ( node );
+
+                std::experimental::fixed_capacity_vector<Move, std::size_t{ 61 } * std::size_t{ 2 }> available_moves;
+                state.availableMoves ( &available_moves );
+                if ( std::end ( available_moves ) ==
+                     std::find ( std::begin ( available_moves ), std::end ( available_moves ), m ) ) {
+
+                    std::cout << "size " << available_moves.size ( ) << nl;
+                    for ( auto & m : available_moves )
+                        std::cout << m;
+                    std::cout << nl;
+                    exit ( 0 );
+                }
+
+                state.moveHashWinner ( m ); // State update.
                 m_path.push ( addChild ( node, state ) );
             }
             // The player in back of path is player ( the player to Move ).We now play

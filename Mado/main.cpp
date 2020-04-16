@@ -200,7 +200,8 @@ int main65675 ( ) {
 
 #    include "Mcts.hpp"
 
-int main96768 ( ) {
+int main ( ) {
+    sax::enable_virtual_terminal_sequences ( );
     using State  = Mado<4>;
     using Player = typename State::value_type;
     using Mcts   = mcts::Mcts<State>;
@@ -215,11 +216,11 @@ int main96768 ( ) {
             Mcts *mcts_agent = new Mcts ( ), *mcts_human = new Mcts ( );
             match_start = Clock::instance ( ).now ( );
             do {
-                state.moveHashWinner ( state.playerToMove ( ) == Player::Type::agent ? mcts_agent->compute ( state, 20'000 )
+                state.moveHashWinner_ ( state.playerToMove ( ) == Player::Type::agent ? mcts_agent->compute ( state, 20'000 )
                                                                                      : mcts_human->compute ( state, 2'000 ) );
                 // Mcts::prune ( state.playerToMove ( ) == Player::Type::agent ? mcts_agent : mcts_human, state );
                 std::cout << state << nl;
-            } while ( not( winner = state.ended ( ) ) );
+            } while ( true );//not( winner = state.ended ( ) ) );
 #    if 0
             state.print ( );
             if ( winner.get ( ) == Player::Type::agent ) {
@@ -283,7 +284,7 @@ int main67567 ( ) {
     return EXIT_SUCCESS;
 }
 
-int main ( ) {
+int main786786 ( ) {
 
     sax::enable_virtual_terminal_sequences ( );
 

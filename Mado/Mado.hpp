@@ -180,7 +180,6 @@ class Mado {
     void moveHash ( Move const move_ ) noexcept {
         m_last_move = move_;
         moveHashImpl ( move_ );
-        // std::cout << *this << nl;
         // writePositionData ( );
         m_pos.m_player_to_move.next ( );
     }
@@ -194,8 +193,22 @@ class Mado {
     }
 
     void moveHashWinner ( Move const move_ ) noexcept {
-        if ( m_pos.m_board[ move_.to ] != value::vacant )
+        if ( m_pos.m_board[ move_.to ] != value::vacant ) {
             std::cout << " to not valid " << move_ << nl;
+            exit ( 0 );
+        }
+        m_last_move = move_;
+        moveHashImpl ( move_ );
+        checkForWinner ( );
+        // writePositionData ( );
+        m_pos.m_player_to_move.next ( );
+    }
+
+    void moveHashWinner_ ( Move const move_ ) noexcept {
+        if ( m_pos.m_board[ move_.to ] != value::vacant ) {
+            std::cout << " to not valid 1 " << move_ << nl << *this << nl;
+            exit ( 0 );
+        }
         m_last_move = move_;
         moveHashImpl ( move_ );
         checkForWinner ( );
@@ -205,7 +218,6 @@ class Mado {
 
     template<typename MovesContainerPtr>
     [[nodiscard]] int availableMoves ( MovesContainerPtr moves_ ) const noexcept {
-        // Mcts class takes/has ownership.
         for ( int s = static_cast<int> ( Board::size ( ) ), i = 0; i < s; ++i ) {
             // Find placements.
             if ( m_pos.m_board[ i ].vacant ( ) ) {
@@ -237,14 +249,14 @@ class Mado {
     [[maybe_unused]] value_type simulate ( ) noexcept {
         std::experimental::fixed_capacity_vector<Move, std::size_t{ Board::size ( ) } * std::size_t{ 2 }> available_moves;
         while ( nonterminal ( ) and availableMoves ( &available_moves ) ) {
-            std::cout << *this << nl;
+            // std::cout << *this << nl;
             auto const s = available_moves.size ( );
             moveWinner ( available_moves[ bounded_integer ( s ) ] );
             if ( max_moves_size < s )
                 max_moves_size = s;
             available_moves.clear ( );
         }
-        std::cout << *this << nl;
+        // std::cout << *this << nl;
         return m_winner;
     }
 
