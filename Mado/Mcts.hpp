@@ -264,7 +264,7 @@ struct NodeData { // 25 bytes.
     }
 
     [[maybe_unused]] NodeData & operator= ( NodeData && nd_ ) noexcept {
-        // std::cout << "nodedata Move assigned\n";
+        // std::cout << "nodedata move assigned\n";
         std::swap ( m_moves, nd_.m_moves );
         m_score             = std::move ( nd_.m_score );
         m_visits            = std::move ( nd_.m_visits );

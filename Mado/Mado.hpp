@@ -194,7 +194,7 @@ class Mado {
 
     void moveHashWinner ( Move const move_ ) noexcept {
         if ( m_pos.m_board[ move_.to ] != value::vacant ) {
-            std::cout << " to not valid " << move_ << nl;
+            std::cout << "to is not valid 0 " << move_ << nl << *this << nl;
             exit ( 0 );
         }
         m_last_move = move_;
@@ -206,7 +206,7 @@ class Mado {
 
     void moveHashWinner_ ( Move const move_ ) noexcept {
         if ( m_pos.m_board[ move_.to ] != value::vacant ) {
-            std::cout << " to not valid 1 " << move_ << nl << *this << nl;
+            std::cout << "to is not valid 1 " << move_ << nl << *this << nl;
             exit ( 0 );
         }
         m_last_move = move_;
@@ -234,7 +234,7 @@ class Mado {
         return static_cast<int> ( moves_->size ( ) );
     }
 
-    [[nodiscard]] Move randomMove ( ) noexcept {
+    [[nodiscard]] Move randomMove ( ) const noexcept {
         std::experimental::fixed_capacity_vector<Move, std::size_t{ Board::size ( ) } * std::size_t{ 2 }> available_moves;
         return nonterminal ( ) and availableMoves ( &available_moves )
                    ? available_moves[ bounded_integer ( available_moves.size ( ) ) ]

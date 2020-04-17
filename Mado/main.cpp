@@ -198,7 +198,7 @@ int main65675 ( ) {
     return EXIT_SUCCESS;
 }
 
-#    include "Mcts.hpp"
+#    include "Mcts-2.hpp"
 
 int main ( ) {
     sax::enable_virtual_terminal_sequences ( );
@@ -213,30 +213,14 @@ int main ( ) {
     for ( int i = 0; i < 1; ++i ) {
         {
             State state;
-            Mcts *mcts_agent = new Mcts ( ), *mcts_human = new Mcts ( );
+
             match_start = Clock::instance ( ).now ( );
             do {
-                state.moveHashWinner_ ( state.playerToMove ( ) == Player::Type::agent ? mcts_agent->compute ( state, 20'000 )
-                                                                                     : mcts_human->compute ( state, 2'000 ) );
-                // Mcts::prune ( state.playerToMove ( ) == Player::Type::agent ? mcts_agent : mcts_human, state );
+                Mcts mcts_agent, mcts_human;
+                state.moveHashWinner_ ( state.playerToMove ( ) == Player::Type::agent ? mcts_agent.compute ( state, 20'000 )
+                                                                                      : mcts_human.compute ( state, 2'000 ) );
                 std::cout << state << nl;
-            } while ( true );//not( winner = state.ended ( ) ) );
-#    if 0
-            state.print ( );
-            if ( winner.get ( ) == Player::Type::agent ) {
-                std::wcout << L" Winner: Agent\n";
-            }
-            else if ( winner.get ( ) == Player::Type::human ) {
-                std::wcout << L" Winner: Human\n";
-            }
-            else {
-                std::wcout << L" Draw\n";
-            }
-#    endif
-            // saveToFile ( * mcts_human, "human" );
-            delete mcts_human;
-            // saveToFile ( * mcts_agent, "agent" );
-            delete mcts_agent;
+            } while ( state.nonterminal ( ) );
         }
         elapsed += since ( match_start );
         ++matches;
