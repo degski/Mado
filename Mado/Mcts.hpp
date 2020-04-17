@@ -232,10 +232,12 @@ struct NodeData { // 25 bytes.
         return m;
     }
 
-    void removeMove ( Move const m_ ) noexcept {
+    void updateMoves ( Move const m_ ) noexcept {
         m_moves->erase (
             std::remove_if ( std::begin ( *m_moves ), std::end ( *m_moves ), [ m_ ] ( Move const & m ) { return m_.to == m.to; } ),
             std::end ( *m_moves ) );
+        if ( m_.is_slide ( ) )
+            m_moves->emplace_back ( m_.from );
         if ( m_moves->empty ( ) ) {
             m_moves->~vector ( );
             m_moves_pool.deallocate ( m_moves );
@@ -524,7 +526,7 @@ class Mcts {
         // Adding the Move of the opponent to the path (and possibly to the tree).
         std::cout << "connectStatesPath" << nl;
         NodeID const parent = m_path.back ( ).target;
-        m_tree[ parent ].removeMove ( state_.lastMove ( ) );
+        m_tree[ parent ].updateMoves ( state_.lastMove ( ) );
         m_path.push ( m_tree.link ( parent, addChild ( parent, state_ ).target ) );
         ++m_path_size;
     }
