@@ -54,6 +54,9 @@
     <ClInclude Include="Mcts-2.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="connect_four.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Mado.rc">

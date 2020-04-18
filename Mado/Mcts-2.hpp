@@ -46,6 +46,7 @@
 
 #include "Globals.hpp"
 
+#include "../../compact_vector/include/compact_vector.hpp"
 #include "../../MCTSSearchTree/include/flat_search_tree.hpp"
 
 namespace mcts {
@@ -127,26 +128,49 @@ struct ArcData { // 2 bytes
 };
 
 template<typename State>
-struct NodeData { // 24 bytes.
+struct NodeData { // 24 bytes
 
+    using Move        = typename State::Move;
+    using Moves       = typename State::Moves;
+    using ZobristHash = typename State::ZobristHash;
     using PlayerValue = typename State::value;
     using Player      = typename State::value_type;
 
-    using ZobristHash = typename State::ZobristHash;
-
-    ZobristHash m_zobrist_hash          = State::zobrist_hash_default; // 8 bytes
-    float m_score                       = 0.0f;                        // 4 bytes
-    std::int32_t m_visits               = 0;                           // 4 bytes
-    mutable bool m_has_no_untried_moves = false;                       // 4 bytes
-    Player m_player_just_moved          = PlayerValue::invalid;        // 1 byte
+    Moves m_moves;                                            // 8 bytes
+    ZobristHash m_zobrist_hash = State::zobrist_hash_default; // 8 bytes
+    float m_score              = 0.0f;                        // 4 bytes
+    int m_visits               = 0;                           // 4 bytes
+    Player m_player_just_moved = PlayerValue::invalid;        // 1 byte
 
     NodeData ( ) noexcept                  = default;
     NodeData ( NodeData const & ) noexcept = default;
     NodeData ( NodeData && ) noexcept      = default;
     NodeData ( State const & state_ ) noexcept :
-        m_zobrist_hash{ state_.zobrist ( ) }, m_player_just_moved{ state_.playerJustMoved ( ) } {}
+        m_moves{ state_.availableMoves ( ) }, m_zobrist_hash{ state_.zobrist ( ) }, m_player_just_moved{
+            state_.playerJustMoved ( )
+        } {}
 
     ~NodeData ( ) noexcept = default;
+
+    [[nodiscard]] Move getUntriedMove ( ) noexcept {
+        if ( 1 == m_moves.size ( ) ) {
+            Move m = m_moves.front ( );
+            m_moves.reset ( );
+            return m;
+        }
+        // Random draw.
+        int const i              = sax::uniform_int_distribution<int> ( 0, m_moves.size ( ) - 1 ) ( Rng::generator ( ) );
+        Move const m             = m_moves.operator[] ( i );
+        m_moves.operator[] ( i ) = m_moves.back ( );
+        m_moves.pop_back ( );
+        return m;
+    }
+
+    void removeMove ( Move const m_ ) noexcept {
+        m_moves.unordered_erase_v ( m_ );
+        if ( m_moves.empty ( ) )
+            m_moves.reset ( );
+    }
 
     [[maybe_unused]] NodeData & operator= ( NodeData const & ) noexcept = default;
     [[maybe_unused]] NodeData & operator= ( NodeData && ) noexcept = default;
@@ -161,8 +185,8 @@ struct NodeData { // 24 bytes.
     friend class cereal::access;
 
     template<class Archive>
-    void serialize ( Archive & ar_ ) noexcept {
-        ar_ ( m_zobrist_hash, m_score, m_visits, m_has_no_untried_moves, m_player_just_moved );
+    void serialize ( Archive & ar_ ) noexcept { // m_moves not serialized
+        ar_ ( m_zobrist_hash, m_score, m_visits, m_player_just_moved );
     }
 };
 
@@ -209,15 +233,6 @@ class Mcts {
 
     bool m_not_initialized = true;
 
-    // The purpose of the m_path is to maintain the path with updates
-    // (of the visits/scores) all the way to the original root (start
-    // of the game). It's also used as a scrath-pad for the updates
-    // after play-out. Each Move and players' Move gets added to this
-    // path.
-
-    Path m_path;
-    int m_path_size;
-
     private:
     void initialize ( State const & state_ ) noexcept {
         // Set root_arc and root_node data.
@@ -227,8 +242,6 @@ class Mcts {
         m_transposition_table.emplace ( state_.zobrist ( ), m_tree.root_node );
         // Has been initialized.
         m_not_initialized = false;
-        m_path.reset ( m_tree.root_arc, m_tree.root_node );
-        m_path_size = 1;
     }
 
     public:
@@ -261,36 +274,17 @@ class Mcts {
 
     // Moves.
 
-    [[nodiscard]] Move getUntriedMove ( NodeID const node_, State const & state_ ) const noexcept {
-        if ( m_tree[ node_ ].m_has_no_untried_moves )
-            return Move{ };
-        Move m = state_.randomMove ( );
-        if ( Move{ } == m )
-            m_tree[ node_ ].m_has_no_untried_moves = true;
-        return m;
-    }
+    [[nodiscard]] bool hasNoUntriedMoves ( NodeID const node_ ) const noexcept { return m_tree[ node_ ].m_moves.is_released ( ); }
+    [[nodiscard]] bool hasUntriedMoves ( NodeID const node_ ) const noexcept { return not hasNoUntriedMoves ( node_ ); }
+    [[nodiscard]] Move getUntriedMove ( NodeID const node_ ) noexcept { return m_tree[ node_ ].getUntriedMove ( ); }
 
     // Data.
 
-    [[nodiscard]] std::int32_t getVisits ( NodeID const node_ ) const noexcept {
-        std::int32_t visits = 0L;
+    [[nodiscard]] int getVisits ( NodeID const node_ ) const noexcept {
+        int visits = 0;
         for ( InIt a ( m_tree, node_ ); InIt::end ( ) != a; ++a )
             visits += m_tree[ a ].m_visits;
         return visits;
-    }
-
-    [[nodiscard]] float getUCTFromArcs ( NodeID const parent_, NodeID const child_ ) const noexcept {
-        ArcData child_data;
-        for ( InIt a ( m_tree, child_ ); InIt::end ( ) != a; ++a )
-            child_data += m_tree[ a ];
-        std::int32_t visits = 1L;
-        for ( InIt a ( m_tree, parent_ ); InIt::end ( ) != a; ++a )
-            visits += m_tree[ a ].m_visits;
-        //                              Exploitation                                                             Exploration
-        // Exploitation is the task to select the Move that leads to the best results so far.
-        // Exploration deals with less promising moves that still have to be examined, due to the uncertainty of the evaluation.
-        return ( float ) child_data.m_score / ( float ) child_data.m_visits +
-               std::sqrtf ( 3.0f * std::logf ( ( float ) visits ) / ( float ) child_data.m_visits );
     }
 
     [[nodiscard]] float getUCTFromNode ( NodeID const parent_, NodeID const child_ ) const noexcept {
@@ -298,16 +292,7 @@ class Mcts {
         // Exploitation is the task to select the Move that leads to the best results so far.
         // Exploration deals with less promising moves that still have to be examined, due to the uncertainty of the evaluation.
         return ( float ) m_tree[ child_ ].m_score / ( float ) m_tree[ child_ ].m_visits +
-               std::sqrtf ( 4.0f * std::logf ( ( float ) ( m_tree[ parent_ ].m_visits + 1 ) ) /
-                            ( float ) m_tree[ child_ ].m_visits );
-    }
-
-    [[nodiscard]] Link selectChildRandom ( NodeID const parent_ ) const noexcept {
-        using children_static_vector = std::experimental::fixed_capacity_vector<Link, State::max_no_moves>;
-        children_static_vector children;
-        for ( COutIt a ( m_tree, parent_ ); a.is_valid ( ); ++a )
-            children.emplace_back ( m_tree.link ( a ) );
-        return children[ std::uniform_int_distribution<ptrdiff_t> ( 0, children.size ( ) - 1 ) ( Rng::generator ( ) ) ];
+               std::sqrtf ( 2.0f * std::logf ( ( float ) ( m_tree[ parent_ ].m_visits ) ) / ( float ) m_tree[ child_ ].m_visits );
     }
 
     [[nodiscard]] Link selectChildUCT ( NodeID const parent_ ) const noexcept {
@@ -341,24 +326,20 @@ class Mcts {
     }
 
     void updateData ( Link && link_, State const & state_ ) noexcept {
-        float const result = state_.result ( m_tree[ link_.target ].m_player_just_moved );
         ++m_tree[ link_.target ].m_visits;
-        m_tree[ link_.target ].m_score += result;
+        m_tree[ link_.target ].m_score += state_.result ( m_tree[ link_.target ].m_player_just_moved );
     }
 
     [[nodiscard]] Move getBestMove ( ) noexcept {
         // Find the node (the most robust) with the most visits.
-        std::int32_t best_child_visits = INT_MIN;
+        int best_child_visits = INT_MIN;
         Move best_child_move;
-        m_path.push ( Tree::ArcID::invalid ( ), Tree::NodeID::invalid ( ) );
-        ++m_path_size;
         for ( OutIt a ( m_tree, m_tree.root_node ); a.is_valid ( ); ++a ) {
-            Link const child ( m_tree.link ( a ) );
-            std::int32_t const child_visits ( m_tree[ child.target ].m_visits );
+            Link child       = m_tree.link ( a );
+            int child_visits = m_tree[ child.target ].m_visits;
             if ( child_visits > best_child_visits ) {
                 best_child_visits = child_visits;
                 best_child_move   = m_tree[ child.arc ].m_move;
-                m_path.back ( )   = child;
             }
         }
         return best_child_move;
@@ -366,25 +347,27 @@ class Mcts {
 
     [[nodiscard]] Move compute ( State const & state_, int max_iterations_ = 100'000 ) noexcept {
         initialize ( state_ );
-        Player const player = state_.playerToMove ( );
+        Path path ( m_tree.root_arc, m_tree.root_node );
         while ( max_iterations_-- > 0 ) {
             NodeID node = m_tree.root_node;
             State state ( state_ );
-            Move move;
-            while ( ( Move{ } == ( move = getUntriedMove ( node, state ) ) ) and hasChildren ( node ) ) {
+            while ( hasNoUntriedMoves ( node ) and hasChildren ( node ) ) {
                 Link child = selectChildUCT ( node );
+                node       = child.target;
                 state.moveHash ( m_tree[ child.arc ].m_move );
-                m_path.push ( child );
-                node = child.target;
+                path.emplace ( std::move ( child ) );
             }
-            if ( state.nonterminal ( ) ) {
-                state.moveHashWinner ( move );
-                m_path.push ( addChild ( node, state ) );
+            if ( hasUntriedMoves ( node ) ) {
+                state.moveHashWinner ( getUntriedMove ( node ) );
+                path.emplace ( addChild ( node, state ) );
             }
-            state.simulate ( );
-            for ( Link link : m_path )
-                updateData ( std::move ( link ), state );
-            m_path.resize ( m_path_size );
+            for ( int i = 0; i < 1; ++i ) {
+                State monte_carlo_state ( state );
+                monte_carlo_state.simulate ( );
+                for ( Link link : path )
+                    updateData ( std::move ( link ), monte_carlo_state );
+            }
+            path.resize ( 1u );
         }
         return getBestMove ( );
     }
@@ -393,15 +376,8 @@ class Mcts {
     friend class cereal::access;
 
     template<class Archive>
-    void save ( Archive & ar_ ) const noexcept {
+    void serialize ( Archive & ar_ ) const noexcept {
         ar_ ( m_tree, m_transposition_table, m_not_initialized );
-    }
-
-    template<class Archive>
-    void load ( Archive & ar_ ) noexcept {
-        ar_ ( m_tree, m_transposition_table, m_not_initialized );
-        m_path.reset ( m_tree.root_arc, m_tree.root_node );
-        m_path_size = 1;
     }
 };
 

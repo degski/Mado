@@ -95,9 +95,6 @@ class Mado {
     using Hex     = Hex<R, true>;
     using IdxType = typename Hex::IdxType;
 
-    using Move  = Move<R>;
-    using Moves = Moves<R>;
-
     using value      = typename Player<R>::Type;
     using value_type = Player<R>;
 
@@ -105,6 +102,9 @@ class Mado {
     using PDV          = PositionDataVector<R>;
     using Board        = typename PositionData::Board;
     using size_type    = typename Board::size_type;
+
+    using Move  = Move<R>;
+    using Moves = Moves<R, Board::size ( )>;
 
     using Generator   = sax::Rng &;
     using ZobristHash = std::uint64_t;
@@ -122,6 +122,7 @@ class Mado {
     public:
     static constexpr int const max_no_moves                 = 4096;
     static constexpr ZobristHash const zobrist_hash_default = 0xb735a0f5839e4e22;
+    static constexpr Move no_move;
 
     int move_no = 0;
 
@@ -178,6 +179,7 @@ class Mado {
     }
 
     void moveHash ( Move const move_ ) noexcept {
+        assert ( m_pos.m_board[ move_.to ] == value::vacant );
         m_last_move = move_;
         moveHashImpl ( move_ );
         // writePositionData ( );
@@ -185,30 +187,17 @@ class Mado {
     }
 
     void moveWinner ( Move const move_ ) noexcept {
+        assert ( m_pos.m_board[ move_.to ] == value::vacant );
         m_last_move = move_;
         moveImpl ( move_ );
         checkForWinner ( );
         // writePositionData ( );
         m_pos.m_player_to_move.next ( );
     }
+    void do_move ( Move const move_ ) noexcept { moveWinner ( move_ ); }
 
     void moveHashWinner ( Move const move_ ) noexcept {
-        if ( m_pos.m_board[ move_.to ] != value::vacant ) {
-            std::cout << "to is not valid 0 " << move_ << nl << *this << nl;
-            exit ( 0 );
-        }
-        m_last_move = move_;
-        moveHashImpl ( move_ );
-        checkForWinner ( );
-        // writePositionData ( );
-        m_pos.m_player_to_move.next ( );
-    }
-
-    void moveHashWinner_ ( Move const move_ ) noexcept {
-        if ( m_pos.m_board[ move_.to ] != value::vacant ) {
-            std::cout << "to is not valid 1 " << move_ << nl << *this << nl;
-            exit ( 0 );
-        }
+        assert ( m_pos.m_board[ move_.to ] == value::vacant );
         m_last_move = move_;
         moveHashImpl ( move_ );
         checkForWinner ( );
@@ -233,6 +222,25 @@ class Mado {
         }
         return static_cast<int> ( moves_->size ( ) );
     }
+
+    [[nodiscard]] Moves availableMoves ( ) const noexcept {
+        Moves moves;
+        for ( int s = static_cast<int> ( Board::size ( ) ), i = 0; i < s; ++i ) {
+            // Find placements.
+            if ( m_pos.m_board[ i ].vacant ( ) ) {
+                moves.emplace_back ( i );
+                continue;
+            }
+            // Find slides.
+            if ( m_pos.m_player_to_move == m_pos.m_board[ i ] ) {
+                for ( auto const to : Board::neighbors[ i ] )
+                    if ( m_pos.m_board[ to ].vacant ( ) )
+                        moves.emplace_back ( i, to );
+            }
+        }
+        return moves;
+    }
+    [[nodiscard]] Moves get_moves ( ) const noexcept { return availableMoves ( ); }
 
     [[nodiscard]] Move randomMove ( ) const noexcept {
         std::experimental::fixed_capacity_vector<Move, std::size_t{ Board::size ( ) } * std::size_t{ 2 }> available_moves;
@@ -272,6 +280,9 @@ class Mado {
     [[nodiscard]] float result ( value_type const player_just_moved_ ) const noexcept {
         // Determine result: last player of path is the player to Move.
         return m_winner.vacant ( ) ? 0.0f : ( m_winner == player_just_moved_ ? 1.0f : -1.0f );
+    }
+    [[nodiscard]] float get_result ( value_type const player_to_move_ ) const noexcept {
+        return m_winner.vacant ( ) ? 0.5f : ( m_winner == player_to_move_ ? 0.0f : 1.0f );
     }
 
     [[nodiscard]] bool terminal ( ) const noexcept { return m_winner.valid ( ); }

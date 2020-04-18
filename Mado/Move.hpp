@@ -34,6 +34,8 @@
 #include <cereal/cereal.hpp>
 #include <cereal/archives/binary.hpp>
 
+#include "../../compact_vector/include/compact_vector.hpp"
+
 #include "Hexcontainer.hpp"
 
 template<int R>
@@ -89,8 +91,9 @@ struct Move {
     }
 };
 
-template<std::size_t R>
-using Moves = std::vector<Move<R>>;
+template<std::size_t R, std::size_t BoardSize>
+// using Moves = std::vector<Move<R>>;
+using Moves = sax::compact_vector<Move<R>, int, 2 * BoardSize, BoardSize / 2>;
 
 // R Max Av. Moves
 // 4     102
