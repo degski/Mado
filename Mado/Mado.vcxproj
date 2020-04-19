@@ -230,6 +230,7 @@
     <ClInclude Include="Mado.hpp" />
     <ClInclude Include="Mcts-2.hpp" />
     <ClInclude Include="Mcts.hpp" />
+    <ClInclude Include="MonteCarlo.hpp" />
     <ClInclude Include="Move.hpp" />
     <ClInclude Include="Player.hpp" />
   </ItemGroup>

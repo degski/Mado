@@ -54,66 +54,12 @@
 
 #include <plf/plf_nanotimer.h>
 
-// #include "../../KD-Tree/KD-Tree/sorted_vector_set.hpp"
 #include "../../MCTSSearchTree/include/flat_search_tree.hpp"
-#include "../../monte-carlo-tree-search/mcts.h"
+#include "MonteCarlo.hpp"
 
 #if 1
 
 #    include "Application.hpp"
-
-#    include <lemon/smart_graph.h>
-
-template<typename RadBase>
-struct HexGrid : public RadBase {
-
-    using rad       = RadBase;
-    using size_type = typename rad::size_type;
-
-    lemon::SmartDigraph m_grid;
-
-    void add_valid_neighbor_arc ( size_type const i_, size_type const q_, size_type const r_ ) noexcept {
-        if ( rad::is_invalid ( q_, r_ ) )
-            return;
-        m_grid.addArc ( m_grid.nodeFromId ( rad::index ( q_, r_ ) ), m_grid.nodeFromId ( i_ ) );
-    }
-    void add_neighbor_arcs ( size_type const q_, size_type const r_ ) noexcept {
-        size_type const i = rad::index ( q_, r_ );
-        add_valid_neighbor_arc ( i, q_, r_ - 1 );
-        add_valid_neighbor_arc ( i, q_ + 1, r_ - 1 );
-        add_valid_neighbor_arc ( i, q_ - 1, r_ );
-        add_valid_neighbor_arc ( i, q_ + 1, r_ );
-        add_valid_neighbor_arc ( i, q_ - 1, r_ + 1 );
-        add_valid_neighbor_arc ( i, q_, r_ + 1 );
-    }
-
-    HexGrid ( ) : RadBase{ } {
-
-        // Add nodes.
-        for ( size_type i = 0; i < rad::size ( ); ++i )
-            m_grid.addNode ( );
-        // Add arcs.
-        size_type q = rad::centre_idx ( ), r = rad::centre_idx ( );
-        add_neighbor_arcs ( q, r );
-        for ( size_type ring = 1; ring <= rad::radius ( ); ++ring ) {
-            ++q;                                   // Move to next ring, east.
-            for ( size_type j = 0; j < ring; ++j ) // nw.
-                add_neighbor_arcs ( q, --r );
-            for ( size_type j = 0; j < ring; ++j ) // w.
-                add_neighbor_arcs ( --q, r );
-            for ( size_type j = 0; j < ring; ++j ) // sw.
-                add_neighbor_arcs ( --q, ++r );
-            for ( size_type j = 0; j < ring; ++j ) // se.
-                add_neighbor_arcs ( q, ++r );
-            for ( size_type j = 0; j < ring; ++j ) // e.
-                add_neighbor_arcs ( ++q, r );
-            for ( size_type j = 0; j < ring; ++j ) // ne.
-                add_neighbor_arcs ( ++q, --r );
-        }
-    }
-
-    [[nodiscard]] lemon::SmartDigraph & grid ( ) noexcept { return m_grid; }
-};
 
 void handleEptr ( std::exception_ptr eptr ) { // Passing by value is ok.
     try {
@@ -201,6 +147,7 @@ int main65675 ( ) {
 
 int main ( ) {
     sax::enable_virtual_terminal_sequences ( );
+    std::ios_base::sync_with_stdio ( false );
     using State = Mado<3>;
     State state;
     using Player = typename State::value_type;
@@ -215,7 +162,7 @@ int main ( ) {
             match_start = Clock::instance ( ).now ( );
             do {
                 state.moveHashWinner ( Mcts::compute_move ( state, Mcts::ComputeOptions ( ) ) );
-                std::cout << state << nl;
+                std::cout << nl << state << nl;
             } while ( state.nonterminal ( ) );
             winner = state.winner ( );
         }
