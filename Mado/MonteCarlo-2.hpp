@@ -86,11 +86,6 @@
 #include <sax/uniform_int_distribution.hpp>
 
 #include "../../compact_vector/include/compact_vector.hpp"
-#include "../../MCTSSearchTree/include/flat_search_tree_hash.hpp"
-#include "../../MCTSSearchTree/include/nary_tree.hpp"
-
-#define USE_FSTH 0
-#define USE_NAT 0
 
 namespace Mcts {
 
@@ -125,16 +120,11 @@ static void assertion_failed ( char const * expr, char const * file, int line );
 #    define dattest( expr ) ( ( void ) 0 )
 #endif
 
-template<typename State>
-class Arc {};
-
 // This class is used to build the game tree. The root is created by the users and
 // the rest of the tree is created by add_node.
 template<typename State>
-class Node {
+struct Node {
 
-    public:
-    using NodeID          = nat::detail::NodeID;
     using Move            = typename State::Move;
     using Moves           = typename State::Moves;
     using Player          = typename State::value_type;
@@ -142,15 +132,6 @@ class Node {
     using Children        = sax::compact_vector<std::unique_ptr<Node>>;
     using ZobristHash     = typename State::ZobristHash;
 
-#if USE_FSTH or USE_NAT
-    Node ( State const & state ) :
-        player_to_move ( state.playerToMove ( ) ), visits ( 0 ), wins ( 0.0f ), moves ( state.get_moves ( ) ), UCT_score ( 0.0f ),
-        hash ( state.zobrist ( ) ), move ( State::no_move ) {}
-
-    Node ( State const & state, Move const & move_ ) :
-        player_to_move ( state.playerToMove ( ) ), visits ( 0 ), wins ( 0.0f ), moves ( state.get_moves ( ) ), UCT_score ( 0.0f ),
-        hash ( state.zobrist ( ) ), move ( move_ ) {}
-#else
     Node ( State const & state ) :
         parent ( nullptr ), player_to_move ( state.playerToMove ( ) ), visits ( 0 ), wins ( 0.0f ), moves ( state.get_moves ( ) ),
         UCT_score ( 0.0f ), hash ( state.zobrist ( ) ), move ( State::no_move ) {}
@@ -159,41 +140,33 @@ class Node {
     Node ( State const & state, Move const & move_, Node * parent_ ) :
         parent ( parent_ ), player_to_move ( state.playerToMove ( ) ), visits ( 0 ), wins ( 0.0f ), moves ( state.get_moves ( ) ),
         UCT_score ( 0.0f ), hash ( state.zobrist ( ) ), move ( move_ ) {}
-#endif
 
     public:
-    Node ( Node const & )            = default;
-    Node ( Node && other_ ) noexcept = default;
-    ~Node ( ) noexcept               = default;
+    Node ( Node const & )     = default;
+    Node ( Node && ) noexcept = default;
+    ~Node ( ) noexcept        = default;
+
     [[maybe_unused]] Node & operator= ( Node const & ) = default;
     [[maybe_unused]] Node & operator= ( Node && ) noexcept = default;
 
     bool has_untried_moves ( ) const noexcept;
     template<typename RandomEngine>
-    // The move is removed.
-    Move get_untried_move ( RandomEngine * engine ) noexcept;
+    Move get_untried_move ( RandomEngine * engine ) noexcept; // removes move
     Node * best_child ( ) const noexcept;
-
     Node * select_child_UCT ( ) const noexcept;
-#if not( USE_FSTH or USE_NAT )
     bool has_children ( ) const noexcept { return not children.empty ( ); }
     Node * add_child ( Move const & move, State const & state );
-#endif
     void update ( float result );
 
     std::string to_string ( ) const;
     std::string tree_to_string ( int max_depth = 1'000'000, int indent = 0 ) const;
 
-#if not( USE_FSTH or USE_NAT )
-    Node * parent; // 8
-#endif
+    Node * parent;         // 8
     Player player_to_move; // 12
     int visits;            // 16
     float wins;            // 20
     Moves moves;           // 28
-#if not( USE_FSTH or USE_NAT )
-    Children children; // 36
-#endif
+    Children children;     // 36
 
     private:
     std::string indent_string ( int indent ) const;
@@ -234,9 +207,6 @@ typename State::Move Node<State>::get_untried_move ( RandomEngine * engine ) noe
     return moves.unordered_erase ( sax::uniform_int_distribution<moves_size_type> ( 0, moves.size ( ) - 1 ) ( *engine ) );
 }
 
-#if USE_FSTH or USE_NAT
-
-#else
 template<typename State>
 Node<State> * Node<State>::best_child ( ) const noexcept {
     attest ( moves.empty ( ) );
@@ -245,7 +215,6 @@ Node<State> * Node<State>::best_child ( ) const noexcept {
                               [] ( auto & a, auto & b ) noexcept { return a->visits < b->visits; } )
         ->get ( );
 }
-#endif
 
 template<typename State>
 Node<State> * Node<State>::select_child_UCT ( ) const noexcept {
@@ -259,12 +228,10 @@ Node<State> * Node<State>::select_child_UCT ( ) const noexcept {
         ->get ( );
 }
 
-#if not( USE_FSTH or USE_NAT )
 template<typename State>
 Node<State> * Node<State>::add_child ( Move const & move, State const & state ) {
     return children.emplace_back ( new Node{ state, move, this } ).get ( );
 }
-#endif
 
 template<typename State>
 void Node<State>::update ( float result ) {
@@ -313,89 +280,26 @@ std::unique_ptr<Node<State>> compute_tree ( State const root_state, ComputeOptio
     static_assert ( std::is_move_assignable<Node<State>>::value, "Node<State> is not move-assignable" );
     sax::Rng random_engine ( seed_ );
     attest ( options.max_iterations >= 0 or options.max_time >= 0 );
-
-#if USE_FSTH
-    using Dag    = fsth::SearchTree<Arc<State>, Node<State>>;
-    using NodeID = typename Dag::NodeID;
-    Dag dag ( root_state );
-    std::vector<NodeID> parents{ dag.root_node };
-#elif USE_NAT
-    using Tree = nat::SearchTree<Node<State>>;
-    using NodeID = typename Tree::NodeID;
-    Tree tree ( root_state );
-#else
-    auto root = std::unique_ptr<Node<State>> ( new Node<State> ( root_state ) );
-#endif
-
+    auto root         = std::unique_ptr<Node<State>> ( new Node<State> ( root_state ) );
     double start_time = wall_time ( );
     double print_time = start_time;
-
     for ( int iter = 1; iter <= options.max_iterations or options.max_iterations < 0; ++iter ) {
-
-#if USE_FSTH
-        parents.resize ( 1 );
-        NodeID node = dag.root_node;
-#elif USE_NAT
-        NodeID node = tree.root_node;
-#else
-        auto node = root.get ( );
-#endif
-
+        auto node   = root.get ( );
         State state = root_state;
-
-        // Select a path through the tree to a leaf node.
-#if USE_FSTH
-        while ( auto & node_ref = dag[ node ]; not node_ref.has_untried_moves ( ) and node_ref.has_children ( ) ) {
-            node = node_ref.select_child_UCT ( );
-            state.do_move ( node_ref.move );
-            parents.push_back ( node );
-        }
-#elif USE_NAT
-        while ( auto & node_ref = tree[ node ]; not node_ref.has_untried_moves ( ) and node_ref.has_children ( ) ) {
-            node = node_ref.select_child_UCT ( );
-            state.do_move ( node_ref.move );
-        }
-#else
         while ( not node->has_untried_moves ( ) and node->has_children ( ) ) {
             node = node->select_child_UCT ( );
             state.do_move ( node->move );
         }
-#endif
-        // If we are not already at the final state, expand the
-        // tree with a new node and move there.
-#if USE_FSTH
-        if ( auto & node_ref = dag[ node ]; node_ref.has_untried_moves ( ) ) {
-            auto move = node_ref.get_untried_move ( &random_engine );
-            state.do_move ( move );
-            NodeID id = dag.contains ( state.zobrist ( ) ) )
-            if ( not id.value )
-                id = dag.addNode ( move, state );
-            dag.addArc ( node, id );
-            parents.push_back ( node = id );
-        }
-#else
         if ( node->has_untried_moves ( ) ) {
             auto move = node->get_untried_move ( &random_engine );
             state.do_move ( move );
             node = node->add_child ( move, state );
         }
-#endif
-
-        // We now play randomly until the game ends.
         state.simulate ( );
-
-        // We have now reached a final state. Backpropagate the result
-        // up the tree to the root node.
-#if USE_FSTH
-        auto const result = state.get_result ( dag[ node ].player_to_move );
-        std::for_each ( std::begin ( parents ), std::end ( parents ),
-                        [ result ] ( auto & n ) noexcept { dag[ n ].update ( result ); } );
-#else
         while ( node ) {
             node->update ( state.get_result ( node->player_to_move ) );
             node = node->parent;
         }
-#endif
         if ( options.verbose or options.max_time >= 0 ) {
             double time = wall_time ( );
             if ( options.verbose && ( time - print_time >= 1.0 or iter == options.max_iterations ) ) {
