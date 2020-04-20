@@ -85,6 +85,7 @@
 #include <sax/prng_sfc.hpp>
 #include <sax/uniform_int_distribution.hpp>
 
+#include "../../MCTSSearchTree/include/nary_tree.hpp"
 #include "../../compact_vector/include/compact_vector.hpp"
 
 namespace Mcts {
@@ -120,6 +121,119 @@ static void assertion_failed ( char const * expr, char const * file, int line );
 #    define dattest( expr ) ( ( void ) 0 )
 #endif
 
+#if 1
+// This class is used to build the game tree. The root is created by the users and
+// the rest of the tree is created by add_node.
+template<typename State>
+struct Node {
+
+    using Tree            = nat::SearchTree<Node<State>>;
+    using RawNode         = typename Tree::Node;
+    using NodeID          = typename Tree::NodeID;
+    using Move            = typename State::Move;
+    using Moves           = typename State::Moves;
+    using Player          = typename State::value_type;
+    using moves_size_type = typename Moves::size_type;
+    using Children        = sax::compact_vector<std::unique_ptr<Node>>;
+    using ZobristHash     = typename State::ZobristHash;
+
+    Node ( State const & state ) :
+        parent ( nullptr ), player_to_move ( state.playerToMove ( ) ), visits ( 0 ), wins ( 0.0f ), moves ( state.get_moves ( ) ),
+        UCT_score ( 0.0f ), hash ( state.zobrist ( ) ), move ( State::no_move ) {}
+
+    private:
+    Node ( State const & state, Move const & move_, Node * parent_ ) :
+        parent ( parent_ ), player_to_move ( state.playerToMove ( ) ), visits ( 0 ), wins ( 0.0f ), moves ( state.get_moves ( ) ),
+        UCT_score ( 0.0f ), hash ( state.zobrist ( ) ), move ( move_ ) {}
+
+    public:
+    Node ( Node const & )     = default;
+    Node ( Node && ) noexcept = default;
+    ~Node ( ) noexcept        = default;
+
+    [[maybe_unused]] Node & operator= ( Node const & ) = default;
+    [[maybe_unused]] Node & operator= ( Node && ) noexcept = default;
+
+    [[nodiscard]] bool has_untried_moves ( ) const noexcept { return not moves.is_released ( ); }
+
+    template<typename RandomEngine>
+    [[nodiscard]] Move get_untried_move ( RandomEngine * engine ) noexcept { // removes move
+        attest ( not moves.empty ( ) );
+        if ( 1 == moves.size ( ) ) {
+            Move m = moves.front ( );
+            moves.reset ( );
+            return m;
+        }
+        return moves.unordered_erase ( sax::uniform_int_distribution<moves_size_type> ( 0, moves.size ( ) - 1 ) ( *engine ) );
+    }
+
+    [[nodiscard]] NodeID best_child ( ) const noexcept {
+        Node & node = *reinterpret_cast<Node *> ( reinterpret_cast<char *> ( this ) - Node::offset_to_data ( ) );
+
+        attest ( moves.empty ( ) );
+        attest ( node.size );
+        return std::max_element ( children.begin ( ), children.end ( ),
+                                  [] ( auto & a, auto & b ) noexcept { return a->visits < b->visits; } )
+            ->get ( );
+    }
+
+    [[nodiscard]] Node * select_child_UCT ( ) const noexcept {
+        attest ( not children.empty ( ) );
+        for ( auto & child : children )
+            child->UCT_score =
+                ( static_cast<double> ( child->wins ) / 2.0 ) / static_cast<double> ( child->visits ) +
+                std::sqrt ( 2.0 * std::log ( static_cast<double> ( this->visits ) ) / static_cast<double> ( child->visits ) );
+        return std::max_element ( children.begin ( ), children.end ( ),
+                                  [] ( auto & a, auto & b ) { return a->UCT_score < b->UCT_score; } )
+            ->get ( );
+    }
+
+    [[nodiscard]] bool has_children ( ) const noexcept { return not children.empty ( ); }
+
+    [[nodiscard]] Node * add_child ( Move const & move, State const & state ) {
+        return children.emplace_back ( new Node{ state, move, this } ).get ( );
+    }
+
+    void update ( float result ) {
+        visits++;
+        wins += result;
+    }
+
+    std::string to_string ( ) const;
+    std::string tree_to_string ( int max_depth = 1'000'000, int indent = 0 ) const;
+
+    NodeID id ( ) const noexcept { return { static_cast<std::size_t> ( this - &tree.begin ( )->data ) }; }
+
+    Player player_to_move; // 12
+    int visits;            // 16
+    float wins;            // 20
+    Moves moves;           // 28
+
+    private:
+    std::string indent_string ( int indent ) const;
+
+    float UCT_score; // 40
+
+    public:
+    /*
+        [[nodiscard]] static void * operator new ( std::size_t n_size_ ) {
+            if ( auto ptr = mi_malloc ( n_size_ ) )
+                return ptr;
+            else {
+                std::cout << "malloc err\n";
+                throw std::bad_alloc{ };
+            }
+        }
+
+        static void operator delete ( void * ptr_ ) noexcept { mi_free ( ptr_ ); }
+    */
+    ZobristHash hash; // 48
+    Move move;        // 50
+
+    private:
+    static thread_local Tree tree;
+};
+#else
 // This class is used to build the game tree. The root is created by the users and
 // the rest of the tree is created by add_node.
 template<typename State>
@@ -223,6 +337,7 @@ struct Node {
     ZobristHash hash; // 48
     Move move;        // 50
 };
+#endif
 
 template<typename State>
 std::string Node<State>::to_string ( ) const {
