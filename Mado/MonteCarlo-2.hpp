@@ -149,14 +149,48 @@ struct Node {
     [[maybe_unused]] Node & operator= ( Node const & ) = default;
     [[maybe_unused]] Node & operator= ( Node && ) noexcept = default;
 
-    bool has_untried_moves ( ) const noexcept;
+    [[nodiscard]] bool has_untried_moves ( ) const noexcept { return not moves.is_released ( ); }
+
     template<typename RandomEngine>
-    Move get_untried_move ( RandomEngine * engine ) noexcept; // removes move
-    Node * best_child ( ) const noexcept;
-    Node * select_child_UCT ( ) const noexcept;
-    bool has_children ( ) const noexcept { return not children.empty ( ); }
-    Node * add_child ( Move const & move, State const & state );
-    void update ( float result );
+    [[nodiscard]] Move get_untried_move ( RandomEngine * engine ) noexcept { // removes move
+        attest ( not moves.empty ( ) );
+        if ( 1 == moves.size ( ) ) {
+            Move m = moves.front ( );
+            moves.reset ( );
+            return m;
+        }
+        return moves.unordered_erase ( sax::uniform_int_distribution<moves_size_type> ( 0, moves.size ( ) - 1 ) ( *engine ) );
+    }
+
+    [[nodiscard]] Node * best_child ( ) const noexcept {
+        attest ( moves.empty ( ) );
+        attest ( not children.empty ( ) );
+        return std::max_element ( children.begin ( ), children.end ( ),
+                                  [] ( auto & a, auto & b ) noexcept { return a->visits < b->visits; } )
+            ->get ( );
+    }
+
+    [[nodiscard]] Node * select_child_UCT ( ) const noexcept {
+        attest ( not children.empty ( ) );
+        for ( auto & child : children )
+            child->UCT_score =
+                ( static_cast<double> ( child->wins ) / 2.0 ) / static_cast<double> ( child->visits ) +
+                std::sqrt ( 2.0 * std::log ( static_cast<double> ( this->visits ) ) / static_cast<double> ( child->visits ) );
+        return std::max_element ( children.begin ( ), children.end ( ),
+                                  [] ( auto & a, auto & b ) { return a->UCT_score < b->UCT_score; } )
+            ->get ( );
+    }
+
+    [[nodiscard]] bool has_children ( ) const noexcept { return not children.empty ( ); }
+
+    [[nodiscard]] Node * add_child ( Move const & move, State const & state ) {
+        return children.emplace_back ( new Node{ state, move, this } ).get ( );
+    }
+
+    void update ( float result ) {
+        visits++;
+        wins += result;
+    }
 
     std::string to_string ( ) const;
     std::string tree_to_string ( int max_depth = 1'000'000, int indent = 0 ) const;
@@ -189,55 +223,6 @@ struct Node {
     ZobristHash hash; // 48
     Move move;        // 50
 };
-
-template<typename State>
-bool Node<State>::has_untried_moves ( ) const noexcept {
-    return not moves.is_released ( );
-}
-
-template<typename State>
-template<typename RandomEngine>
-typename State::Move Node<State>::get_untried_move ( RandomEngine * engine ) noexcept {
-    attest ( not moves.empty ( ) );
-    if ( 1 == moves.size ( ) ) {
-        Move m = moves.front ( );
-        moves.reset ( );
-        return m;
-    }
-    return moves.unordered_erase ( sax::uniform_int_distribution<moves_size_type> ( 0, moves.size ( ) - 1 ) ( *engine ) );
-}
-
-template<typename State>
-Node<State> * Node<State>::best_child ( ) const noexcept {
-    attest ( moves.empty ( ) );
-    attest ( not children.empty ( ) );
-    return std::max_element ( children.begin ( ), children.end ( ),
-                              [] ( auto & a, auto & b ) noexcept { return a->visits < b->visits; } )
-        ->get ( );
-}
-
-template<typename State>
-Node<State> * Node<State>::select_child_UCT ( ) const noexcept {
-    attest ( not children.empty ( ) );
-    for ( auto & child : children )
-        child->UCT_score =
-            ( static_cast<double> ( child->wins ) / 2.0 ) / static_cast<double> ( child->visits ) +
-            std::sqrt ( 2.0 * std::log ( static_cast<double> ( this->visits ) ) / static_cast<double> ( child->visits ) );
-    return std::max_element ( children.begin ( ), children.end ( ),
-                              [] ( auto & a, auto & b ) { return a->UCT_score < b->UCT_score; } )
-        ->get ( );
-}
-
-template<typename State>
-Node<State> * Node<State>::add_child ( Move const & move, State const & state ) {
-    return children.emplace_back ( new Node{ state, move, this } ).get ( );
-}
-
-template<typename State>
-void Node<State>::update ( float result ) {
-    visits++;
-    wins += result;
-}
 
 template<typename State>
 std::string Node<State>::to_string ( ) const {
