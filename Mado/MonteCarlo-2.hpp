@@ -123,7 +123,7 @@ inline void assertion_failed ( char const * expr, char const * file, int line );
 #    define dattest( expr ) ( ( void ) 0 )
 #endif
 
-#if 0
+#if 1
 // This class is used to build the game tree. The root is created by the users and
 // the rest of the tree is created by add_node.
 template<typename State>
@@ -164,27 +164,29 @@ struct Node {
     }
 
     [[nodiscard]] NodeID best_child ( ) const noexcept {
-        RawNode & node = *reinterpret_cast<RawNode *> ( reinterpret_cast<char *> ( this ) - RawNode::offset_to_data ( ) );
+        RawNode const & node =
+            *reinterpret_cast<RawNode const *> ( reinterpret_cast<char const *> ( this ) - RawNode::offset_to_data ( ) );
         attest ( moves.empty ( ) );
         attest ( node.size );
         NodeID best;
         int best_visits = std::numeric_limits<int>::lowest ( );
-        for ( NodeID child = node.tail; NodeID::invalid ( ) != child; child = tree[ child.value ].prev ) {
-            if ( tree[ child.value ].data.visits > best_visits ) {
+        for ( NodeID child = node.tail; NodeID::invalid ( ) != child; child = tree[ child ].prev ) {
+            if ( tree[ child ].data.visits > best_visits ) {
                 best        = child;
-                best_visits = tree[ child.value ].data.visits;
+                best_visits = tree[ child ].data.visits;
             }
         }
         return tree[ best.value ].data.move;
     }
 
     [[nodiscard]] NodeID select_child_UCT ( ) const noexcept {
-        RawNode & node = *reinterpret_cast<RawNode *> ( reinterpret_cast<char *> ( this ) - RawNode::offset_to_data ( ) );
+        RawNode const & node =
+            *reinterpret_cast<RawNode const *> ( reinterpret_cast<char const *> ( this ) - RawNode::offset_to_data ( ) );
         attest ( node.size );
         NodeID best;
         float best_utc_score = std::numeric_limits<float>::lowest ( );
-        for ( NodeID child = node.tail; NodeID::invalid ( ) != child; child = tree[ child.value ].prev ) {
-            auto & c = tree[ child.value ].data;
+        for ( NodeID child = node.tail; NodeID::invalid ( ) != child; child = tree[ child ].prev ) {
+            auto & c = tree[ child ].data;
             float utc_score =
                 ( c.wins / 2.0f ) / static_cast<float> ( c.visits ) +
                 std::sqrtf ( 2.0f * std::logf ( static_cast<float> ( this->visits ) ) / static_cast<float> ( c.visits ) );
@@ -197,7 +199,7 @@ struct Node {
     }
 
     [[nodiscard]] bool has_children ( ) const noexcept {
-        return reinterpret_cast<RawNode *> ( reinterpret_cast<char *> ( this ) - RawNode::offset_to_data ( ) )->size;
+        return reinterpret_cast<RawNode const *> ( reinterpret_cast<char const *> ( this ) - RawNode::offset_to_data ( ) )->size;
     }
 
     [[nodiscard]] NodeID add_child ( Move const & move, State const & state ) { return tree.add_node ( id ( ), state, move ); }
@@ -223,12 +225,12 @@ struct Node {
         if ( indent >= max_depth )
             return "";
         std::string s = indent_string ( indent ) + to_string ( );
-        for ( NodeID child = node.tail; NodeID::invalid ( ) != child; child = tree[ child.value ].prev )
-            s += tree[ child.value ].data.tree_to_string ( max_depth, indent + 1 );
+        for ( NodeID child = node.tail; NodeID::invalid ( ) != child; child = tree[ child ].prev )
+            s += tree[ child ].data.tree_to_string ( max_depth, indent + 1 );
         return s;
     }
 
-    NodeID id ( ) const noexcept { return { static_cast<std::size_t> ( this - &tree.begin ( )->data ) }; }
+    NodeID id ( ) const noexcept { return NodeID{ static_cast<std::size_t> ( this - &tree.begin ( )->data ) }; }
 
     int visits;  // 4
     float wins;  // 8
@@ -247,9 +249,48 @@ struct Node {
     Move move;             // 26
     Player player_to_move; // 27
 
-    private:
     static thread_local Tree tree;
 };
+
+template<typename State>
+std::unique_ptr<Node<State>> compute_tree ( State const root_state, ComputeOptions const options, sax::Rng::result_type seed_ ) {
+    static_assert ( std::is_copy_assignable<Node<State>>::value, "Node<State> is not copy-assignable" );
+    static_assert ( std::is_move_assignable<Node<State>>::value, "Node<State> is not move-assignable" );
+    sax::Rng random_engine ( seed_ );
+    attest ( options.max_iterations >= 0 or options.max_time >= 0 );
+    std::unique_ptr<Node<State>> root ( new Node<State> ( root_state ) );
+    double start_time = wall_time ( );
+    double print_time = start_time;
+    for ( int iter = 1; iter <= options.max_iterations or options.max_iterations < 0; ++iter ) {
+        typename Node<State>::NodeID node = root->id ( );
+        State state                       = root_state;
+        while ( not Node<State>::tree[ node ].data.has_untried_moves ( ) and Node<State>::tree[ node ].data.has_children ( ) ) {
+            node = Node<State>::tree[ node ].data.select_child_UCT ( );
+            state.do_move ( Node<State>::tree[ node ].data.move );
+        }
+        if ( Node<State>::tree[ node ].data.has_untried_moves ( ) ) {
+            auto move = Node<State>::tree[ node ].data.get_untried_move ( &random_engine );
+            state.do_move ( move );
+            node = Node<State>::tree[ node ].data.add_child ( move, state );
+        }
+        state.simulate ( );
+        while ( Node<State>::NodeID::invalid ( ) != node ) {
+            Node<State>::tree[ node ].data.update ( state.get_result ( Node<State>::tree[ node ].data.player_to_move ) );
+            node = Node<State>::tree[ node ].up;
+        }
+        if ( options.verbose or options.max_time >= 0 ) {
+            double time = wall_time ( );
+            if ( options.verbose && ( time - print_time >= 1.0 or iter == options.max_iterations ) ) {
+                std::cerr << iter << " games played (" << double ( iter ) / ( time - start_time ) << " / second)." << std::endl;
+                print_time = time;
+            }
+
+            if ( time - start_time >= options.max_time )
+                break;
+        }
+    }
+    return root;
+}
 #else
 // This class is used to build the game tree. The root is created by the users and
 // the rest of the tree is created by add_node.
@@ -363,7 +404,6 @@ struct Node {
     ZobristHash hash; // 48
     Move move;        // 50
 };
-#endif
 
 template<typename State>
 std::unique_ptr<Node<State>> compute_tree ( State const root_state, ComputeOptions const options, sax::Rng::result_type seed_ ) {
@@ -404,6 +444,7 @@ std::unique_ptr<Node<State>> compute_tree ( State const root_state, ComputeOptio
     }
     return root;
 }
+#endif
 
 template<typename State>
 typename State::Move compute_move ( State const root_state, ComputeOptions const options ) {
