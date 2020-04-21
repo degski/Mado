@@ -73,6 +73,7 @@
 #include <future>
 #include <iomanip>
 #include <iostream>
+#include <limits>
 #include <map>
 #include <memory>
 #include <random>
@@ -105,8 +106,9 @@ struct ComputeOptions {
 template<typename State>
 typename State::Move compute_move ( State const root_state, ComputeOptions const options );
 
-static void check ( bool expr, char const * message );
-static void assertion_failed ( char const * expr, char const * file, int line );
+inline double wall_time ( ) noexcept;
+inline void check ( bool expr, char const * message );
+inline void assertion_failed ( char const * expr, char const * file, int line );
 
 #define attest( expr )                                                                                                             \
     if ( not( expr ) ) {                                                                                                           \
@@ -121,7 +123,7 @@ static void assertion_failed ( char const * expr, char const * file, int line );
 #    define dattest( expr ) ( ( void ) 0 )
 #endif
 
-#if 1
+#if 0
 // This class is used to build the game tree. The root is created by the users and
 // the rest of the tree is created by add_node.
 template<typename State>
@@ -137,16 +139,10 @@ struct Node {
     using Children        = sax::compact_vector<std::unique_ptr<Node>>;
     using ZobristHash     = typename State::ZobristHash;
 
-    Node ( State const & state ) :
-        parent ( nullptr ), player_to_move ( state.playerToMove ( ) ), visits ( 0 ), wins ( 0.0f ), moves ( state.get_moves ( ) ),
-        UCT_score ( 0.0f ), hash ( state.zobrist ( ) ), move ( State::no_move ) {}
+    Node ( State const & state, Move const & move_ = State::no_move ) :
+        visits ( 0 ), wins ( 0.0f ), moves ( state.get_moves ( ) ), hash ( state.zobrist ( ) ), move ( move_ ),
+        player_to_move ( state.playerToMove ( ) ) {}
 
-    private:
-    Node ( State const & state, Move const & move_, Node * parent_ ) :
-        parent ( parent_ ), player_to_move ( state.playerToMove ( ) ), visits ( 0 ), wins ( 0.0f ), moves ( state.get_moves ( ) ),
-        UCT_score ( 0.0f ), hash ( state.zobrist ( ) ), move ( move_ ) {}
-
-    public:
     Node ( Node const & )     = default;
     Node ( Node && ) noexcept = default;
     ~Node ( ) noexcept        = default;
@@ -168,67 +164,88 @@ struct Node {
     }
 
     [[nodiscard]] NodeID best_child ( ) const noexcept {
-        Node & node = *reinterpret_cast<Node *> ( reinterpret_cast<char *> ( this ) - Node::offset_to_data ( ) );
-
+        RawNode & node = *reinterpret_cast<RawNode *> ( reinterpret_cast<char *> ( this ) - RawNode::offset_to_data ( ) );
         attest ( moves.empty ( ) );
         attest ( node.size );
-        return std::max_element ( children.begin ( ), children.end ( ),
-                                  [] ( auto & a, auto & b ) noexcept { return a->visits < b->visits; } )
-            ->get ( );
+        NodeID best;
+        int best_visits = std::numeric_limits<int>::lowest ( );
+        for ( NodeID child = node.tail; NodeID::invalid ( ) != child; child = tree[ child.value ].prev ) {
+            if ( tree[ child.value ].data.visits > best_visits ) {
+                best        = child;
+                best_visits = tree[ child.value ].data.visits;
+            }
+        }
+        return tree[ best.value ].data.move;
     }
 
-    [[nodiscard]] Node * select_child_UCT ( ) const noexcept {
-        attest ( not children.empty ( ) );
-        for ( auto & child : children )
-            child->UCT_score =
-                ( static_cast<double> ( child->wins ) / 2.0 ) / static_cast<double> ( child->visits ) +
-                std::sqrt ( 2.0 * std::log ( static_cast<double> ( this->visits ) ) / static_cast<double> ( child->visits ) );
-        return std::max_element ( children.begin ( ), children.end ( ),
-                                  [] ( auto & a, auto & b ) { return a->UCT_score < b->UCT_score; } )
-            ->get ( );
+    [[nodiscard]] NodeID select_child_UCT ( ) const noexcept {
+        RawNode & node = *reinterpret_cast<RawNode *> ( reinterpret_cast<char *> ( this ) - RawNode::offset_to_data ( ) );
+        attest ( node.size );
+        NodeID best;
+        float best_utc_score = std::numeric_limits<float>::lowest ( );
+        for ( NodeID child = node.tail; NodeID::invalid ( ) != child; child = tree[ child.value ].prev ) {
+            auto & c = tree[ child.value ].data;
+            float utc_score =
+                ( c.wins / 2.0f ) / static_cast<float> ( c.visits ) +
+                std::sqrtf ( 2.0f * std::logf ( static_cast<float> ( this->visits ) ) / static_cast<float> ( c.visits ) );
+            if ( utc_score > best_utc_score ) {
+                best           = child;
+                best_utc_score = utc_score;
+            }
+        }
+        return best;
     }
 
-    [[nodiscard]] bool has_children ( ) const noexcept { return not children.empty ( ); }
-
-    [[nodiscard]] Node * add_child ( Move const & move, State const & state ) {
-        return children.emplace_back ( new Node{ state, move, this } ).get ( );
+    [[nodiscard]] bool has_children ( ) const noexcept {
+        return reinterpret_cast<RawNode *> ( reinterpret_cast<char *> ( this ) - RawNode::offset_to_data ( ) )->size;
     }
+
+    [[nodiscard]] NodeID add_child ( Move const & move, State const & state ) { return tree.add_node ( id ( ), state, move ); }
 
     void update ( float result ) {
         visits++;
         wins += result;
     }
 
-    std::string to_string ( ) const;
-    std::string tree_to_string ( int max_depth = 1'000'000, int indent = 0 ) const;
+    std::string to_string ( ) const {
+        std::stringstream ss;
+        ss << "["
+           << "P" << player_to_move.opponent ( ) << " "
+           << "M:" << move << " "
+           << "W/V: " << ( wins / 2.0f ) << "/" << visits << " "
+           << "U: " << moves.size ( ) << "]\n";
+        return ss.str ( );
+    }
+
+    std::string tree_to_string ( int max_depth = 1'000'000, int indent = 0 ) const {
+        RawNode & node = *reinterpret_cast<RawNode *> ( reinterpret_cast<char *> ( this ) - RawNode::offset_to_data ( ) );
+        attest ( node.size );
+        if ( indent >= max_depth )
+            return "";
+        std::string s = indent_string ( indent ) + to_string ( );
+        for ( NodeID child = node.tail; NodeID::invalid ( ) != child; child = tree[ child.value ].prev )
+            s += tree[ child.value ].data.tree_to_string ( max_depth, indent + 1 );
+        return s;
+    }
 
     NodeID id ( ) const noexcept { return { static_cast<std::size_t> ( this - &tree.begin ( )->data ) }; }
 
-    Player player_to_move; // 12
-    int visits;            // 16
-    float wins;            // 20
-    Moves moves;           // 28
+    int visits;  // 4
+    float wins;  // 8
+    Moves moves; // 16
 
     private:
-    std::string indent_string ( int indent ) const;
-
-    float UCT_score; // 40
+    std::string indent_string ( int indent ) const {
+        std::string s = "";
+        for ( int i = 1; i <= indent; ++i )
+            s += "| ";
+        return s;
+    }
 
     public:
-    /*
-        [[nodiscard]] static void * operator new ( std::size_t n_size_ ) {
-            if ( auto ptr = mi_malloc ( n_size_ ) )
-                return ptr;
-            else {
-                std::cout << "malloc err\n";
-                throw std::bad_alloc{ };
-            }
-        }
-
-        static void operator delete ( void * ptr_ ) noexcept { mi_free ( ptr_ ); }
-    */
-    ZobristHash hash; // 48
-    Move move;        // 50
+    ZobristHash hash;      // 24
+    Move move;             // 26
+    Player player_to_move; // 27
 
     private:
     static thread_local Tree tree;
@@ -306,8 +323,24 @@ struct Node {
         wins += result;
     }
 
-    std::string to_string ( ) const;
-    std::string tree_to_string ( int max_depth = 1'000'000, int indent = 0 ) const;
+    std::string to_string ( ) const {
+        std::stringstream ss;
+        ss << "["
+           << "P" << player_to_move.opponent ( ) << " "
+           << "M:" << move << " "
+           << "W/V: " << ( static_cast<double> ( wins ) / 2.0 ) << "/" << visits << " "
+           << "U: " << moves.size ( ) << "]\n";
+        return ss.str ( );
+    }
+
+    std::string tree_to_string ( int max_depth = 1'000'000, int indent = 0 ) const {
+        if ( indent >= max_depth )
+            return "";
+        std::string s = indent_string ( indent ) + to_string ( );
+        for ( auto child : children )
+            s += child->tree_to_string ( max_depth, indent + 1 );
+        return s;
+    }
 
     Node * parent;         // 8
     Player player_to_move; // 12
@@ -317,62 +350,20 @@ struct Node {
     Children children;     // 36
 
     private:
-    std::string indent_string ( int indent ) const;
+    std::string indent_string ( int indent ) const {
+        std::string s = "";
+        for ( int i = 1; i <= indent; ++i )
+            s += "| ";
+        return s;
+    }
 
     float UCT_score; // 40
 
     public:
-    /*
-        [[nodiscard]] static void * operator new ( std::size_t n_size_ ) {
-            if ( auto ptr = mi_malloc ( n_size_ ) )
-                return ptr;
-            else {
-                std::cout << "malloc err\n";
-                throw std::bad_alloc{ };
-            }
-        }
-
-        static void operator delete ( void * ptr_ ) noexcept { mi_free ( ptr_ ); }
-    */
     ZobristHash hash; // 48
     Move move;        // 50
 };
 #endif
-
-template<typename State>
-std::string Node<State>::to_string ( ) const {
-    std::stringstream ss;
-    ss << "["
-       << "P" << 3 - player_to_move << " "
-       << "M:" << move << " "
-       << "W/V: " << ( static_cast<double> ( wins ) / 2.0 ) << "/" << visits << " "
-       << "U: " << moves.size ( ) << "]\n";
-    return ss.str ( );
-}
-
-template<typename State>
-std::string Node<State>::tree_to_string ( int max_depth, int indent ) const {
-    if ( indent >= max_depth )
-        return "";
-    std::string s = indent_string ( indent ) + to_string ( );
-    for ( auto child : children )
-        s += child->tree_to_string ( max_depth, indent + 1 );
-    return s;
-}
-
-template<typename State>
-std::string Node<State>::indent_string ( int indent ) const {
-    std::string s = "";
-    for ( int i = 1; i <= indent; ++i )
-        s += "| ";
-    return s;
-}
-
-// Walltime.
-inline double wall_time ( ) noexcept {
-    using Clock = std::chrono::high_resolution_clock;
-    return double ( Clock::now ( ).time_since_epoch ( ).count ( ) ) * double ( Clock::period::num ) / double ( Clock::period::den );
-}
 
 template<typename State>
 std::unique_ptr<Node<State>> compute_tree ( State const root_state, ComputeOptions const options, sax::Rng::result_type seed_ ) {
@@ -481,6 +472,11 @@ typename State::Move compute_move ( State const root_state, ComputeOptions const
                   << " parallel jobs)." << std::endl;
     }
     return best_move;
+}
+
+inline double wall_time ( ) noexcept {
+    using Clock = std::chrono::high_resolution_clock;
+    return double ( Clock::now ( ).time_since_epoch ( ).count ( ) ) * double ( Clock::period::num ) / double ( Clock::period::den );
 }
 
 inline void check ( bool expr, char const * message ) {
