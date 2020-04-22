@@ -134,8 +134,6 @@ struct Result {
 template<typename State>
 using ResultVector = std::vector<Result<typename State::Move>>;
 
-// This class is used to build the game tree. The root is created by the users and
-// the rest of the tree is created by add_node.
 template<typename State>
 struct Node {
 
@@ -331,7 +329,7 @@ ResultVector<State> compute_tree ( State const root_state, ComputeOptions const 
 template<typename State>
 typename State::Move compute_move ( State const root_state, ComputeOptions const options ) {
     {
-        auto moves = root_state.get_moves ( );
+        typename State::Moves moves = root_state.get_moves ( );
         attest ( moves.size ( ) > 0 );
         if ( moves.size ( ) == 1 )
             return moves[ 0 ];
