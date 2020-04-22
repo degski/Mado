@@ -149,8 +149,8 @@ struct Node {
     using Children        = sax::compact_vector<std::unique_ptr<Node>>;
     using ZobristHash     = typename State::ZobristHash;
 
-    Node ( ) :
-        visits ( 0 ), wins ( 0.0f ), moves{ }, hash ( 0 ), move ( State::no_move ), player_to_move ( Player::Type::invalid ) {}
+    explicit Node ( ) noexcept :
+        visits ( 0 ), wins ( 0.0f ), moves ( ), hash ( 0 ), move ( State::no_move ), player_to_move ( Player::Type::invalid ) {}
     Node ( State const & state, Move const & move_ = State::no_move ) :
         visits ( 0 ), wins ( 0.0f ), moves ( state.get_moves ( ) ), hash ( state.zobrist ( ) ), move ( move_ ),
         player_to_move ( state.playerToMove ( ) ) {}
@@ -214,7 +214,7 @@ struct Node {
         return reinterpret_cast<RawNode const *> ( reinterpret_cast<char const *> ( this ) - RawNode::offset_to_data ( ) )->size;
     }
 
-    [[nodiscard]] NodeID add_child ( Move const & move, State const & state ) { return tree.add_node ( id ( ), state, move ); }
+    [[maybe_unused]] NodeID add_child ( Move const & move, State const & state ) { return tree.add_node ( id ( ), state, move ); }
 
     void update ( float result ) {
         visits++;
@@ -242,7 +242,11 @@ struct Node {
         return s;
     }
 
-    NodeID id ( ) const noexcept { return NodeID{ static_cast<std::size_t> ( this - &tree.begin ( )->data ) }; }
+    NodeID id ( ) const noexcept {
+        RawNode const * node =
+            reinterpret_cast<RawNode const *> ( reinterpret_cast<char const *> ( this ) - RawNode::offset_to_data ( ) );
+        return NodeID{ static_cast<std::size_t> ( node - tree.data ( ) ) };
+    }
 
     int visits;  // 4
     float wins;  // 8
@@ -263,10 +267,10 @@ struct Node {
 
     static ResultVector<State> results ( ) {
         ResultVector<State> r;
-        r.reserve ( tree[ Tree::root_node ].size );
-        for ( NodeID child = tree[ Tree::root_node ].tail; NodeID::invalid ( ) != child; child = tree[ child ].prev ) {
+        r.reserve ( tree[ tree.root_node ].size );
+        for ( NodeID child = tree[ tree.root_node ].tail; NodeID::invalid ( ) != child; child = tree[ child ].prev ) {
             Node & c = tree[ child ].data;
-            r.emplace_back ( c.visits, c.wins, c.move );
+            r.emplace_back ( Result<Move>{ c.visits, c.wins, c.move } );
         }
         return r;
     }
@@ -278,16 +282,16 @@ template<typename State>
 thread_local typename Node<State>::Tree Node<State>::tree;
 
 template<typename State>
-std::unique_ptr<Node<State>> compute_tree ( State const root_state, ComputeOptions const options, sax::Rng::result_type seed_ ) {
+ResultVector<State> compute_tree ( State const root_state, ComputeOptions const options, sax::Rng::result_type seed_ ) {
     static_assert ( std::is_copy_assignable<Node<State>>::value, "Node<State> is not copy-assignable" );
     static_assert ( std::is_move_assignable<Node<State>>::value, "Node<State> is not move-assignable" );
     sax::Rng random_engine ( seed_ );
     attest ( options.max_iterations >= 0 or options.max_time >= 0 );
-    std::unique_ptr<Node<State>> root ( new Node<State> ( root_state ) );
+    Node<State>::tree[ Node<State>::NodeID::invalid ( ) ].data.add_child ( State::no_move, root_state ); // add root state
     double start_time = wall_time ( );
     double print_time = start_time;
     for ( int iter = 1; iter <= options.max_iterations or options.max_iterations < 0; ++iter ) {
-        typename Node<State>::NodeID node = root->id ( );
+        typename Node<State>::NodeID node = Node<State>::tree.root_node;
         State state                       = root_state;
         while ( not Node<State>::tree[ node ].data.has_untried_moves ( ) and Node<State>::tree[ node ].data.has_children ( ) ) {
             node = Node<State>::tree[ node ].data.select_child_UCT ( );
@@ -314,7 +318,7 @@ std::unique_ptr<Node<State>> compute_tree ( State const root_state, ComputeOptio
                 break;
         }
     }
-    return root;
+    return Node<State>::results ( );
 }
 
 template<typename State>
@@ -325,40 +329,37 @@ typename State::Move compute_move ( State const root_state, ComputeOptions const
         return moves[ 0 ];
     double start_time = wall_time ( );
     // Start all jobs to compute trees.
-    std::vector<std::future<std::unique_ptr<Node<State>>>> root_futures;
+    std::vector<std::future<ResultVector<State>>> root_futures;
     ComputeOptions job_options = options;
     job_options.verbose        = false;
     for ( int t = 0; t < options.number_of_threads; ++t ) {
-        auto func = [ t, &root_state, &job_options ] ( ) -> std::unique_ptr<Node<State>> {
+        auto func = [ t, &root_state, &job_options ] ( ) -> ResultVector<State> {
             return compute_tree ( root_state, job_options, 18'446'744'073'709'551'557ull * t + 0x0fce58188743146dull );
         };
         root_futures.push_back ( std::async ( std::launch::async, func ) );
     }
     // Collect the results.
-    std::vector<std::unique_ptr<Node<State>>> roots;
+    std::vector<ResultVector<State>> results;
     for ( int t = 0; t < options.number_of_threads; ++t )
-        roots.push_back ( std::move ( root_futures[ t ].get ( ) ) );
-    // Merge the children of all root nodes.
-    std::map<typename State::Move, int> visits;
-    std::map<typename State::Move, float> wins;
+        results.push_back ( std::move ( root_futures[ t ].get ( ) ) );
+    // Merge the results.
+    std::map<typename State::Move, std::pair<int, float>> merged_results;
     std::int64_t games_played = 0;
     for ( int t = 0; t < options.number_of_threads; ++t ) {
-        typename Node<State>::NodeID root = roots[ t ].get ( )->id ( );
-        games_played += Node<State>::tree[ root ].data.visits;
-        for ( typename Node<State>::NodeID child = Node<State>::tree[ root ].tail; Node<State>::NodeID::invalid ( ) != child;
-              child                              = Node<State>::tree[ child ].prev ) {
-            auto & c = Node<State>::tree[ child ].data;
-            visits[ c.move ] += c.visits;
-            wins[ c.move ] += c.wins;
+        for ( auto & r : results[ t ] ) {
+            auto & m = merged_results[ r.move ];
+            m.first += r.visits;
+            m.second += r.wins;
+            games_played += r.visits;
         }
     }
     // Find the node with the highest score.
     float best_score               = 0.0f;
     typename State::Move best_move = typename State::Move ( );
-    for ( auto itr : visits ) {
+    for ( auto itr : merged_results ) {
         auto move = itr.first;
-        float v   = itr.second;
-        float w   = wins[ move ];
+        float v   = itr.second.first;
+        float w   = itr.second.second;
         // Expected success rate assuming a uniform prior (Beta(1, 1)).
         // https://en.wikipedia.org/wiki/Beta_distribution
         float expected_success_rate = ( w + 1.0f ) / ( v + 2.0f );
@@ -373,8 +374,8 @@ typename State::Move compute_move ( State const root_state, ComputeOptions const
         }
     }
     if ( options.verbose ) {
-        auto best_wins   = wins[ best_move ];
-        auto best_visits = visits[ best_move ];
+        auto best_wins   = merged_results[ best_move ].second;
+        auto best_visits = merged_results[ best_move ].first;
         std::cerr << "----" << std::endl;
         std::cerr << "Best: " << best_move << " (" << 100.0f * best_visits / float ( games_played ) << "% visits)"
                   << " (" << 100.0f * best_wins / best_visits << "% wins)" << std::endl;
