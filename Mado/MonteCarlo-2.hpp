@@ -126,8 +126,8 @@ inline void assertion_failed ( char const * expr, char const * file, int line );
 #if 1
 template<typename Move>
 struct Result {
-    int visits;
-    float wins;
+    int visits = 0;
+    float wins = 0.0f;
     Move move;
 };
 
@@ -147,7 +147,7 @@ struct Node {
     using Player      = typename State::value_type;
     using ZobristHash = typename State::ZobristHash;
 
-    explicit Node ( ) noexcept : hash ( 0 ), move ( State::no_move ), player_to_move ( Player::Type::invalid ) {}
+    explicit Node ( ) noexcept : hash ( 0u ), move ( State::no_move ), player_to_move ( Player::Type::invalid ) {}
     Node ( State const & state, Move const & move_ = State::no_move ) :
         moves ( state.get_moves ( ) ), hash ( state.zobrist ( ) ), move ( move_ ), player_to_move ( state.playerToMove ( ) ) {}
 
@@ -361,10 +361,9 @@ typename State::Move compute_move ( State const root_state, ComputeOptions const
     // Find the node with the highest score.
     float best_score               = 0.0f;
     typename State::Move best_move = typename State::Move ( );
-    for ( auto itr : merged_results ) {
-        auto move = itr.first;
-        float v   = itr.second.first;
-        float w   = itr.second.second;
+    for ( auto & itr : merged_results ) {
+        typename State::Move move = itr.first;
+        float v = itr.second.first, w = itr.second.second;
         // Expected success rate assuming a uniform prior (Beta(1, 1)).
         // https://en.wikipedia.org/wiki/Beta_distribution
         float expected_success_rate = ( w + 1.0f ) / ( v + 2.0f );
@@ -379,8 +378,8 @@ typename State::Move compute_move ( State const root_state, ComputeOptions const
         }
     }
     if ( options.verbose ) {
-        auto best_wins   = merged_results[ best_move ].second;
-        auto best_visits = merged_results[ best_move ].first;
+        float best_wins = merged_results[ best_move ].second;
+        int best_visits = merged_results[ best_move ].first;
         std::cerr << "----" << std::endl;
         std::cerr << "Best: " << best_move << " (" << 100.0f * best_visits / float ( games_played ) << "% visits)"
                   << " (" << 100.0f * best_wins / best_visits << "% wins)" << std::endl;
