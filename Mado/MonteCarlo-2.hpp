@@ -124,29 +124,28 @@ inline void assertion_failed ( char const * expr, char const * file, int line );
 #endif
 
 #if 1
-template<typename State>
+template<typename Move>
 struct Result {
-    using Move = typename State::Move;
     int visits;
     float wins;
     Move move;
 };
 
 template<typename State>
-using ResultVector = std::vector<Result<State>>;
+using ResultVector = std::vector<Result<typename State::Move>>;
 
+// This class is used to build the game tree. The root is created by the users and
+// the rest of the tree is created by add_node.
 template<typename State>
 struct Node {
 
-    using Tree            = nat::SearchTree<Node<State>>;
-    using RawNode         = typename Tree::Node;
-    using NodeID          = typename Tree::NodeID;
-    using Move            = typename State::Move;
-    using Moves           = typename State::Moves;
-    using Player          = typename State::value_type;
-    using moves_size_type = typename Moves::size_type;
-    using Children        = sax::compact_vector<std::unique_ptr<Node>>;
-    using ZobristHash     = typename State::ZobristHash;
+    using Tree        = nat::SearchTree<Node<State>>;
+    using RawNode     = typename Tree::Node;
+    using NodeID      = typename Tree::NodeID;
+    using Move        = typename State::Move;
+    using Moves       = typename State::Moves;
+    using Player      = typename State::value_type;
+    using ZobristHash = typename State::ZobristHash;
 
     explicit Node ( ) noexcept : hash ( 0 ), move ( State::no_move ), player_to_move ( Player::Type::invalid ) {}
     Node ( State const & state, Move const & move_ = State::no_move ) :
@@ -169,7 +168,8 @@ struct Node {
             moves.reset ( );
             return m;
         }
-        return moves.unordered_erase ( sax::uniform_int_distribution<moves_size_type> ( 0, moves.size ( ) - 1 ) ( *engine ) );
+        return moves.unordered_erase (
+            sax::uniform_int_distribution<typename Moves::size_type> ( 0, moves.size ( ) - 1 ) ( *engine ) );
     }
 
     [[nodiscard]] NodeID best_child ( ) const noexcept {
@@ -294,20 +294,16 @@ ResultVector<State> compute_tree ( State const root_state, ComputeOptions const 
     for ( int iter = 1; iter <= options.max_iterations or options.max_iterations < 0; ++iter ) {
         typename Node<State>::NodeID node = Node<State>::tree.root_node;
         State state                       = root_state;
-        // Select a path through the tree to a leaf node.
         while ( not Node<State>::tree[ node ].data.has_untried_moves ( ) and Node<State>::tree[ node ].data.has_children ( ) ) {
             node = Node<State>::tree[ node ].data.select_child_UCT ( );
             state.do_move ( Node<State>::tree[ node ].data.move );
         }
-        // If we are not already at the final state, expand the tree with a new node and Move there.
         if ( Node<State>::tree[ node ].data.has_untried_moves ( ) ) {
             auto move = Node<State>::tree[ node ].data.get_untried_move ( &random_engine );
             state.do_move ( move );
             node = Node<State>::tree[ node ].data.add_child ( move, state );
         }
-        // We now play randomly until the game ends.
         state.simulate ( );
-        // We have now reached a final state. Backpropagate the result up the tree to the root node.
         while ( Node<State>::NodeID::invalid ( ) != node ) {
             Node<State>::tree[ node ].data.update ( state.get_result ( Node<State>::tree[ node ].data.player_to_move ) );
             node = Node<State>::tree[ node ].up;
@@ -318,11 +314,11 @@ ResultVector<State> compute_tree ( State const root_state, ComputeOptions const 
                 std::cerr << iter << " games played (" << double ( iter ) / ( time - start_time ) << " / second)." << std::endl;
                 print_time = time;
             }
+
             if ( time - start_time >= options.max_time )
                 break;
         }
     }
-    // Gather and return the results.
     return Node<State>::results ( );
 }
 
