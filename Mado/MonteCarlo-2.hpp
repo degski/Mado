@@ -304,12 +304,15 @@ ResultVector<State> compute_tree ( State const root_state, ComputeOptions const 
             state.do_move ( move );
             node = Node<State>::tree[ node ].data.add_child ( move, state );
         }
-        // We now play randomly until the game ends.
-        state.simulate ( );
-        // We have now reached a final state. Backpropagate the result up the tree to the root node.
-        while ( Node<State>::NodeID::invalid ( ) != node ) {
-            Node<State>::tree[ node ].data.update ( state.get_result ( Node<State>::tree[ node ].data.player_to_move ) );
-            node = Node<State>::tree[ node ].up;
+        for ( int i = 0; i < 5; ++i ) {
+            State sim_state = state;
+            // We now play randomly until the game ends.
+            sim_state.simulate ( );
+            // We have now reached a final state. Backpropagate the result up the tree to the root node.
+            while ( Node<State>::NodeID::invalid ( ) != node ) {
+                Node<State>::tree[ node ].data.update ( sim_state.get_result ( Node<State>::tree[ node ].data.player_to_move ) );
+                node = Node<State>::tree[ node ].up;
+            }
         }
         if ( options.verbose or options.max_time >= 0 ) {
             double time = wall_time ( );
@@ -317,7 +320,6 @@ ResultVector<State> compute_tree ( State const root_state, ComputeOptions const 
                 std::cerr << iter << " games played (" << double ( iter ) / ( time - start_time ) << " / second)." << std::endl;
                 print_time = time;
             }
-
             if ( time - start_time >= options.max_time )
                 break;
         }
@@ -328,10 +330,12 @@ ResultVector<State> compute_tree ( State const root_state, ComputeOptions const 
 
 template<typename State>
 typename State::Move compute_move ( State const root_state, ComputeOptions const options ) {
-    auto moves = root_state.get_moves ( );
-    attest ( moves.size ( ) > 0 );
-    if ( moves.size ( ) == 1 )
-        return moves[ 0 ];
+    {
+        auto moves = root_state.get_moves ( );
+        attest ( moves.size ( ) > 0 );
+        if ( moves.size ( ) == 1 )
+            return moves[ 0 ];
+    }
     double start_time = wall_time ( );
     // Start all jobs to compute trees.
     std::vector<std::future<ResultVector<State>>> root_futures;
@@ -378,8 +382,8 @@ typename State::Move compute_move ( State const root_state, ComputeOptions const
         }
     }
     if ( options.verbose ) {
-        float best_wins = merged_results[ best_move ].second;
         int best_visits = merged_results[ best_move ].first;
+        float best_wins = merged_results[ best_move ].second;
         std::cerr << "----" << std::endl;
         std::cerr << "Best: " << best_move << " (" << 100.0f * best_visits / float ( games_played ) << "% visits)"
                   << " (" << 100.0f * best_wins / best_visits << "% wins)" << std::endl;
