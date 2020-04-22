@@ -124,6 +124,16 @@ inline void assertion_failed ( char const * expr, char const * file, int line );
 #endif
 
 #if 1
+template<typename Move>
+struct Result {
+    int visits;
+    float wins;
+    Move move;
+};
+
+template<typename State>
+using ResultVector = std::vector<Result<typename State::Move>>;
+
 // This class is used to build the game tree. The root is created by the users and
 // the rest of the tree is created by add_node.
 template<typename State>
@@ -139,6 +149,8 @@ struct Node {
     using Children        = sax::compact_vector<std::unique_ptr<Node>>;
     using ZobristHash     = typename State::ZobristHash;
 
+    Node ( ) :
+        visits ( 0 ), wins ( 0.0f ), moves{ }, hash ( 0 ), move ( State::no_move ), player_to_move ( Player::Type::invalid ) {}
     Node ( State const & state, Move const & move_ = State::no_move ) :
         visits ( 0 ), wins ( 0.0f ), moves ( state.get_moves ( ) ), hash ( state.zobrist ( ) ), move ( move_ ),
         player_to_move ( state.playerToMove ( ) ) {}
@@ -176,7 +188,7 @@ struct Node {
                 best_visits = tree[ child ].data.visits;
             }
         }
-        return tree[ best.value ].data.move;
+        return tree[ best ].data.move;
     }
 
     [[nodiscard]] NodeID select_child_UCT ( ) const noexcept {
@@ -249,8 +261,21 @@ struct Node {
     Move move;             // 26
     Player player_to_move; // 27
 
+    static ResultVector<State> results ( ) {
+        ResultVector<State> r;
+        r.reserve ( tree[ Tree::root_node ].size );
+        for ( NodeID child = tree[ Tree::root_node ].tail; NodeID::invalid ( ) != child; child = tree[ child ].prev ) {
+            Node & c = tree[ child ].data;
+            r.emplace_back ( c.visits, c.wins, c.move );
+        }
+        return r;
+    }
+
     static thread_local Tree tree;
 };
+
+template<typename State>
+thread_local typename Node<State>::Tree Node<State>::tree;
 
 template<typename State>
 std::unique_ptr<Node<State>> compute_tree ( State const root_state, ComputeOptions const options, sax::Rng::result_type seed_ ) {
@@ -290,6 +315,77 @@ std::unique_ptr<Node<State>> compute_tree ( State const root_state, ComputeOptio
         }
     }
     return root;
+}
+
+template<typename State>
+typename State::Move compute_move ( State const root_state, ComputeOptions const options ) {
+    auto moves = root_state.get_moves ( );
+    attest ( moves.size ( ) > 0 );
+    if ( moves.size ( ) == 1 )
+        return moves[ 0 ];
+    double start_time = wall_time ( );
+    // Start all jobs to compute trees.
+    std::vector<std::future<std::unique_ptr<Node<State>>>> root_futures;
+    ComputeOptions job_options = options;
+    job_options.verbose        = false;
+    for ( int t = 0; t < options.number_of_threads; ++t ) {
+        auto func = [ t, &root_state, &job_options ] ( ) -> std::unique_ptr<Node<State>> {
+            return compute_tree ( root_state, job_options, 18'446'744'073'709'551'557ull * t + 0x0fce58188743146dull );
+        };
+        root_futures.push_back ( std::async ( std::launch::async, func ) );
+    }
+    // Collect the results.
+    std::vector<std::unique_ptr<Node<State>>> roots;
+    for ( int t = 0; t < options.number_of_threads; ++t )
+        roots.push_back ( std::move ( root_futures[ t ].get ( ) ) );
+    // Merge the children of all root nodes.
+    std::map<typename State::Move, int> visits;
+    std::map<typename State::Move, float> wins;
+    std::int64_t games_played = 0;
+    for ( int t = 0; t < options.number_of_threads; ++t ) {
+        typename Node<State>::NodeID root = roots[ t ].get ( )->id ( );
+        games_played += Node<State>::tree[ root ].data.visits;
+        for ( typename Node<State>::NodeID child = Node<State>::tree[ root ].tail; Node<State>::NodeID::invalid ( ) != child;
+              child                              = Node<State>::tree[ child ].prev ) {
+            auto & c = Node<State>::tree[ child ].data;
+            visits[ c.move ] += c.visits;
+            wins[ c.move ] += c.wins;
+        }
+    }
+    // Find the node with the highest score.
+    float best_score               = 0.0f;
+    typename State::Move best_move = typename State::Move ( );
+    for ( auto itr : visits ) {
+        auto move = itr.first;
+        float v   = itr.second;
+        float w   = wins[ move ];
+        // Expected success rate assuming a uniform prior (Beta(1, 1)).
+        // https://en.wikipedia.org/wiki/Beta_distribution
+        float expected_success_rate = ( w + 1.0f ) / ( v + 2.0f );
+        if ( expected_success_rate > best_score ) {
+            best_move  = move;
+            best_score = expected_success_rate;
+        }
+        if ( options.verbose ) {
+            std::cerr << "Move: " << itr.first << " (" << std::setw ( 2 ) << std::right
+                      << int ( 100.0f * v / float ( games_played ) + 0.5f ) << "% visits)"
+                      << " (" << std::setw ( 2 ) << std::right << int ( 100.0f * w / v + 0.5f ) << "% wins)" << std::endl;
+        }
+    }
+    if ( options.verbose ) {
+        auto best_wins   = wins[ best_move ];
+        auto best_visits = visits[ best_move ];
+        std::cerr << "----" << std::endl;
+        std::cerr << "Best: " << best_move << " (" << 100.0f * best_visits / float ( games_played ) << "% visits)"
+                  << " (" << 100.0f * best_wins / best_visits << "% wins)" << std::endl;
+    }
+    if ( options.verbose ) {
+        float time = wall_time ( );
+        std::cerr << games_played << " games played in " << float ( time - start_time ) << " s. "
+                  << "(" << float ( games_played ) / ( time - start_time ) << " / second, " << options.number_of_threads
+                  << " parallel jobs)." << std::endl;
+    }
+    return best_move;
 }
 #else
 // This class is used to build the game tree. The root is created by the users and
@@ -444,7 +540,6 @@ std::unique_ptr<Node<State>> compute_tree ( State const root_state, ComputeOptio
     }
     return root;
 }
-#endif
 
 template<typename State>
 typename State::Move compute_move ( State const root_state, ComputeOptions const options ) {
@@ -469,7 +564,7 @@ typename State::Move compute_move ( State const root_state, ComputeOptions const
         roots.push_back ( std::move ( root_futures[ t ].get ( ) ) );
     // Merge the children of all root nodes.
     std::map<typename State::Move, int> visits;
-    std::map<typename State::Move, int> wins;
+    std::map<typename State::Move, float> wins;
     std::int64_t games_played = 0;
     for ( int t = 0; t < options.number_of_threads; ++t ) {
         auto root = roots[ t ].get ( );
@@ -480,7 +575,7 @@ typename State::Move compute_move ( State const root_state, ComputeOptions const
         }
     }
     // Find the node with the highest score.
-    float best_score               = -1;
+    float best_score               = -1.0f;
     typename State::Move best_move = typename State::Move ( );
     for ( auto itr : visits ) {
         auto move = itr.first;
@@ -488,23 +583,23 @@ typename State::Move compute_move ( State const root_state, ComputeOptions const
         float w   = wins[ move ];
         // Expected success rate assuming a uniform prior (Beta(1, 1)).
         // https://en.wikipedia.org/wiki/Beta_distribution
-        float expected_success_rate = ( w + 1 ) / ( v + 2 );
+        float expected_success_rate = ( w + 1.0f ) / ( v + 2.0f );
         if ( expected_success_rate > best_score ) {
             best_move  = move;
             best_score = expected_success_rate;
         }
         if ( options.verbose ) {
             std::cerr << "Move: " << itr.first << " (" << std::setw ( 2 ) << std::right
-                      << int ( 100.0 * v / float ( games_played ) + 0.5 ) << "% visits)"
-                      << " (" << std::setw ( 2 ) << std::right << int ( 100.0 * w / v + 0.5 ) << "% wins)" << std::endl;
+                      << int ( 100.0f * v / float ( games_played ) + 0.5f ) << "% visits)"
+                      << " (" << std::setw ( 2 ) << std::right << int ( 100.0f * w / v + 0.5f ) << "% wins)" << std::endl;
         }
     }
     if ( options.verbose ) {
         auto best_wins   = wins[ best_move ];
         auto best_visits = visits[ best_move ];
         std::cerr << "----" << std::endl;
-        std::cerr << "Best: " << best_move << " (" << 100.0 * best_visits / float ( games_played ) << "% visits)"
-                  << " (" << 100.0 * best_wins / best_visits << "% wins)" << std::endl;
+        std::cerr << "Best: " << best_move << " (" << 100.0f * best_visits / float ( games_played ) << "% visits)"
+                  << " (" << 100.0f * best_wins / best_visits << "% wins)" << std::endl;
     }
     if ( options.verbose ) {
         float time = wall_time ( );
@@ -514,6 +609,7 @@ typename State::Move compute_move ( State const root_state, ComputeOptions const
     }
     return best_move;
 }
+#endif
 
 inline double wall_time ( ) noexcept {
     using Clock = std::chrono::high_resolution_clock;
