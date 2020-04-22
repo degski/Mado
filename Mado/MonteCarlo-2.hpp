@@ -149,11 +149,9 @@ struct Node {
     using Children        = sax::compact_vector<std::unique_ptr<Node>>;
     using ZobristHash     = typename State::ZobristHash;
 
-    explicit Node ( ) noexcept :
-        visits ( 0 ), wins ( 0.0f ), moves ( ), hash ( 0 ), move ( State::no_move ), player_to_move ( Player::Type::invalid ) {}
+    explicit Node ( ) noexcept : hash ( 0 ), move ( State::no_move ), player_to_move ( Player::Type::invalid ) {}
     Node ( State const & state, Move const & move_ = State::no_move ) :
-        visits ( 0 ), wins ( 0.0f ), moves ( state.get_moves ( ) ), hash ( state.zobrist ( ) ), move ( move_ ),
-        player_to_move ( state.playerToMove ( ) ) {}
+        moves ( state.get_moves ( ) ), hash ( state.zobrist ( ) ), move ( move_ ), player_to_move ( state.playerToMove ( ) ) {}
 
     Node ( Node const & )     = default;
     Node ( Node && ) noexcept = default;
@@ -176,13 +174,14 @@ struct Node {
     }
 
     [[nodiscard]] NodeID best_child ( ) const noexcept {
-        RawNode const & node =
-            *reinterpret_cast<RawNode const *> ( reinterpret_cast<char const *> ( this ) - RawNode::offset_to_data ( ) );
         attest ( moves.empty ( ) );
-        attest ( node.size );
+        attest (
+            reinterpret_cast<RawNode const *> ( reinterpret_cast<char const *> ( this ) - RawNode::offset_to_data ( ) )->size );
         NodeID best;
         int best_visits = std::numeric_limits<int>::lowest ( );
-        for ( NodeID child = node.tail; NodeID::invalid ( ) != child; child = tree[ child ].prev ) {
+        for ( NodeID child =
+                  reinterpret_cast<RawNode const *> ( reinterpret_cast<char const *> ( this ) - RawNode::offset_to_data ( ) )->tail;
+              NodeID::invalid ( ) != child; child = tree[ child ].prev ) {
             if ( tree[ child ].data.visits > best_visits ) {
                 best        = child;
                 best_visits = tree[ child ].data.visits;
@@ -192,12 +191,13 @@ struct Node {
     }
 
     [[nodiscard]] NodeID select_child_UCT ( ) const noexcept {
-        RawNode const & node =
-            *reinterpret_cast<RawNode const *> ( reinterpret_cast<char const *> ( this ) - RawNode::offset_to_data ( ) );
-        attest ( node.size );
+        attest (
+            reinterpret_cast<RawNode const *> ( reinterpret_cast<char const *> ( this ) - RawNode::offset_to_data ( ) )->size );
         NodeID best;
         float best_utc_score = std::numeric_limits<float>::lowest ( );
-        for ( NodeID child = node.tail; NodeID::invalid ( ) != child; child = tree[ child ].prev ) {
+        for ( NodeID child =
+                  reinterpret_cast<RawNode const *> ( reinterpret_cast<char const *> ( this ) - RawNode::offset_to_data ( ) )->tail;
+              NodeID::invalid ( ) != child; child = tree[ child ].prev ) {
             auto & c = tree[ child ].data;
             float utc_score =
                 ( c.wins / 2.0f ) / static_cast<float> ( c.visits ) +
@@ -216,8 +216,8 @@ struct Node {
 
     [[maybe_unused]] NodeID add_child ( Move const & move, State const & state ) { return tree.add_node ( id ( ), state, move ); }
 
-    void update ( float result ) {
-        visits++;
+    void update ( float result ) noexcept {
+        visits += 1;
         wins += result;
     }
 
@@ -232,25 +232,27 @@ struct Node {
     }
 
     std::string tree_to_string ( int max_depth = 1'000'000, int indent = 0 ) const {
-        RawNode & node = *reinterpret_cast<RawNode *> ( reinterpret_cast<char *> ( this ) - RawNode::offset_to_data ( ) );
-        attest ( node.size );
+        attest (
+            reinterpret_cast<RawNode const *> ( reinterpret_cast<char const *> ( this ) - RawNode::offset_to_data ( ) )->size );
         if ( indent >= max_depth )
             return "";
         std::string s = indent_string ( indent ) + to_string ( );
-        for ( NodeID child = node.tail; NodeID::invalid ( ) != child; child = tree[ child ].prev )
+        for ( NodeID child =
+                  reinterpret_cast<RawNode const *> ( reinterpret_cast<char const *> ( this ) - RawNode::offset_to_data ( ) )->tail;
+              NodeID::invalid ( ) != child; child = tree[ child ].prev )
             s += tree[ child ].data.tree_to_string ( max_depth, indent + 1 );
         return s;
     }
 
     NodeID id ( ) const noexcept {
-        RawNode const * node =
-            reinterpret_cast<RawNode const *> ( reinterpret_cast<char const *> ( this ) - RawNode::offset_to_data ( ) );
-        return NodeID{ static_cast<std::size_t> ( node - tree.data ( ) ) };
+        return NodeID{ static_cast<std::size_t> (
+            reinterpret_cast<RawNode const *> ( reinterpret_cast<char const *> ( this ) - RawNode::offset_to_data ( ) ) -
+            tree.data ( ) ) };
     }
 
-    int visits;  // 4
-    float wins;  // 8
-    Moves moves; // 16
+    int visits = 0;    // 4
+    float wins = 0.0f; // 8
+    Moves moves;       // 16
 
     private:
     std::string indent_string ( int indent ) const {
