@@ -289,21 +289,24 @@ ResultVector<State> compute_tree ( State const root_state, ComputeOptions const 
     sax::Rng random_engine ( seed_ );
     attest ( options.max_iterations >= 0 or options.max_time >= 0 );
     Node<State>::tree[ Node<State>::NodeID::invalid ( ) ].data.add_child ( State::no_move, root_state ); // add root state
-    double start_time = wall_time ( );
-    double print_time = start_time;
+    double start_time = wall_time ( ), print_time = start_time;
     for ( int iter = 1; iter <= options.max_iterations or options.max_iterations < 0; ++iter ) {
         typename Node<State>::NodeID node = Node<State>::tree.root_node;
         State state                       = root_state;
+        // Select a path through the tree to a leaf node.
         while ( not Node<State>::tree[ node ].data.has_untried_moves ( ) and Node<State>::tree[ node ].data.has_children ( ) ) {
             node = Node<State>::tree[ node ].data.select_child_UCT ( );
             state.do_move ( Node<State>::tree[ node ].data.move );
         }
+        // If we are not already at the final state, expand the tree with a new node and Move there.
         if ( Node<State>::tree[ node ].data.has_untried_moves ( ) ) {
             auto move = Node<State>::tree[ node ].data.get_untried_move ( &random_engine );
             state.do_move ( move );
             node = Node<State>::tree[ node ].data.add_child ( move, state );
         }
+        // We now play randomly until the game ends.
         state.simulate ( );
+        // We have now reached a final state. Backpropagate the result up the tree to the root node.
         while ( Node<State>::NodeID::invalid ( ) != node ) {
             Node<State>::tree[ node ].data.update ( state.get_result ( Node<State>::tree[ node ].data.player_to_move ) );
             node = Node<State>::tree[ node ].up;
@@ -319,6 +322,7 @@ ResultVector<State> compute_tree ( State const root_state, ComputeOptions const 
                 break;
         }
     }
+    // Gather and return the results.
     return Node<State>::results ( );
 }
 
