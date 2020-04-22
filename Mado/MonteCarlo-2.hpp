@@ -182,12 +182,12 @@ struct Node {
         for ( NodeID child =
                   reinterpret_cast<RawNode const *> ( reinterpret_cast<char const *> ( this ) - RawNode::offset_to_data ( ) )->tail;
               NodeID::invalid ( ) != child; child = tree[ child ].prev ) {
-            if ( tree[ child ].data.visits > best_visits ) {
+            if ( int v = tree[ child ].data.visits; v > best_visits ) {
                 best        = child;
-                best_visits = tree[ child ].data.visits;
+                best_visits = v;
             }
         }
-        return tree[ best ].data.move;
+        return best;
     }
 
     [[nodiscard]] NodeID select_child_UCT ( ) const noexcept {
@@ -198,7 +198,7 @@ struct Node {
         for ( NodeID child =
                   reinterpret_cast<RawNode const *> ( reinterpret_cast<char const *> ( this ) - RawNode::offset_to_data ( ) )->tail;
               NodeID::invalid ( ) != child; child = tree[ child ].prev ) {
-            auto & c = tree[ child ].data;
+            Node & c = tree[ child ].data;
             float utc_score =
                 ( c.wins / 2.0f ) / static_cast<float> ( c.visits ) +
                 std::sqrtf ( 2.0f * std::logf ( static_cast<float> ( this->visits ) ) / static_cast<float> ( c.visits ) );
