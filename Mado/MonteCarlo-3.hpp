@@ -231,7 +231,7 @@ struct Node {
     template<typename Tree>
     [[nodiscard]] NodeID select_child_UCT ( Tree const & tree_, ) const noexcept {
         attest ( size );
-        NodeID best;
+        NodeID best_child;
         float best_utc_score = std::numeric_limits<float>::lowest ( );
         for ( NodeID child = tail; NodeID::invalid ( ) != child; child = tree_[ child.id ].prev ) {
             Node & c = tree_[ child.id ];
@@ -239,11 +239,11 @@ struct Node {
                 ( c.wins / 2.0f ) / static_cast<float> ( c.visits ) +
                 std::sqrtf ( 2.0f * std::logf ( static_cast<float> ( this->visits ) ) / static_cast<float> ( c.visits ) );
             if ( utc_score > best_utc_score ) {
-                best           = child;
+                best_child     = child;
                 best_utc_score = utc_score;
             }
         }
-        return best;
+        return best_child;
     }
 
     template<typename Tree>
@@ -404,8 +404,8 @@ typename State::Move compute_move ( State const root_state, ComputeOptions const
         }
     }
     // Find the node with the highest score.
-    float best_score               = 0.0f;
-    typename State::Move best_move = typename State::Move ( );
+    float best_score = 0.0f;
+    typename State::Move best_move;
     for ( auto & itr : merged_results ) {
         typename State::Move move = itr.first;
         float v = itr.second.first, w = itr.second.second;
