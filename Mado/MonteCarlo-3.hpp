@@ -184,7 +184,7 @@ struct Result {
 };
 
 template<typename State>
-using ResultVector = pector<Result<typename State::Move>>;
+using Results = pector<Result<typename State::Move>>;
 
 template<typename State>
 struct Node {
@@ -310,8 +310,8 @@ inline constexpr NodeID const root_node = NodeID{ 1 };
 } // namespace nry
 
 template<typename State>
-[[nodiscard]] ResultVector<State> results ( nry::Tree<State> & tree_ ) {
-    ResultVector<State> r;
+[[nodiscard]] Results<State> results ( nry::Tree<State> & tree_ ) {
+    Results<State> r;
     r.reserve ( tree_[ nry::root_node.id ].size );
     for ( NodeID child = tree_[ nry::root_node.id ].tail; NodeID::invalid ( ) != child; child = tree_[ child.id ].prev )
         r.emplace_back ( Result<typename State::Move>{ tree_[ child.id ].visits, tree_[ child.id ].wins, tree_[ child.id ].move } );
@@ -319,7 +319,7 @@ template<typename State>
 }
 
 template<typename State>
-ResultVector<State> compute_tree ( nry::Tree<State> & tree, State const root_state, ComputeOptions const options,
+Results<State> compute_tree ( nry::Tree<State> & tree, State const root_state, ComputeOptions const options,
                                    sax::Rng::result_type seed_ ) {
     static_assert ( std::is_copy_assignable<Node<State>>::value, "Node<State> is not copy-assignable" );
     static_assert ( std::is_move_assignable<Node<State>>::value, "Node<State> is not move-assignable" );
@@ -378,18 +378,18 @@ typename State::Move compute_move ( State const root_state, ComputeOptions const
     }
     double start_time = wall_time ( );
     // Start all jobs to compute trees.
-    std::vector<std::future<ResultVector<State>>> root_futures;
+    std::vector<std::future<Results<State>>> root_futures;
     ComputeOptions job_options = options;
     job_options.verbose        = false;
     for ( int t = 0; t < options.number_of_threads; ++t ) {
-        auto func = [ t, &trees, &root_state, &job_options ] ( ) -> ResultVector<State> {
+        auto func = [ t, &trees, &root_state, &job_options ] ( ) -> Results<State> {
             return compute_tree ( std::ref ( trees[ t ] ), root_state, job_options,
                                   18'446'744'073'709'551'557ull * t + 0x0fce58188743146dull );
         };
         root_futures.push_back ( std::async ( std::launch::async, func ) );
     }
     // Collect the results.
-    std::vector<ResultVector<State>> results;
+    std::vector<Results<State>> results;
     for ( int t = 0; t < options.number_of_threads; ++t )
         results.push_back ( std::move ( root_futures[ t ].get ( ) ) );
     // Merge the results.
