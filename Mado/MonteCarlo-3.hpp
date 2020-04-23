@@ -189,17 +189,16 @@ using ResultVector = pector<Result<typename State::Move>>;
 template<typename State>
 struct Node {
 
-    using Move        = typename State::Move;
-    using Moves       = typename State::Moves;
-    using Player      = typename State::value_type;
-    using ZobristHash = typename State::ZobristHash;
+    using Moves  = typename State::Moves;
+    using Hash   = typename State::ZobristHash;
+    using Move   = typename State::Move;
+    using Player = typename State::value_type;
 
-    explicit Node ( ) noexcept : hash ( 0u ), move ( State::no_move ), player_to_move ( Player::Type::invalid ) {}
+    explicit Node ( ) noexcept : hash ( 0u ), move ( State::no_move ), player ( Player::Type::invalid ) {}
     Node ( State const & state ) :
-        moves ( state.get_moves ( ) ), hash ( state.zobrist ( ) ), move ( State::no_move ),
-        player_to_move ( state.playerToMove ( ) ) {}
+        moves ( state.get_moves ( ) ), hash ( state.zobrist ( ) ), move ( State::no_move ), player ( state.playerToMove ( ) ) {}
     Node ( State const & state, Move const & move_ ) :
-        moves ( state.get_moves ( ) ), hash ( state.zobrist ( ) ), move ( move_ ), player_to_move ( state.playerToMove ( ) ) {}
+        moves ( state.get_moves ( ) ), hash ( state.zobrist ( ) ), move ( move_ ), player ( state.playerToMove ( ) ) {}
 
     Node ( Node const & )     = default;
     Node ( Node && ) noexcept = default;
@@ -267,7 +266,7 @@ struct Node {
     std::string to_string ( ) const {
         std::stringstream ss;
         ss << "["
-           << "P" << player_to_move.opponent ( ) << " "
+           << "P" << player.opponent ( ) << " "
            << "M:" << move << " "
            << "W/V: " << ( wins / 2.0f ) << "/" << visits << " "
            << "U: " << moves.size ( ) << "]\n";
@@ -295,12 +294,12 @@ struct Node {
     NodeID up, prev, tail; // 12
     int size = 0;          // 16 number of children
 
-    int visits = 0;        // 20
-    float wins = 0.0f;     // 24
-    Moves moves;           // 32
-    ZobristHash hash;      // 40
-    Move move;             // 42
-    Player player_to_move; // 43
+    int visits = 0;    // 20
+    float wins = 0.0f; // 24
+    Moves moves;       // 32
+    Hash hash;         // 40
+    Move move;         // 42
+    Player player;     // 43
 };
 
 namespace nry {
@@ -347,7 +346,7 @@ ResultVector<State> compute_tree ( nry::Tree<State> & tree, State const root_sta
             sim_state.simulate ( );
             // We have now reached a final state. Backpropagate the result up the tree to the root node.id.
             while ( NodeID::invalid ( ) != node ) {
-                tree[ node.id ].update ( sim_state.get_result ( tree[ node.id ].player_to_move ) );
+                tree[ node.id ].update ( sim_state.get_result ( tree[ node.id ].player ) );
                 node = tree[ node.id ].up;
             }
         }
