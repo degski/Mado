@@ -378,7 +378,7 @@ typename State::Move compute_move ( State const root_state, ComputeOptions const
     }
     double start_time = wall_time ( );
     // Start all jobs to compute trees.
-    std::vector<std::future<Results<State>>> root_futures;
+    std::vector<std::future<Results<State>>> results_futures;
     ComputeOptions job_options = options;
     job_options.verbose        = false;
     for ( int t = 0; t < options.number_of_threads; ++t ) {
@@ -386,12 +386,12 @@ typename State::Move compute_move ( State const root_state, ComputeOptions const
             return compute_tree ( std::ref ( trees[ t ] ), root_state, job_options,
                                   18'446'744'073'709'551'557ull * t + 0x0fce58188743146dull );
         };
-        root_futures.push_back ( std::async ( std::launch::async, func ) );
+        results_futures.push_back ( std::async ( std::launch::async, func ) );
     }
     // Collect the results.
     std::vector<Results<State>> results;
     for ( int t = 0; t < options.number_of_threads; ++t )
-        results.push_back ( std::move ( root_futures[ t ].get ( ) ) );
+        results.push_back ( std::move ( results_futures[ t ].get ( ) ) );
     // Merge the results.
     std::map<typename State::Move, std::pair<int, float>> merged_results;
     std::int64_t games_played = 0;
