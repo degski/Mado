@@ -63,6 +63,9 @@
     <ClInclude Include="MonteCarlo-2.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="MonteCarlo-3.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Mado.rc">
