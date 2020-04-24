@@ -67,9 +67,13 @@
 
 #pragma once
 
+#include <cassert>
+#include <cstddef>
+#include <cstdint>
+#include <cstdlib>
+
 #include <algorithm>
 #include <chrono>
-#include <cstdlib>
 #include <functional>
 #include <future>
 #include <iomanip>
@@ -89,8 +93,8 @@
 #include <cereal/archives/binary.hpp>
 #include <cereal/types/vector.hpp>
 
-#include <pector/malloc_allocator.h>
-#include <pector/mimalloc_allocator.h>
+// #include <pector/malloc_allocator.h>
+// #include <pector/mimalloc_allocator.h>
 #include <pector/pector.h>
 
 template<typename T>
@@ -111,7 +115,7 @@ struct ComputeOptions {
     bool verbose;
 
     ComputeOptions ( ) :
-        number_of_threads ( 1 ), max_iterations ( 1'000'000 ), max_time ( -1.0 ), // default is no time limit.
+        number_of_threads ( 1 ), max_iterations ( 1'000'000 ), max_time ( 30.0 ), // default is no time limit.
         verbose ( true ) {}
 };
 
@@ -200,9 +204,9 @@ struct Node {
     Node ( State const & state, Move const & move_ ) :
         moves ( state.get_moves ( ) ), hash ( state.zobrist ( ) ), move ( move_ ), player ( state.playerToMove ( ) ) {}
 
-    Node ( Node const & )     = default;
-    Node ( Node && ) noexcept = default;
-    ~Node ( ) noexcept        = default;
+    explicit Node ( Node const & )     = default;
+    explicit Node ( Node && ) noexcept = default;
+    ~Node ( ) noexcept                 = default;
 
     [[maybe_unused]] Node & operator= ( Node const & ) = default;
     [[maybe_unused]] Node & operator= ( Node && ) noexcept = default;
@@ -234,7 +238,7 @@ struct Node {
         NodeID best_child;
         float best_utc_score = std::numeric_limits<float>::lowest ( );
         for ( NodeID child = tail; NodeID::invalid ( ) != child; child = tree_[ child.id ].prev ) {
-            Node & c = tree_[ child.id ];
+            Node & c = tree_[ child ( ) ];
             float utc_score =
                 ( c.wins / 2.0f ) / static_cast<float> ( c.visits ) +
                 std::sqrtf ( 2.0f * std::logf ( static_cast<float> ( this->visits ) ) / static_cast<float> ( c.visits ) );
@@ -251,7 +255,7 @@ struct Node {
         NodeID c{ tree_.size ( ) };
         Node & t = tree_.emplace_back ( state_, move_ );
         t.up     = id ( tree_ );
-        Node & s = tree_[ t.up.id ];
+        Node & s = tree_[ t.up ( ) ];
         t.prev   = s.tail;
         s.tail   = c;
         ++s.size;
@@ -286,8 +290,8 @@ struct Node {
         if ( indent_ >= max_depth_ )
             return "";
         std::string s = indent_string ( indent_ ) + to_string ( );
-        for ( NodeID child = tail; NodeID::invalid ( ) != child; child = tree_[ child.id ].prev )
-            s += tree_[ child.id ].tree_to_string ( max_depth_, indent_ + 1 );
+        for ( NodeID child = tail; NodeID::invalid ( ) != child; child = tree_[ child ( ) ].prev )
+            s += tree_[ child ( ) ].tree_to_string ( max_depth_, indent_ + 1 );
         return s;
     }
 
@@ -310,17 +314,8 @@ inline constexpr NodeID const root_node = NodeID{ 1 };
 } // namespace nry
 
 template<typename State>
-[[nodiscard]] Results<State> results ( nry::Tree<State> & tree_ ) {
-    Results<State> r;
-    r.reserve ( tree_[ nry::root_node.id ].size );
-    for ( NodeID child = tree_[ nry::root_node.id ].tail; NodeID::invalid ( ) != child; child = tree_[ child.id ].prev )
-        r.emplace_back ( Result<typename State::Move>{ tree_[ child.id ].visits, tree_[ child.id ].wins, tree_[ child.id ].move } );
-    return r;
-}
-
-template<typename State>
 Results<State> compute_tree ( nry::Tree<State> & tree, State const root_state, ComputeOptions const options,
-                                   sax::Rng::result_type seed_ ) {
+                              sax::Rng::result_type seed_ ) {
     static_assert ( std::is_copy_assignable<Node<State>>::value, "Node<State> is not copy-assignable" );
     static_assert ( std::is_move_assignable<Node<State>>::value, "Node<State> is not move-assignable" );
     sax::Rng random_engine ( seed_ );
@@ -330,24 +325,24 @@ Results<State> compute_tree ( nry::Tree<State> & tree, State const root_state, C
         NodeID node = nry::root_node;
         State state = root_state;
         // Select a path through the tree to a leaf node.
-        while ( not tree[ node.id ].has_untried_moves ( ) and tree[ node.id ].has_children ( ) ) {
-            node = tree[ node.id ].select_child_UCT ( );
-            state.do_move ( tree[ node.id ].move );
+        while ( not tree[ node ( ) ].has_untried_moves ( ) and tree[ node ( ) ].has_children ( ) ) {
+            node = tree[ node ( ) ].select_child_UCT ( );
+            state.do_move ( tree[ node ( ) ].move );
         }
-        // If we are not already at the final state, expand the tree with a new node.id and Move there.
-        if ( tree[ node.id ].has_untried_moves ( ) ) {
-            auto move = tree[ node.id ].get_untried_move ( &random_engine );
+        // If we are not already at the final state, expand the tree with a new node ( ) and Move there.
+        if ( tree[ node ( ) ].has_untried_moves ( ) ) {
+            auto move = tree[ node ( ) ].get_untried_move ( &random_engine );
             state.do_move ( move );
-            node = tree[ node.id ].add_child ( state, move );
+            node = tree[ node ( ) ].add_child ( state, move );
         }
         for ( int i = 0; i < 1; ++i ) {
             State sim_state = state;
             // We now play randomly until the game ends.
             sim_state.simulate ( );
-            // We have now reached a final state. Backpropagate the result up the tree to the root node.id.
+            // We have now reached a final state. Backpropagate the result up the tree to the root node ( ).
             while ( NodeID::invalid ( ) != node ) {
-                tree[ node.id ].update ( sim_state.get_result ( tree[ node.id ].player ) );
-                node = tree[ node.id ].up;
+                tree[ node ( ) ].update ( sim_state.get_result ( tree[ node ( ) ].player ) );
+                node = tree[ node ( ) ].up;
             }
         }
         if ( options.verbose or options.max_time >= 0 ) {
@@ -361,7 +356,11 @@ Results<State> compute_tree ( nry::Tree<State> & tree, State const root_state, C
         }
     }
     // Gather and return the results.
-    return results ( tree );
+    Results<State> r;
+    r.reserve ( tree[ nry::root_node ( ) ].size );
+    for ( NodeID child = tree[ nry::root_node ( ) ].tail; NodeID::invalid ( ) != child; child = tree[ child ( ) ].prev )
+        r.emplace_back ( Result<typename State::Move>{ tree[ child ( ) ].visits, tree[ child ( ) ].wins, tree[ child ( ) ].move } );
+    return r;
 }
 
 template<typename State>
