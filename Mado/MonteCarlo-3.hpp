@@ -327,6 +327,7 @@ template<typename State>
 void root ( Tree<State> & tree_, NodeID const root_ ) {
     assert ( NodeID::invalid ( ) != root_ );
     Tree<State> sub_tree;
+    sub_tree.emplace_back ( );
     add_child ( sub_tree, NodeID{ 0 }, std::move ( tree_[ root_ ( ) ].data ) ); // add root state data
     std::vector<NodeID> visited ( tree_.size ( ) );
     visited[ root_ ( ) ] = root_node;
@@ -348,6 +349,7 @@ void root ( Tree<State> & tree_, NodeID const root_ ) {
 template<typename State>
 void flatten ( Tree<State> & tree_ ) {
     Tree<State> sub_tree;
+    sub_tree.emplace_back ( );
     add_child ( sub_tree, NodeID{ 0 }, std::move ( tree_[ root_ ( ) ].data ) ); // add root state data
     for ( NodeID child = tree_[ root_node ( ) ].tail; NodeID::invalid ( ) != child; child = tree_[ child ( ) ].prev )
         add_child ( sub_tree, root_node, std::move ( tree_[ child ( ) ].data ) );
@@ -408,9 +410,15 @@ Results<State> compute_tree ( std::reference_wrapper<Tree<State>> tree_, State c
 
 template<typename State>
 typename State::Move compute_move ( State const root_state_, ComputeOptions const options_ ) {
-    std::vector<Tree<State>> trees ( options_.number_of_threads );
-    for ( auto & tree : trees )
+    std::vector<Tree<State>> trees;
+    trees.reserve ( options_.number_of_threads );
+    for ( int t = 0; t < options_.number_of_threads; ++t ) {
+        Tree<State> tree;
+        tree.reserve ( 64 );
+        tree.emplace_back ( );
         add_child ( tree, NodeID{ 0 }, root_state_, State::no_move ); // add root states
+        trees.emplace_back ( std::move ( tree ) );
+    }
     assert ( trees.size ( ) >= options_.number_of_threads );
     {
         typename State::Moves moves = root_state_.get_moves ( );
@@ -421,6 +429,7 @@ typename State::Move compute_move ( State const root_state_, ComputeOptions cons
     double start_time = wall_time ( );
     // Start all jobs to compute trees.
     std::vector<std::future<Results<State>>> results_futures;
+    results_futures.reserve ( options_.number_of_threads );
     ComputeOptions job_options = options_;
     job_options.verbose        = false;
     for ( int t = 0; t < options_.number_of_threads; ++t ) {
@@ -432,11 +441,12 @@ typename State::Move compute_move ( State const root_state_, ComputeOptions cons
     }
     // Collect the results.
     std::vector<Results<State>> results;
+    results.reserve ( options_.number_of_threads );
     for ( int t = 0; t < options_.number_of_threads; ++t )
         results.push_back ( std::move ( results_futures[ t ].get ( ) ) );
     // Merge the results.
     std::map<typename State::Move, std::pair<int, float>> merged_results;
-    std::int64_t games_played = 0;
+    int games_played = 0;
     for ( int t = 0; t < options_.number_of_threads; ++t ) {
         for ( auto & r : results[ t ] ) {
             auto & m = merged_results[ r.move ];
