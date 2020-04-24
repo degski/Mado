@@ -327,6 +327,7 @@ template<typename State>
 void root ( Tree<State> & tree_, NodeID const root_ ) {
     assert ( NodeID::invalid ( ) != root_ );
     Tree<State> sub_tree;
+    sub_tree.reserve ( 64 );
     sub_tree.emplace_back ( );
     add_child ( sub_tree, NodeID{ 0 }, std::move ( tree_[ root_ ( ) ].data ) ); // add root state data
     std::vector<NodeID> visited ( tree_.size ( ) );
@@ -349,6 +350,7 @@ void root ( Tree<State> & tree_, NodeID const root_ ) {
 template<typename State>
 void flatten ( Tree<State> & tree_ ) {
     Tree<State> sub_tree;
+    sub_tree.reserve ( 64 );
     sub_tree.emplace_back ( );
     add_child ( sub_tree, NodeID{ 0 }, std::move ( tree_[ root_ ( ) ].data ) ); // add root state data
     for ( NodeID child = tree_[ root_node ( ) ].tail; NodeID::invalid ( ) != child; child = tree_[ child ( ) ].prev )
