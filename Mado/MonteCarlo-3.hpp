@@ -198,11 +198,30 @@ struct Node {
     using Move   = typename State::Move;
     using Player = typename State::value_type;
 
-    explicit Node ( ) noexcept : hash ( 0u ), move ( State::no_move ), player ( Player::Type::invalid ) {}
+    NodeID up, prev, tail; // 12
+    int size = 0;          // 16 number of children
+
+    struct Data {
+
+        int visits = 0;    // 20
+        float wins = 0.0f; // 24
+        Moves moves;       // 32
+        Hash hash;         // 40
+        Move move;         // 42
+        Player player;     // 43
+    };
+
+    Data data;
+
+    explicit Node ( ) noexcept : data.hash ( 0u ), data.move ( State::no_move ), data.player ( Player::Type::invalid ) {}
     Node ( State const & state ) :
-        moves ( state.get_moves ( ) ), hash ( state.zobrist ( ) ), move ( State::no_move ), player ( state.playerToMove ( ) ) {}
+        data.moves ( state.get_moves ( ) ),
+    data.hash ( state.zobrist ( ) ), data.move ( State::no_move ), data.player ( state.playerToMove ( ) ) {}
     Node ( State const & state, Move const & move_ ) :
-        moves ( state.get_moves ( ) ), hash ( state.zobrist ( ) ), move ( move_ ), player ( state.playerToMove ( ) ) {}
+        data.moves ( state.get_moves ( ) ),
+    data.hash ( state.zobrist ( ) ), data.move ( move_ ), data.player ( state.playerToMove ( ) ) {}
+    Node ( Data && d_ ) noexcept : data{ std::move ( d_ ) } {}
+    Node ( Data const & d_ ) : data{ d_ } {}
 
     explicit Node ( Node const & )     = default;
     explicit Node ( Node && ) noexcept = default;
@@ -211,25 +230,25 @@ struct Node {
     [[maybe_unused]] Node & operator= ( Node const & ) = default;
     [[maybe_unused]] Node & operator= ( Node && ) noexcept = default;
 
-    [[nodiscard]] bool has_untried_moves ( ) const noexcept { return not moves.is_released ( ); }
+    [[nodiscard]] bool has_untried_moves ( ) const noexcept { return not data.moves.is_released ( ); }
 
     template<typename RandomEngine>
     [[nodiscard]] Move get_untried_move ( RandomEngine * engine ) noexcept { // removes move
-        attest ( not moves.empty ( ) );
-        if ( 1 == moves.size ( ) ) {
-            Move m = moves.front ( );
-            moves.reset ( );
+        attest ( not data.moves.empty ( ) );
+        if ( 1 == data.moves.size ( ) ) {
+            Move m = data.moves.front ( );
+            data.moves.reset ( );
             return m;
         }
         return moves.unordered_erase (
-            sax::uniform_int_distribution<typename Moves::size_type> ( 0, moves.size ( ) - 1 ) ( *engine ) );
+            sax::uniform_int_distribution<typename Moves::size_type> ( 0, data.moves.size ( ) - 1 ) ( *engine ) );
     }
 
     [[nodiscard]] bool has_children ( ) const noexcept { return size; }
 
     void update ( float result_ ) noexcept {
-        visits += 1;
-        wins += result_;
+        data.visits += 1;
+        data.wins += result_;
     }
 
     template<typename Tree>
@@ -237,8 +256,8 @@ struct Node {
         attest ( size );
         NodeID best_child;
         float best_utc_score = std::numeric_limits<float>::lowest ( );
-        for ( NodeID child = tail; NodeID::invalid ( ) != child; child = tree_[ child.id ].prev ) {
-            Node & c = tree_[ child ( ) ];
+        for ( NodeID child = tail; NodeID::invalid ( ) != child; child = tree_[ child ( ) ].prev ) {
+            Data & c = tree_[ child ( ) ].data;
             float utc_score =
                 ( c.wins / 2.0f ) / static_cast<float> ( c.visits ) +
                 std::sqrtf ( 2.0f * std::logf ( static_cast<float> ( this->visits ) ) / static_cast<float> ( c.visits ) );
@@ -251,18 +270,6 @@ struct Node {
     }
 
     template<typename Tree>
-    [[maybe_unused]] NodeID add_child ( Tree & tree_, State const & state_, Move const & move_ ) {
-        NodeID c{ tree_.size ( ) };
-        Node & t = tree_.emplace_back ( state_, move_ );
-        t.up     = id ( tree_ );
-        Node & s = tree_[ t.up ( ) ];
-        t.prev   = s.tail;
-        s.tail   = c;
-        ++s.size;
-        return c;
-    }
-
-    template<typename Tree>
     NodeID id ( Tree const & tree_ ) const noexcept {
         return NodeID{ static_cast<std::size_t> ( this - tree_.data ( ) ) };
     }
@@ -270,10 +277,10 @@ struct Node {
     std::string to_string ( ) const {
         std::stringstream ss;
         ss << "["
-           << "P" << player.opponent ( ) << " "
-           << "M:" << move << " "
-           << "W/V: " << ( wins / 2.0f ) << "/" << visits << " "
-           << "U: " << moves.size ( ) << "]\n";
+           << "P" << data.player.opponent ( ) << " "
+           << "M:" << data.move << " "
+           << "W/V: " << ( data.wins / 2.0f ) << "/" << data.visits << " "
+           << "U: " << data.moves.size ( ) << "]\n";
         return ss.str ( );
     }
 
@@ -294,16 +301,6 @@ struct Node {
             s += tree_[ child ( ) ].tree_to_string ( max_depth_, indent_ + 1 );
         return s;
     }
-
-    NodeID up, prev, tail; // 12
-    int size = 0;          // 16 number of children
-
-    int visits = 0;    // 20
-    float wins = 0.0f; // 24
-    Moves moves;       // 32
-    Hash hash;         // 40
-    Move move;         // 42
-    Player player;     // 43
 };
 
 namespace nry {
@@ -311,6 +308,49 @@ namespace nry {
 template<typename State>
 using Tree                              = pector<Node<State>>;
 inline constexpr NodeID const root_node = NodeID{ 1 };
+
+template<typename State, typename... Args>
+[[maybe_unused]] NodeID add_child ( nry::Tree<State> & tree_, NodeID pid_, Args &&... args_ ) {
+    NodeID c{ tree_.size ( ) };
+    Node & t = tree_.emplace_back ( std::forward<Args> ( args_ )... );
+    t.up     = pid_;
+    Node & s = tree_[ t.up ( ) ];
+    t.prev   = s.tail;
+    s.tail   = c;
+    ++s.size;
+    return c;
+}
+
+template<typename State>
+void root ( nry::Tree<State> & tree_, NodeID const root_ ) {
+    assert ( NodeID::invalid ( ) != root_ );
+    nry::Tree<State> sub_tree;
+    nry::add_child ( sub_tree, NodeID{ 0 } std::move ( tree_[ root_ ( ) ].data ) ); // add root state data
+    std::vector<NodeID> visited ( tree_.size ( ) );
+    visited[ root_ ( ) ] = nry::root_node;
+    std::vector<NodeID> stack;
+    stack.reserve ( 64u );
+    stack.push_back ( root_ );
+    while ( stack.size ( ) ) {
+        NodeID parent = stack.back ( );
+        stack.pop_back ( );
+        for ( NodeID child = tree_[ parent ( ) ].tail; NodeID::invalid ( ) != child; child = tree_[ child ( ) ].prev )
+            if ( NodeID::invalid ( ) == visited[ child ( ) ] ) {
+                visited[ child ( ) ] = nry::add_child ( sub_tree, visited[ parent ( ) ], std::move ( tree_[ child ( ) ].data ) );
+                stack.push_back ( child );
+            }
+    }
+    std::swap ( tree_, sub_tree );
+}
+
+template<typename State>
+void flatten ( nry::Tree<State> & tree_ ) {
+    nry::Tree<State> sub_tree;
+    nry::add_child ( sub_tree, NodeID{ 0 }, std::move ( tree_[ root_ ( ) ].data ) ); // add root state data
+    for ( NodeID child = tree_[ nry::root_node ( ) ].tail; NodeID::invalid ( ) != child; child = tree_[ child ( ) ].prev )
+        nry::add_child ( sub_tree, nry::root_node ( ), std::move ( tree_[ child ( ) ].data ) );
+    std::swap ( tree_, sub_tree );
+}
 } // namespace nry
 
 template<typename State>
@@ -327,13 +367,13 @@ Results<State> compute_tree ( nry::Tree<State> & tree, State const root_state, C
         // Select a path through the tree to a leaf node.
         while ( not tree[ node ( ) ].has_untried_moves ( ) and tree[ node ( ) ].has_children ( ) ) {
             node = tree[ node ( ) ].select_child_UCT ( );
-            state.do_move ( tree[ node ( ) ].move );
+            state.do_move ( tree[ node ( ) ].data.move );
         }
         // If we are not already at the final state, expand the tree with a new node ( ) and Move there.
         if ( tree[ node ( ) ].has_untried_moves ( ) ) {
             auto move = tree[ node ( ) ].get_untried_move ( &random_engine );
             state.do_move ( move );
-            node = tree[ node ( ) ].add_child ( state, move );
+            node = nry::add_child ( tree, node ( ), state, move );
         }
         for ( int i = 0; i < 1; ++i ) {
             State sim_state = state;
@@ -341,7 +381,7 @@ Results<State> compute_tree ( nry::Tree<State> & tree, State const root_state, C
             sim_state.simulate ( );
             // We have now reached a final state. Backpropagate the result up the tree to the root node ( ).
             while ( NodeID::invalid ( ) != node ) {
-                tree[ node ( ) ].update ( sim_state.get_result ( tree[ node ( ) ].player ) );
+                tree[ node ( ) ].update ( sim_state.get_result ( tree[ node ( ) ].data.player ) );
                 node = tree[ node ( ) ].up;
             }
         }
@@ -359,7 +399,8 @@ Results<State> compute_tree ( nry::Tree<State> & tree, State const root_state, C
     Results<State> r;
     r.reserve ( tree[ nry::root_node ( ) ].size );
     for ( NodeID child = tree[ nry::root_node ( ) ].tail; NodeID::invalid ( ) != child; child = tree[ child ( ) ].prev )
-        r.emplace_back ( Result<typename State::Move>{ tree[ child ( ) ].visits, tree[ child ( ) ].wins, tree[ child ( ) ].move } );
+        r.emplace_back ( Result<typename State::Move>{ tree[ child ( ) ].data.visits, tree[ child ( ) ].data.wins,
+                                                       tree[ child ( ) ].data.move } );
     return r;
 }
 
@@ -367,7 +408,7 @@ template<typename State>
 typename State::Move compute_move ( State const root_state, ComputeOptions const options ) {
     std::vector<nry::Tree<State>> trees ( options.number_of_threads );
     for ( auto & tree : trees )
-        tree[ 0 ].add_child ( root_state, State::no_move ); // add root states
+        nry::add_child ( tree, NodeID{ 0 }, root_state, State::no_move ); // add root states
     assert ( trees.size ( ) >= options.number_of_threads );
     {
         typename State::Moves moves = root_state.get_moves ( );
