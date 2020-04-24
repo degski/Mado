@@ -442,13 +442,13 @@ typename State::Move compute_move ( State const root_state_, ComputeOptions cons
     // Collect the results.
     std::vector<Results<State>> results;
     results.reserve ( options_.number_of_threads );
-    for ( int t = 0; t < options_.number_of_threads; ++t )
-        results.push_back ( std::move ( results_futures[ t ].get ( ) ) );
+    for ( auto & results_future : results_futures )
+        results.push_back ( std::move ( results_future.get ( ) ) );
     // Merge the results.
     std::map<typename State::Move, std::pair<int, float>> merged_results;
     int games_played = 0;
-    for ( int t = 0; t < options_.number_of_threads; ++t ) {
-        for ( auto & r : results[ t ] ) {
+    for ( auto & result : results ) {
+        for ( auto & r : result ) {
             auto & m = merged_results[ r.move ];
             m.first += r.visits;
             m.second += r.wins;
