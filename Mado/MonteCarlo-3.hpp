@@ -230,8 +230,8 @@ struct Node {
         data.move   = move_;
         data.player = state.playerToMove ( );
     }
-    Node ( Data && d_ ) noexcept : data{ std::move ( d_ ) } {}
-    Node ( Data const & d_ ) : data{ d_ } {}
+    Node ( Data && data_ ) noexcept : data{ std::move ( data_ ) } {}
+    Node ( Data const & data_ ) : data{ data_ } {}
 
     explicit Node ( Node const & )     = default;
     explicit Node ( Node && ) noexcept = default;
@@ -243,7 +243,7 @@ struct Node {
     [[nodiscard]] bool has_untried_moves ( ) const noexcept { return not data.moves.is_released ( ); }
 
     template<typename RandomEngine>
-    [[nodiscard]] Move get_untried_move ( RandomEngine * engine ) noexcept { // removes move
+    [[nodiscard]] Move get_untried_move ( RandomEngine & engine_ ) noexcept { // removes move
         attest ( not data.moves.empty ( ) );
         if ( 1 == data.moves.size ( ) ) {
             Move m = data.moves.front ( );
@@ -251,7 +251,7 @@ struct Node {
             return m;
         }
         return data.moves.unordered_erase (
-            sax::uniform_int_distribution<typename Moves::size_type> ( 0, data.moves.size ( ) - 1 ) ( *engine ) );
+            sax::uniform_int_distribution<typename Moves::size_type> ( 0, data.moves.size ( ) - 1 ) ( engine_ ) );
     }
 
     [[nodiscard]] bool has_children ( ) const noexcept { return size; }
@@ -277,26 +277,26 @@ using Tree                              = pector<Node<State>>;
 inline constexpr NodeID const root_node = NodeID{ 1 };
 
 template<typename State, typename... Args>
-[[maybe_unused]] NodeID add_child ( Tree<State> & tree_, NodeID pid_, Args &&... args_ ) {
-    NodeID c{ tree_.size ( ) };
-    Node<State> & t = tree_.emplace_back ( std::forward<Args> ( args_ )... );
-    t.up            = pid_;
-    Node<State> & s = tree_[ t.up ( ) ];
-    t.prev          = s.tail;
-    s.tail          = c;
-    ++s.size;
-    return c;
+[[maybe_unused]] NodeID add_child ( Tree<State> & tree_, NodeID parent_, Args &&... args_ ) {
+    NodeID child{ tree_.size ( ) };
+    Node<State> & c = tree_.emplace_back ( std::forward<Args> ( args_ )... );
+    c.up            = parent_;
+    Node<State> & p = tree_[ c.up ( ) ];
+    c.prev          = p.tail;
+    p.tail          = child;
+    ++p.size;
+    return child;
 }
 
 template<typename State>
-[[nodiscard]] NodeID select_child_uct ( Tree<State> const & tree_, NodeID pid_ ) noexcept {
-    attest ( tree_[ pid_ ( ) ].size );
+[[nodiscard]] NodeID select_child_uct ( Tree<State> const & tree_, NodeID parent_ ) noexcept {
+    attest ( tree_[ parent_ ( ) ].size );
     NodeID best_child;
     float best_utc_score = std::numeric_limits<float>::lowest ( );
-    for ( NodeID child = tree_[ pid_ ( ) ].tail; NodeID::invalid ( ) != child; child = tree_[ child ( ) ].prev ) {
+    for ( NodeID child = tree_[ parent_ ( ) ].tail; NodeID::invalid ( ) != child; child = tree_[ child ( ) ].prev ) {
         auto & c        = tree_[ child ( ) ].data;
         float utc_score = ( c.wins / 2.0f ) / static_cast<float> ( c.visits ) +
-                          std::sqrtf ( 2.0f * std::logf ( static_cast<float> ( tree_[ pid_ ( ) ].data.visits ) ) /
+                          std::sqrtf ( 2.0f * std::logf ( static_cast<float> ( tree_[ parent_ ( ) ].data.visits ) ) /
                                        static_cast<float> ( c.visits ) );
         if ( utc_score > best_utc_score ) {
             best_child     = child;
@@ -307,18 +307,18 @@ template<typename State>
 }
 
 template<typename State>
-std::string tree_to_string ( Tree<State> const & tree_, NodeID pid_, int max_depth_ = 1'000'000, int indent_ = 0 ) {
+std::string tree_to_string ( Tree<State> const & tree_, NodeID parent_, int max_depth_ = 1'000'000, int indent_ = 0 ) {
     auto indent_string = [] ( int indent_ ) -> std::string {
         std::string s = "";
         for ( int i = 1; i <= indent_; ++i )
             s += "| ";
         return s;
     };
-    attest ( tree_[ pid_ ( ) ].size );
+    attest ( tree_[ parent_ ( ) ].size );
     if ( indent_ >= max_depth_ )
         return "";
-    std::string s = indent_string ( indent_ ) + tree_[ pid_ ( ) ].to_string ( );
-    for ( NodeID child = tree_[ pid_ ( ) ].tail; NodeID::invalid ( ) != child; child = tree_[ child ( ) ].prev )
+    std::string s = indent_string ( indent_ ) + tree_[ parent_ ( ) ].to_string ( );
+    for ( NodeID child = tree_[ parent_ ( ) ].tail; NodeID::invalid ( ) != child; child = tree_[ child ( ) ].prev )
         s += tree_[ child ( ) ].tree_to_string ( tree_, child, max_depth_, indent_ + 1 );
     return s;
 }
@@ -373,7 +373,7 @@ Results<State> compute_tree ( std::reference_wrapper<Tree<State>> tree_, State c
         }
         // If we are not already at the final state, expand the tree with a new node ( ) and Move there.
         if ( tree[ node ( ) ].has_untried_moves ( ) ) {
-            auto move = tree[ node ( ) ].get_untried_move ( &random_engine );
+            auto move = tree[ node ( ) ].get_untried_move ( random_engine );
             state.do_move ( move );
             node = add_child ( tree, node, state, move );
         }
@@ -407,13 +407,13 @@ Results<State> compute_tree ( std::reference_wrapper<Tree<State>> tree_, State c
 }
 
 template<typename State>
-typename State::Move compute_move ( State const root_state, ComputeOptions const options ) {
-    std::vector<Tree<State>> trees ( options.number_of_threads );
+typename State::Move compute_move ( State const root_state_, ComputeOptions const options_ ) {
+    std::vector<Tree<State>> trees ( options_.number_of_threads );
     for ( auto & tree : trees )
-        add_child ( tree, NodeID{ 0 }, root_state, State::no_move ); // add root states
-    assert ( trees.size ( ) >= options.number_of_threads );
+        add_child ( tree, NodeID{ 0 }, root_state_, State::no_move ); // add root states
+    assert ( trees.size ( ) >= options_.number_of_threads );
     {
-        typename State::Moves moves = root_state.get_moves ( );
+        typename State::Moves moves = root_state_.get_moves ( );
         attest ( moves.size ( ) > 0 );
         if ( moves.size ( ) == 1 )
             return moves[ 0 ];
@@ -421,23 +421,23 @@ typename State::Move compute_move ( State const root_state, ComputeOptions const
     double start_time = wall_time ( );
     // Start all jobs to compute trees.
     std::vector<std::future<Results<State>>> results_futures;
-    ComputeOptions job_options = options;
+    ComputeOptions job_options = options_;
     job_options.verbose        = false;
-    for ( int t = 0; t < options.number_of_threads; ++t ) {
-        auto func = [ t, &trees, &root_state, &job_options ] ( ) -> Results<State> {
-            return compute_tree ( std::ref ( trees[ t ] ), root_state, job_options,
+    for ( int t = 0; t < options_.number_of_threads; ++t ) {
+        auto func = [ t, &trees, &root_state_, &job_options ] ( ) -> Results<State> {
+            return compute_tree ( std::ref ( trees[ t ] ), root_state_, job_options,
                                   18'446'744'073'709'551'557ull * t + 0x0fce58188743146dull );
         };
         results_futures.push_back ( std::async ( std::launch::async, func ) );
     }
     // Collect the results.
     std::vector<Results<State>> results;
-    for ( int t = 0; t < options.number_of_threads; ++t )
+    for ( int t = 0; t < options_.number_of_threads; ++t )
         results.push_back ( std::move ( results_futures[ t ].get ( ) ) );
     // Merge the results.
     std::map<typename State::Move, std::pair<int, float>> merged_results;
     std::int64_t games_played = 0;
-    for ( int t = 0; t < options.number_of_threads; ++t ) {
+    for ( int t = 0; t < options_.number_of_threads; ++t ) {
         for ( auto & r : results[ t ] ) {
             auto & m = merged_results[ r.move ];
             m.first += r.visits;
@@ -458,23 +458,23 @@ typename State::Move compute_move ( State const root_state, ComputeOptions const
             best_move  = move;
             best_score = expected_success_rate;
         }
-        if ( options.verbose ) {
+        if ( options_.verbose ) {
             std::cerr << "Move: " << itr.first << " (" << std::setw ( 2 ) << std::right
                       << int ( 100.0f * v / float ( games_played ) + 0.5f ) << "% visits)"
                       << " (" << std::setw ( 2 ) << std::right << int ( 100.0f * w / v + 0.5f ) << "% wins)" << std::endl;
         }
     }
-    if ( options.verbose ) {
+    if ( options_.verbose ) {
         int best_visits = merged_results[ best_move ].first;
         float best_wins = merged_results[ best_move ].second;
         std::cerr << "----" << std::endl;
         std::cerr << "Best: " << best_move << " (" << 100.0f * best_visits / float ( games_played ) << "% visits)"
                   << " (" << 100.0f * best_wins / best_visits << "% wins)" << std::endl;
     }
-    if ( options.verbose ) {
+    if ( options_.verbose ) {
         float time = wall_time ( );
         std::cerr << games_played << " games played in " << float ( time - start_time ) << " s. "
-                  << "(" << float ( games_played ) / ( time - start_time ) << " / second, " << options.number_of_threads
+                  << "(" << float ( games_played ) / ( time - start_time ) << " / second, " << options_.number_of_threads
                   << " parallel jobs)." << std::endl;
     }
     return best_move;
