@@ -397,7 +397,7 @@ Results<State> compute_tree ( std::reference_wrapper<Tree<State>> tree_, State c
                 break;
         }
     }
-    // Gather and return the results.
+    // Collect and return the results.
     Results<State> r;
     r.reserve ( tree[ root_node ( ) ].size );
     for ( NodeID child = tree[ root_node ( ) ].tail; NodeID::invalid ( ) != child; child = tree[ child ( ) ].prev )
