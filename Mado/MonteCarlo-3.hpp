@@ -261,11 +261,6 @@ struct Node {
         data.wins += result_;
     }
 
-    template<typename Tree>
-    NodeID id ( Tree const & tree_ ) const noexcept {
-        return NodeID{ static_cast<std::size_t> ( this - tree_.data ( ) ) };
-    }
-
     std::string to_string ( ) const {
         std::stringstream ss;
         ss << "["
@@ -275,34 +270,14 @@ struct Node {
            << "U: " << data.moves.size ( ) << "]\n";
         return ss.str ( );
     }
-
-    std::string indent_string ( int indent_ ) const {
-        std::string s = "";
-        for ( int i = 1; i <= indent_; ++i )
-            s += "| ";
-        return s;
-    }
-
-    template<typename Tree>
-    std::string tree_to_string ( Tree const & tree_, int max_depth_ = 1'000'000, int indent_ = 0 ) const {
-        attest ( size );
-        if ( indent_ >= max_depth_ )
-            return "";
-        std::string s = indent_string ( indent_ ) + to_string ( );
-        for ( NodeID child = tail; NodeID::invalid ( ) != child; child = tree_[ child ( ) ].prev )
-            s += tree_[ child ( ) ].tree_to_string ( max_depth_, indent_ + 1 );
-        return s;
-    }
 };
-
-namespace nry {
 
 template<typename State>
 using Tree                              = pector<Node<State>>;
 inline constexpr NodeID const root_node = NodeID{ 1 };
 
 template<typename State, typename... Args>
-[[maybe_unused]] NodeID add_child ( nry::Tree<State> & tree_, NodeID pid_, Args &&... args_ ) {
+[[maybe_unused]] NodeID add_child ( Tree<State> & tree_, NodeID pid_, Args &&... args_ ) {
     NodeID c{ tree_.size ( ) };
     Node<State> & t = tree_.emplace_back ( std::forward<Args> ( args_ )... );
     t.up            = pid_;
@@ -314,7 +289,7 @@ template<typename State, typename... Args>
 }
 
 template<typename State>
-[[nodiscard]] NodeID select_child_UCT ( nry::Tree<State> const & tree_, NodeID pid_ ) noexcept {
+[[nodiscard]] NodeID select_child_uct ( Tree<State> const & tree_, NodeID pid_ ) noexcept {
     attest ( tree_[ pid_ ( ) ].size );
     NodeID best_child;
     float best_utc_score = std::numeric_limits<float>::lowest ( );
@@ -329,6 +304,23 @@ template<typename State>
         }
     }
     return best_child;
+}
+
+template<typename State>
+std::string tree_to_string ( Tree<State> const & tree_, NodeID pid_, int max_depth_ = 1'000'000, int indent_ = 0 ) {
+    auto indent_string = [] ( int indent_ ) -> std::string {
+        std::string s = "";
+        for ( int i = 1; i <= indent_; ++i )
+            s += "| ";
+        return s;
+    };
+    attest ( tree_[ pid_ ( ) ].size );
+    if ( indent_ >= max_depth_ )
+        return "";
+    std::string s = indent_string ( indent_ ) + tree_[ pid_ ( ) ].to_string ( );
+    for ( NodeID child = tree_[ pid_ ( ) ].tail; NodeID::invalid ( ) != child; child = tree_[ child ( ) ].prev )
+        s += tree_[ child ( ) ].tree_to_string ( tree_, child, max_depth_, indent_ + 1 );
+    return s;
 }
 
 template<typename State>
@@ -358,33 +350,32 @@ void flatten ( Tree<State> & tree_ ) {
     Tree<State> sub_tree;
     add_child ( sub_tree, NodeID{ 0 }, std::move ( tree_[ root_ ( ) ].data ) ); // add root state data
     for ( NodeID child = tree_[ root_node ( ) ].tail; NodeID::invalid ( ) != child; child = tree_[ child ( ) ].prev )
-        add_child ( sub_tree, root_node ( ), std::move ( tree_[ child ( ) ].data ) );
+        add_child ( sub_tree, root_node, std::move ( tree_[ child ( ) ].data ) );
     std::swap ( tree_, sub_tree );
 }
-} // namespace nry
 
 template<typename State>
-Results<State> compute_tree ( std::reference_wrapper<nry::Tree<State>> tree_, State const root_state_,
-                              ComputeOptions const options_, sax::Rng::result_type seed_ ) {
+Results<State> compute_tree ( std::reference_wrapper<Tree<State>> tree_, State const root_state_, ComputeOptions const options_,
+                              sax::Rng::result_type seed_ ) {
     static_assert ( std::is_copy_assignable<Node<State>>::value, "Node<State> is not copy-assignable" );
     static_assert ( std::is_move_assignable<Node<State>>::value, "Node<State> is not move-assignable" );
-    nry::Tree<State> & tree = tree_.get ( );
+    Tree<State> & tree = tree_.get ( );
     sax::Rng random_engine ( seed_ );
     attest ( options_.max_iterations >= 0 or options_.max_time >= 0 );
     double start_time = wall_time ( ), print_time = start_time;
     for ( int iter = 1; iter <= options_.max_iterations or options_.max_iterations < 0; ++iter ) {
-        NodeID node = nry::root_node;
+        NodeID node = root_node;
         State state = root_state_;
         // Select a path through the tree to a leaf node.
         while ( not tree[ node ( ) ].has_untried_moves ( ) and tree[ node ( ) ].has_children ( ) ) {
-            node = nry::select_child_UCT ( tree, node );
+            node = select_child_uct ( tree, node );
             state.do_move ( tree[ node ( ) ].data.move );
         }
         // If we are not already at the final state, expand the tree with a new node ( ) and Move there.
         if ( tree[ node ( ) ].has_untried_moves ( ) ) {
             auto move = tree[ node ( ) ].get_untried_move ( &random_engine );
             state.do_move ( move );
-            node = nry::add_child ( tree, node, state, move );
+            node = add_child ( tree, node, state, move );
         }
         for ( int i = 0; i < 1; ++i ) {
             State sim_state = state;
@@ -408,8 +399,8 @@ Results<State> compute_tree ( std::reference_wrapper<nry::Tree<State>> tree_, St
     }
     // Gather and return the results.
     Results<State> r;
-    r.reserve ( tree[ nry::root_node ( ) ].size );
-    for ( NodeID child = tree[ nry::root_node ( ) ].tail; NodeID::invalid ( ) != child; child = tree[ child ( ) ].prev )
+    r.reserve ( tree[ root_node ( ) ].size );
+    for ( NodeID child = tree[ root_node ( ) ].tail; NodeID::invalid ( ) != child; child = tree[ child ( ) ].prev )
         r.emplace_back ( Result<typename State::Move>{ tree[ child ( ) ].data.visits, tree[ child ( ) ].data.wins,
                                                        tree[ child ( ) ].data.move } );
     return r;
@@ -417,9 +408,9 @@ Results<State> compute_tree ( std::reference_wrapper<nry::Tree<State>> tree_, St
 
 template<typename State>
 typename State::Move compute_move ( State const root_state, ComputeOptions const options ) {
-    std::vector<nry::Tree<State>> trees ( options.number_of_threads );
+    std::vector<Tree<State>> trees ( options.number_of_threads );
     for ( auto & tree : trees )
-        nry::add_child ( tree, NodeID{ 0 }, root_state, State::no_move ); // add root states
+        add_child ( tree, NodeID{ 0 }, root_state, State::no_move ); // add root states
     assert ( trees.size ( ) >= options.number_of_threads );
     {
         typename State::Moves moves = root_state.get_moves ( );
