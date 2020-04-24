@@ -175,7 +175,7 @@ struct NodeID {
     friend class cereal::access;
 
     template<class Archive>
-    inline void serialize ( Archive & ar_ ) {
+    void serialize ( Archive & ar_ ) {
         ar_ ( id );
     }
 };
@@ -209,6 +209,32 @@ struct Node {
         Hash hash;         // 40
         Move move;         // 42
         Player player;     // 43
+
+        private:
+        friend class cereal::access;
+
+        template<class Archive>
+        void save ( Archive & ar_ ) const {
+            ar_ ( visits, wins );
+            int s = moves.size ( );
+            ar_ ( s );
+            for ( int i = 0; i < s; ++i )
+                ar_ ( moves [ i ] );
+            ar_ ( hash, move, player );
+        }
+
+        template<class Archive>
+        void load ( Archive & ar_ ) {
+            ar_ ( visits, wins );
+            int s = 0;
+            ar_ ( s );
+            if ( s ) {
+                moves.resize ( s );
+                for ( int i = 0; i < s; ++i )
+                    ar_ ( moves[ i ] );
+            }
+            ar_ ( hash, move, player );
+        }
     };
 
     Data data;
@@ -270,6 +296,14 @@ struct Node {
            << "U: " << data.moves.size ( ) << "]\n";
         return ss.str ( );
     }
+
+    private:
+    friend class cereal::access;
+
+    template<class Archive>
+    void serialize ( Archive & ar_ ) {
+        ar_ ( up, prev, tail, size, data );
+    }
 };
 
 template<typename State>
@@ -324,7 +358,7 @@ std::string tree_to_string ( Tree<State> const & tree_, NodeID parent_, int max_
 }
 
 template<typename State>
-void root ( Tree<State> & tree_, NodeID const root_ ) {
+void root ( Tree<State> & tree_, NodeID root_ ) {
     assert ( NodeID::invalid ( ) != root_ );
     Tree<State> sub_tree;
     sub_tree.reserve ( 64 );
