@@ -33,7 +33,6 @@
 #include <array>
 #include <charconv>
 #include <sax/iostream.hpp>
-#include <optional>
 #include <random>
 #include <string_view>
 #include <thread>
@@ -49,7 +48,6 @@
 
 #include <sax/singleton.hpp>
 #include <sax/stl.hpp>
-#include <sax/srwlock.hpp>
 
 #include "Player.hpp"
 #include "Hexcontainer.hpp"
@@ -110,20 +108,13 @@ class Mado {
     using ZobristHash = std::uint64_t;
 
     using SurroundedPlayerVector = std::experimental::fixed_capacity_vector<value_type, 6>;
-    using MoveLock               = sax::SRWLock;
 
     private:
     PositionData m_pos;
     value_type m_winner;
     Generator m_generator;
     ZobristHash m_zobrist_hash; // Hash of the current m_board, some random initial value;
-    struct Event {
-        Move move;
-        value_type player;
-
-        Event ( Move && m_, value_type && p_ ) : move ( std::move ( m_ ) ), player ( std::move ( p_ ) ) {}
-    };
-    std::vector<Event> m_history;
+    std::array<Move, 2> m_last_move;
 
     public:
     static constexpr ZobristHash const zobrist_hash_default = 0xb735a0f5839e4e22;
@@ -131,13 +122,10 @@ class Mado {
 
     int move_no = 0;
 
-    Mado ( ) noexcept : m_generator ( Rng::generator ( ) ) {
-        m_history.reserve ( Board::size ( ) );
-        reset ( );
-    }
+    Mado ( ) noexcept : m_generator ( Rng::generator ( ) ) { reset ( ); }
     Mado ( Mado const & m_ ) noexcept :
         m_pos ( m_.m_pos ), m_winner ( m_.m_winner ), m_generator ( Rng::generator ( ) ), m_zobrist_hash ( m_.m_zobrist_hash ),
-        m_history ( m_.m_history ), move_no ( m_.move_no ) {}
+        m_last_move ( m_.m_last_move ), move_no ( m_.move_no ) {}
     Mado ( Mado && m_ ) noexcept = delete;
 
     ~Mado ( ) noexcept {}
@@ -146,7 +134,7 @@ class Mado {
         m_pos          = m_.m_pos;
         m_winner       = m_.m_winner;
         m_zobrist_hash = m_.m_zobrist_hash;
-        m_history      = m_.m_history;
+        m_last_move    = m_.m_last_move;
         move_no        = m_.move_no;
     }
     [[nodiscard]] Mado & operator= ( Mado && m_ ) noexcept = delete;
@@ -157,8 +145,8 @@ class Mado {
         m_pos.m_player_to_move = value::human;
         m_winner               = value::invalid;
         m_zobrist_hash         = zobrist_hash_default;
-        m_history.clear ( );
-        move_no = 0;
+        m_last_move            = std::array<Move, 2>{ };
+        move_no                = 0;
     }
 
     [[nodiscard]] static constexpr ZobristHash hash ( value_type p_, IdxType const i_ ) noexcept {
@@ -185,17 +173,23 @@ class Mado {
         }
     }
 
+    void move ( Move move_ ) noexcept {
+        assert ( m_pos.m_board[ move_.to ] == value::vacant );
+        moveImpl ( move_ );
+        m_last_move[ value_type{ m_pos.m_player_to_move.next ( ) }.as_01index ( ) ] = std::move ( move_ );
+    }
+
     void moveHash ( Move move_ ) noexcept {
         assert ( m_pos.m_board[ move_.to ] == value::vacant );
         moveHashImpl ( move_ );
-        m_history.emplace_back ( std::move ( move_ ), m_pos.m_player_to_move.next ( ) );
+        m_last_move[ value_type{ m_pos.m_player_to_move.next ( ) }.as_01index ( ) ] = std::move ( move_ );
     }
 
     void moveWinner ( Move move_ ) noexcept {
         assert ( m_pos.m_board[ move_.to ] == value::vacant );
         moveImpl ( move_ );
         checkForWinner ( move_ );
-        m_history.emplace_back ( std::move ( move_ ), m_pos.m_player_to_move.next ( ) );
+        m_last_move[ value_type{ m_pos.m_player_to_move.next ( ) }.as_01index ( ) ] = std::move ( move_ );
     }
     void do_move ( Move move_ ) noexcept { moveWinner ( std::move ( move_ ) ); }
 
@@ -203,7 +197,7 @@ class Mado {
         assert ( m_pos.m_board[ move_.to ] == value::vacant );
         moveHashImpl ( move_ );
         checkForWinner ( move_ );
-        m_history.emplace_back ( std::move ( move_ ), m_pos.m_player_to_move.next ( ) );
+        m_last_move[ value_type{ m_pos.m_player_to_move.next ( ) }.as_01index ( ) ] = std::move ( move_ );
     }
 
     template<typename MovesContainer>
@@ -244,7 +238,8 @@ class Mado {
     [[nodiscard]] Moves get_moves ( ) const noexcept { return availableMoves ( ); }
 
     [[nodiscard]] Move randomMove ( ) const noexcept {
-        std::experimental::fixed_capacity_vector<Move, std::size_t{ Board::size ( ) } * std::size_t{ 2 }> available_moves;
+        alignas ( 64 ) std::experimental::fixed_capacity_vector<Move, std::size_t{ Board::size ( ) } * std::size_t{ 2 }>
+            available_moves;
         std::size_t s;
         return nonterminal ( ) and ( s = availableMoves ( available_moves ) ) ? available_moves[ bounded_integer ( s ) ] : Move{ };
     }
@@ -255,17 +250,14 @@ class Mado {
     }
 
     [[maybe_unused]] value_type simulate ( ) noexcept {
-        std::experimental::fixed_capacity_vector<Move, std::size_t{ Board::size ( ) } * std::size_t{ 2 }> available_moves;
+        alignas ( 64 ) std::experimental::fixed_capacity_vector<Move, std::size_t{ Board::size ( ) } * std::size_t{ 2 }>
+            available_moves;
         std::size_t s;
         while ( nonterminal ( ) and ( s = availableMoves ( available_moves ) ) ) {
             moveWinner ( available_moves[ bounded_integer ( s ) ] );
             available_moves.clear ( );
         }
         return m_winner;
-    }
-
-    [[nodiscard]] std::optional<value_type> ended ( ) const noexcept {
-        return m_winner.invalid ( ) ? std::optional<value_type>{ } : std::optional<value_type>{ m_winner };
     }
 
     [[nodiscard]] float result ( ) const noexcept {
@@ -286,12 +278,10 @@ class Mado {
 
     [[nodiscard]] value_type winner ( ) const noexcept { return m_winner; }
 
-    [[nodiscard]] Move lastMove ( ) const noexcept { return m_history.back ( ).move; }
-    [[nodiscard]] Move beforeLastMove ( ) const noexcept {
-        if ( m_history.size ( ) > 1 )
-            return std::next ( m_history.crbegin ( ) )->move;
-        return Move{ };
+    [[nodiscard]] Move lastMove ( ) const noexcept {
+        return m_last_move[ value_type{ m_pos.m_player_to_move.opponent ( ) }.as_01index ( ) ];
     }
+    [[nodiscard]] Move beforeLastMove ( ) const noexcept { return m_last_move[ m_pos.m_player_to_move.as_01index ( ) ]; }
 
     private:
     void update_board_colors ( ) const noexcept {
@@ -365,8 +355,9 @@ class Mado {
                     m_winner = m_pos.m_player_to_move.opponent ( );
                     return;
                 }
-                // Continue to verify that the current player did not surround himself.
                 m_winner = m_pos.m_player_to_move;
+                // Continue [searching thru all neighbours] to verify that the current player
+                // did not surround himself.
             }
         }
     }
@@ -387,7 +378,7 @@ class Mado {
         }
         m_pos.m_board[ move_.to ] = m_pos.m_player_to_move;
         m_zobrist_hash ^= hash ( m_pos.m_player_to_move, move_.to );
-        // Alternatingly hash-in and hash-out this value,
+        // Alternatingly hash-in and hash-out the below value (0xa9063818575b53b7),
         // to add-in the current player.
         m_zobrist_hash ^= 0xa9063818575b53b7;
         ++move_no;

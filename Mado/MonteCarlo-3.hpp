@@ -219,7 +219,7 @@ struct Node {
             int s = moves.size ( );
             ar_ ( s );
             for ( int i = 0; i < s; ++i )
-                ar_ ( moves [ i ] );
+                ar_ ( moves[ i ] );
             ar_ ( hash, move, player );
         }
 
@@ -407,12 +407,12 @@ Results<State> compute_tree ( std::reference_wrapper<Tree<State>> tree_, State c
         // Select a path through the tree to a leaf node.
         while ( not tree[ node ( ) ].has_untried_moves ( ) and tree[ node ( ) ].has_children ( ) ) {
             node = select_child_uct ( tree, node );
-            state.do_move ( tree[ node ( ) ].data.move );
+            state.move ( tree[ node ( ) ].data.move );
         }
         // If we are not already at the final state, expand the tree with a new node ( ) and Move there.
         if ( tree[ node ( ) ].has_untried_moves ( ) ) {
             auto move = tree[ node ( ) ].get_untried_move ( random_engine );
-            state.do_move ( move );
+            state.moveWinner ( move );
             node = add_child ( tree, node, state, move );
         }
         for ( int i = 0; i < 1; ++i ) {
