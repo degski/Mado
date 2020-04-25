@@ -281,7 +281,9 @@ class Mado {
     [[nodiscard]] Move lastMove ( ) const noexcept {
         return m_last_move[ value_type{ m_pos.m_player_to_move.opponent ( ) }.as_01index ( ) ];
     }
-    [[nodiscard]] Move beforeLastMove ( ) const noexcept { return m_last_move[ m_pos.m_player_to_move.as_01index ( ) ]; }
+    [[nodiscard]] Move lastMovePlayerJustMoved ( ) const noexcept { return lastMove ( ); }
+    [[nodiscard]] Move moveBeforeLastMove ( ) const noexcept { return m_last_move[ m_pos.m_player_to_move.as_01index ( ) ]; }
+    [[nodiscard]] Move lastMovePlayerToMove ( ) const noexcept { return moveBeforeLastMove ( ); }
 
     private:
     void update_board_colors ( ) const noexcept {
