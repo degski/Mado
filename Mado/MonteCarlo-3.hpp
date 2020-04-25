@@ -123,17 +123,13 @@ inline double wall_time ( ) noexcept;
 inline void check ( bool expr, char const * message );
 inline void assertion_failed ( char const * expr, char const * file, int line );
 
-#define attest( expr )                                                                                                             \
-    if ( not( expr ) ) {                                                                                                           \
-        ::Mcts::assertion_failed ( #expr, __FILE__, __LINE__ );                                                                    \
-    }
 #ifndef NDEBUG
-#    define dattest( expr )                                                                                                        \
+#    define attest( expr )                                                                                                         \
         if ( not( expr ) ) {                                                                                                       \
             ::Mcts::assertion_failed ( #expr, __FILE__, __LINE__ );                                                                \
         }
 #else
-#    define dattest( expr ) ( ( void ) 0 )
+#    define attest( expr ) ( ( void ) 0 )
 #endif
 
 #if 1
@@ -193,8 +189,8 @@ using Results = pector<Result<typename State::Move>>;
 template<typename State>
 struct Node {
 
-    using Moves  = typename State::Moves;
-    using Hash   = typename State::ZobristHash;
+    using Moves = typename State::Moves;
+    // using Hash   = typename State::ZobristHash;
     using Move   = typename State::Move;
     using Player = typename State::value_type;
 
@@ -206,9 +202,9 @@ struct Node {
         int visits = 0;    // 20
         float wins = 0.0f; // 24
         Moves moves;       // 32
-        Hash hash;         // 40
-        Move move;         // 42
-        Player player;     // 43
+        // Hash hash;
+        Move move;     // 34
+        Player player; // 35
 
         private:
         friend class cereal::access;
@@ -220,7 +216,8 @@ struct Node {
             ar_ ( s );
             for ( int i = 0; i < s; ++i )
                 ar_ ( moves[ i ] );
-            ar_ ( hash, move, player );
+            // ar_ ( hash );
+            ar_ ( move, player );
         }
 
         template<class Archive>
@@ -233,26 +230,27 @@ struct Node {
                 for ( int i = 0; i < s; ++i )
                     ar_ ( moves[ i ] );
             }
-            ar_ ( hash, move, player );
+            // ar_ ( hash );
+            ar_ ( move, player );
         }
     };
 
     Data data;
 
     explicit Node ( ) noexcept {
-        data.hash   = 0u;
+        // data.hash   = 0u;
         data.move   = State::no_move;
         data.player = Player::Type::invalid;
     }
     Node ( State const & state ) {
-        data.moves  = state.get_moves ( );
-        data.hash   = state.zobrist ( );
+        data.moves = state.get_moves ( );
+        // data.hash   = state.zobrist ( );
         data.move   = State::no_move;
         data.player = state.playerToMove ( );
     }
     Node ( State const & state, Move const & move_ ) {
-        data.moves  = state.get_moves ( );
-        data.hash   = state.zobrist ( );
+        data.moves = state.get_moves ( );
+        // data.hash   = state.zobrist ( );
         data.move   = move_;
         data.player = state.playerToMove ( );
     }
@@ -653,11 +651,11 @@ std::unique_ptr<Node<State>> compute_tree ( State const root_state, ComputeOptio
         State state = root_state;
         while ( not node->has_untried_moves ( ) and node->has_children ( ) ) {
             node = node->select_child_UCT ( );
-            state.do_move ( node->move );
+            state.move ( node->move );
         }
         if ( node->has_untried_moves ( ) ) {
             auto move = node->get_untried_move ( &random_engine );
-            state.do_move ( move );
+            state.moveWinner ( move );
             node = node->add_child ( move, state );
         }
         state.simulate ( );

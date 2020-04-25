@@ -161,7 +161,7 @@ int main ( ) {
             State state;
             match_start = Clock::instance ( ).now ( );
             do {
-                state.moveHashWinner ( Mcts::compute_move ( state, Mcts::ComputeOptions{ } ) );
+                state.moveWinner ( Mcts::compute_move ( state, Mcts::ComputeOptions{ } ) );
                 std::cout << nl << state << nl;
             } while ( state.nonterminal ( ) );
             winner = state.winner ( );
