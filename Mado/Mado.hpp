@@ -117,7 +117,13 @@ class Mado {
     value_type m_winner;
     Generator m_generator;
     ZobristHash m_zobrist_hash; // Hash of the current m_board, some random initial value;
-    Move m_last_move;
+    struct Event {
+        Move move;
+        value_type player;
+
+        Event ( Move && m_, value_type && p_ ) : move ( std::move ( m_ ) ), player ( std::move ( p_ ) ) {}
+    };
+    std::vector<Event> m_history;
 
     public:
     static constexpr ZobristHash const zobrist_hash_default = 0xb735a0f5839e4e22;
@@ -125,10 +131,13 @@ class Mado {
 
     int move_no = 0;
 
-    Mado ( ) noexcept : m_generator ( Rng::generator ( ) ) { reset ( ); }
+    Mado ( ) noexcept : m_generator ( Rng::generator ( ) ) {
+        m_history.reserve ( Board::size ( ) );
+        reset ( );
+    }
     Mado ( Mado const & m_ ) noexcept :
         m_pos ( m_.m_pos ), m_winner ( m_.m_winner ), m_generator ( Rng::generator ( ) ), m_zobrist_hash ( m_.m_zobrist_hash ),
-        m_last_move ( m_.m_last_move ), move_no ( m_.move_no ) {}
+        m_history ( m_.m_history ), move_no ( m_.move_no ) {}
     Mado ( Mado && m_ ) noexcept = delete;
 
     ~Mado ( ) noexcept {}
@@ -137,7 +146,7 @@ class Mado {
         m_pos          = m_.m_pos;
         m_winner       = m_.m_winner;
         m_zobrist_hash = m_.m_zobrist_hash;
-        m_last_move    = m_.m_last_move;
+        m_history      = m_.m_history;
         move_no        = m_.move_no;
     }
     [[nodiscard]] Mado & operator= ( Mado && m_ ) noexcept = delete;
@@ -148,7 +157,8 @@ class Mado {
         m_pos.m_player_to_move = value::human;
         m_winner               = value::invalid;
         m_zobrist_hash         = zobrist_hash_default;
-        move_no                = 0;
+        m_history.clear ( );
+        move_no = 0;
     }
 
     [[nodiscard]] static constexpr ZobristHash hash ( value_type p_, IdxType const i_ ) noexcept {
@@ -177,26 +187,23 @@ class Mado {
 
     void moveHash ( Move move_ ) noexcept {
         assert ( m_pos.m_board[ move_.to ] == value::vacant );
-        m_last_move = move_;
         moveHashImpl ( move_ );
-        m_pos.m_player_to_move.next ( );
+        m_history.emplace_back ( std::move ( move_ ), m_pos.m_player_to_move.next ( ) );
     }
 
     void moveWinner ( Move move_ ) noexcept {
         assert ( m_pos.m_board[ move_.to ] == value::vacant );
-        m_last_move = move_;
         moveImpl ( move_ );
         checkForWinner ( move_ );
-        m_pos.m_player_to_move.next ( );
+        m_history.emplace_back ( std::move ( move_ ), m_pos.m_player_to_move.next ( ) );
     }
-    void do_move ( Move move_ ) noexcept { moveWinner ( move_ ); }
+    void do_move ( Move move_ ) noexcept { moveWinner ( std::move ( move_ ) ); }
 
     void moveHashWinner ( Move move_ ) noexcept {
         assert ( m_pos.m_board[ move_.to ] == value::vacant );
-        m_last_move = move_;
         moveHashImpl ( move_ );
         checkForWinner ( move_ );
-        m_pos.m_player_to_move.next ( );
+        m_history.emplace_back ( std::move ( move_ ), m_pos.m_player_to_move.next ( ) );
     }
 
     template<typename MovesContainer>
@@ -279,7 +286,12 @@ class Mado {
 
     [[nodiscard]] value_type winner ( ) const noexcept { return m_winner; }
 
-    [[nodiscard]] Move lastMove ( ) const noexcept { return m_last_move; }
+    [[nodiscard]] Move lastMove ( ) const noexcept { return m_history.back ( ).move; }
+    [[nodiscard]] Move beforeLastMove ( ) const noexcept {
+        if ( m_history.size ( ) > 1 )
+            return std::next ( m_history.crbegin ( ) )->move;
+        return Move{ };
+    }
 
     private:
     void update_board_colors ( ) const noexcept {
@@ -288,10 +300,10 @@ class Mado {
                              constexpr sax::string_literal_t const code[ 3 ]{ sax::fg::blue, sax::fg::white, sax::fg::red };
                              return code[ field.as_index ( ) + 1 ];
                          } );
-        if ( m_last_move.is_valid ( ) ) {
-            Board::color_codes[ m_last_move.to ] = playerJustMoved ( ).agent ( ) ? sax::fg::bright_blue : sax::fg::bright_red;
-            if ( m_last_move.is_slide ( ) )
-                Board::color_codes[ m_last_move.from ] = Board::color_codes[ m_last_move.to ];
+        if ( lastMove ( ).is_valid ( ) ) {
+            Board::color_codes[ lastMove ( ).to ] = playerJustMoved ( ).agent ( ) ? sax::fg::bright_blue : sax::fg::bright_red;
+            if ( lastMove ( ).is_slide ( ) )
+                Board::color_codes[ lastMove ( ).from ] = Board::color_codes[ lastMove ( ).to ];
         }
     }
 
@@ -301,7 +313,7 @@ class Mado {
         b_.update_board_colors ( );
         out_ << b_.m_pos.m_board << "  move " << b_.move_no << " hash 0x" << std::hex << b_.m_zobrist_hash << " slides "
              << static_cast<int> ( b_.m_pos.m_slides ) << " last move "
-             << ( b_.playerJustMoved ( ).agent ( ) ? sax::fg::bright_blue : sax::fg::bright_red ) << b_.m_last_move << sax::reset
+             << ( b_.playerJustMoved ( ).agent ( ) ? sax::fg::bright_blue : sax::fg::bright_red ) << b_.lastMove ( ) << sax::reset
              << nl;
         if ( b_.terminal ( ) )
             out_ << "  winner: " << ( b_.winner ( ).agent ( ) ? sax::fg::bright_blue : sax::fg::bright_red ) << b_.winner ( )
