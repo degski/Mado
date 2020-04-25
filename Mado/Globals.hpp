@@ -107,3 +107,24 @@ using Animator = sax::singleton<sf::CallbackAnimator>;
 [[nodiscard]] inline sf::HrClock::duration since ( sf::HrTimePoint const start_ ) noexcept {
     return ( Clock::instance ( ).now ( ) - start_ );
 }
+
+template<typename T>
+void saveToFile ( T const & t_, fs::path const & path_, std::string const & file_name_ ) {
+    std::ofstream ostream ( path_ / ( file_name_ + std::string ( ".txt" ) ), std::ios::out );
+    {
+        cereal::CSVOutputArchive archive ( ostream );
+        archive ( t_ );
+    }
+    ostream << std::endl;
+    ostream.close ( );
+}
+
+template<typename T>
+void loadFromFile ( T & t_, fs::path const & path_, std::string const & file_name_ ) {
+    std::ifstream istream ( path_ / ( file_name_ + std::string ( ".txt" ) ), std::ios::in );
+    {
+        cereal::CSVInputArchive archive ( istream );
+        archive ( t_ );
+    }
+    istream.close ( );
+}

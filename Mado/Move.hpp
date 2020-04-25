@@ -27,6 +27,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
+#include <cstring>
 
 #include <sax/iostream.hpp>
 #include <limits>
@@ -45,29 +46,37 @@ struct Move {
 
     enum class Type : value_type { none = std::numeric_limits<value_type>::lowest ( ), place = 1, slide = 2 };
 
-    value_type from, to;
+    value_type to, from;
 
     [[nodiscard]] bool operator< ( Move const & rhs_ ) const noexcept {
-        return from < rhs_.from or ( from == rhs_.from and to < rhs_.to );
+        return -1 == std::memcmp ( this, std::addressof ( rhs_ ), sizeof ( Move ) );
     }
-    [[nodiscard]] bool operator== ( Move const & rhs_ ) const noexcept { return from == rhs_.from and to == rhs_.to; }
-    [[nodiscard]] bool operator!= ( Move const & rhs_ ) const noexcept { return not operator== ( rhs_ ); }
+    [[nodiscard]] bool operator> ( Move const & rhs_ ) const noexcept {
+        return 1 == std::memcmp ( this, std::addressof ( rhs_ ), sizeof ( Move ) );
+    }
+    [[nodiscard]] bool operator<= ( Move const & rhs_ ) const noexcept { return not operator> ( rhs_ ); }
+    [[nodiscard]] bool operator>= ( Move const & rhs_ ) const noexcept { return not operator< ( rhs_ ); }
+    [[nodiscard]] bool operator!= ( Move const & rhs_ ) const noexcept {
+        return std::memcmp ( this, std::addressof ( rhs_ ), sizeof ( Move ) );
+    }
+    [[nodiscard]] bool operator== ( Move const & rhs_ ) const noexcept { return not operator!= ( rhs_ ); }
 
     constexpr Move ( ) noexcept :
-        from{ std::numeric_limits<value_type>::lowest ( ) }, to{ std::numeric_limits<value_type>::lowest ( ) } {}
-    constexpr Move ( value_type const & to_ ) noexcept : from{ std::numeric_limits<value_type>::lowest ( ) }, to{ to_ } {}
-    constexpr Move ( value_type && to_ ) noexcept : from{ std::numeric_limits<value_type>::lowest ( ) }, to{ std::move ( to_ ) } {}
-    constexpr Move ( value_type const & from_, value_type const & to_ ) noexcept : from{ from_ }, to{ to_ } {}
-    constexpr Move ( value_type && from_, value_type && to_ ) noexcept : from{ std::move ( from_ ) }, to{ std::move ( to_ ) } {}
+        to{ std::numeric_limits<value_type>::lowest ( ) }, from{ std::numeric_limits<value_type>::lowest ( ) } {}
+    constexpr Move ( value_type const & to_ ) noexcept : to{ to_ }, from{ std::numeric_limits<value_type>::lowest ( ) } {}
+    constexpr Move ( value_type && to_ ) noexcept : to{ std::move ( to_ ) }, from{ std::numeric_limits<value_type>::lowest ( ) } {}
+    constexpr Move ( value_type const & from_, value_type const & to_ ) noexcept : to{ to_ }, from{ from_ } {}
+    constexpr Move ( value_type && from_, value_type && to_ ) noexcept : to{ std::move ( to_ ) }, from{ std::move ( from_ ) } {}
 
     [[nodiscard]] constexpr bool is_placement ( ) const noexcept {
-        return std::numeric_limits<value_type>::lowest ( ) != to and std::numeric_limits<value_type>::lowest ( ) == from;
+        return
+            // std::numeric_limits<value_type>::lowest ( ) != to and
+            std::numeric_limits<value_type>::lowest ( ) == from;
     }
-    [[nodiscard]] constexpr bool is_slide ( ) const noexcept {
-        return std::numeric_limits<value_type>::lowest ( ) != to and std::numeric_limits<value_type>::lowest ( ) != from;
-    }
-    [[nodiscard]] constexpr bool is_valid ( ) const noexcept { return std::numeric_limits<value_type>::lowest ( ) != to; }
+    [[nodiscard]] constexpr bool is_slide ( ) const noexcept { return not is_placement ( ); }
+
     [[nodiscard]] constexpr bool is_invalid ( ) const noexcept { return std::numeric_limits<value_type>::lowest ( ) == to; }
+    [[nodiscard]] constexpr bool is_valid ( ) const noexcept { return not is_invalid ( ); }
 
     void invalidate ( ) noexcept { to = std::numeric_limits<value_type>::lowest ( ); }
 
@@ -86,8 +95,7 @@ struct Move {
 
     template<class Archive>
     void serialize ( Archive & ar_ ) {
-        ar_ ( from );
-        ar_ ( to );
+        ar_ ( to, from );
     }
 };
 
