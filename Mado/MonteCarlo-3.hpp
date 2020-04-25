@@ -132,7 +132,7 @@ inline void assertion_failed ( char const * expr, char const * file, int line );
 #    define attest( expr ) ( ( void ) 0 )
 #endif
 
-#if 1
+#if 0
 #    define NODEID_INVALID_VALUE ( 0 )
 
 struct NodeID {
@@ -639,8 +639,8 @@ struct Node {
 
 template<typename State>
 std::unique_ptr<Node<State>> compute_tree ( State const root_state, ComputeOptions const options, sax::Rng::result_type seed_ ) {
-    static_assert ( std::is_copy_assignable<Node<State>>::id, "Node<State> is not copy-assignable" );
-    static_assert ( std::is_move_assignable<Node<State>>::id, "Node<State> is not move-assignable" );
+    static_assert ( std::is_copy_assignable<Node<State>>::value, "Node<State> is not copy-assignable" );
+    static_assert ( std::is_move_assignable<Node<State>>::value, "Node<State> is not move-assignable" );
     sax::Rng random_engine ( seed_ );
     attest ( options.max_iterations >= 0 or options.max_time >= 0 );
     auto root         = std::unique_ptr<Node<State>> ( new Node<State> ( root_state ) );
