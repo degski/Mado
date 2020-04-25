@@ -120,12 +120,12 @@ class Mado {
     static constexpr ZobristHash const zobrist_hash_default = 0xb735a0f5839e4e22;
     static constexpr Move no_move;
 
-    int move_no = 0;
+    int move_no, piece_no;
 
     Mado ( ) noexcept : m_generator ( Rng::generator ( ) ) { reset ( ); }
     Mado ( Mado const & m_ ) noexcept :
         m_pos ( m_.m_pos ), m_winner ( m_.m_winner ), m_generator ( Rng::generator ( ) ), m_zobrist_hash ( m_.m_zobrist_hash ),
-        m_last_move ( m_.m_last_move ), move_no ( m_.move_no ) {}
+        m_last_move ( m_.m_last_move ), move_no ( m_.move_no ), piece_no ( m_.piece_no ) {}
     Mado ( Mado && m_ ) noexcept = delete;
 
     ~Mado ( ) noexcept {}
@@ -136,6 +136,7 @@ class Mado {
         m_zobrist_hash = m_.m_zobrist_hash;
         m_last_move    = m_.m_last_move;
         move_no        = m_.move_no;
+        piece_no       = m_.piece_no;
     }
     [[nodiscard]] Mado & operator= ( Mado && m_ ) noexcept = delete;
 
@@ -147,6 +148,7 @@ class Mado {
         m_zobrist_hash         = zobrist_hash_default;
         m_last_move            = std::array<Move, 2>{ };
         move_no                = 0;
+        piece_no               = 0;
     }
 
     [[nodiscard]] static constexpr ZobristHash hash ( value_type p_, IdxType const i_ ) noexcept {
@@ -235,7 +237,6 @@ class Mado {
         }
         return moves;
     }
-    [[nodiscard]] Moves get_moves ( ) const noexcept { return availableMoves ( ); }
 
     [[nodiscard]] Move randomMove ( ) const noexcept {
         alignas ( 64 ) std::experimental::fixed_capacity_vector<Move, std::size_t{ Board::size ( ) } * std::size_t{ 2 }>
@@ -260,16 +261,11 @@ class Mado {
         return m_winner;
     }
 
-    [[nodiscard]] float result ( ) const noexcept {
-        // Determine result: last player of path is the player to Move. The role of the minus 1? By now the player to make
-        // a move has be updated (has moved, the state is ready for the next move, including the player to move).
-        return static_cast<float> ( static_cast<int> ( m_winner.as_index ( ) ) * ( -1 ) );
+    [[nodiscard]] float temperature ( ) const noexcept {
+        return static_cast<float> ( piece_no + m_pos.m_slides ) / static_cast<float> ( Board::size ( ) + 6 );
     }
-    [[nodiscard]] float result ( value_type const player_just_moved_ ) const noexcept {
-        // Determine result: last player of path is the player to Move.
-        return m_winner.vacant ( ) ? 0.0f : ( m_winner == player_just_moved_ ? 1.0f : -1.0f );
-    }
-    [[nodiscard]] float get_result ( value_type const player_to_move_ ) const noexcept {
+
+    [[nodiscard]] float result ( value_type const player_to_move_ ) const noexcept {
         return m_winner.vacant ( ) ? 0.5f : ( m_winner == player_to_move_ ? 0.0f : 1.0f );
     }
 
@@ -370,6 +366,7 @@ class Mado {
             if ( m_pos.m_slides )
                 m_zobrist_hash ^= mm_mix64 ( static_cast<std::uint64_t> ( m_pos.m_slides ) );
             m_pos.m_slides = 0;
+            ++piece_no;
         }
         else { // Slide.
             if ( m_pos.m_slides )
@@ -390,6 +387,7 @@ class Mado {
     void moveImpl ( Move const move_ ) noexcept {
         if ( move_.is_placement ( ) ) { // Place.
             m_pos.m_slides = 0;
+            ++piece_no;
         }
         else { // Slide.
             ++m_pos.m_slides;

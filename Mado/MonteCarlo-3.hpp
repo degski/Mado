@@ -132,7 +132,7 @@ inline void assertion_failed ( char const * expr, char const * file, int line );
 #    define attest( expr ) ( ( void ) 0 )
 #endif
 
-#if 0
+#if 1
 #    define NODEID_INVALID_VALUE ( 0 )
 
 struct NodeID {
@@ -243,13 +243,13 @@ struct Node {
         data.player = Player::Type::invalid;
     }
     Node ( State const & state ) {
-        data.moves = state.get_moves ( );
+        data.moves = state.availableMoves ( );
         // data.hash   = state.zobrist ( );
         data.move   = State::no_move;
         data.player = state.playerToMove ( );
     }
     Node ( State const & state, Move const & move_ ) {
-        data.moves = state.get_moves ( );
+        data.moves = state.availableMoves ( );
         // data.hash   = state.zobrist ( );
         data.move   = move_;
         data.player = state.playerToMove ( );
@@ -419,7 +419,7 @@ Results<State> compute_tree ( std::reference_wrapper<Tree<State>> tree_, State c
             sim_state.simulate ( );
             // We have now reached a final state. Backpropagate the result up the tree to the root node ( ).
             while ( NodeID::invalid ( ) != node ) {
-                tree[ node ( ) ].update ( sim_state.get_result ( tree[ node ( ) ].data.player ) );
+                tree[ node ( ) ].update ( sim_state.result ( tree[ node ( ) ].data.player ) );
                 node = tree[ node ( ) ].up;
             }
         }
@@ -455,7 +455,7 @@ typename State::Move compute_move ( State const root_state_, ComputeOptions cons
     }
     assert ( trees.size ( ) >= options_.number_of_threads );
     {
-        typename State::Moves moves = root_state_.get_moves ( );
+        typename State::Moves moves = root_state_.availableMoves ( );
         attest ( moves.size ( ) > 0 );
         if ( moves.size ( ) == 1 )
             return moves[ 0 ];
@@ -537,13 +537,13 @@ struct Node {
     using ZobristHash     = typename State::ZobristHash;
 
     Node ( State const & state ) :
-        parent ( nullptr ), player_to_move ( state.playerToMove ( ) ), visits ( 0 ), wins ( 0.0f ), moves ( state.get_moves ( ) ),
-        UCT_score ( 0.0f ), hash ( state.zobrist ( ) ), move ( State::no_move ) {}
+        parent ( nullptr ), player_to_move ( state.playerToMove ( ) ), visits ( 0 ), wins ( 0.0f ),
+        moves ( state.availableMoves ( ) ), UCT_score ( 0.0f ), hash ( state.zobrist ( ) ), move ( State::no_move ) {}
 
     private:
     Node ( State const & state, Move const & move_, Node * parent_ ) :
-        parent ( parent_ ), player_to_move ( state.playerToMove ( ) ), visits ( 0 ), wins ( 0.0f ), moves ( state.get_moves ( ) ),
-        UCT_score ( 0.0f ), hash ( state.zobrist ( ) ), move ( move_ ) {}
+        parent ( parent_ ), player_to_move ( state.playerToMove ( ) ), visits ( 0 ), wins ( 0.0f ),
+        moves ( state.availableMoves ( ) ), UCT_score ( 0.0f ), hash ( state.zobrist ( ) ), move ( move_ ) {}
 
     public:
     Node ( Node const & )     = default;
@@ -660,7 +660,7 @@ std::unique_ptr<Node<State>> compute_tree ( State const root_state, ComputeOptio
         }
         state.simulate ( );
         while ( node ) {
-            node->update ( state.get_result ( node->player_to_move ) );
+            node->update ( state.result ( node->player_to_move ) );
             node = node->parent;
         }
         if ( options.verbose or options.max_time >= 0 ) {
