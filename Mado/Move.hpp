@@ -31,6 +31,7 @@
 
 #include <sax/iostream.hpp>
 #include <limits>
+#include <type_traits>
 
 #include <cereal/cereal.hpp>
 #include <cereal/archives/binary.hpp>
@@ -48,18 +49,35 @@ struct Move {
 
     value_type to, from;
 
+    private:
+    using uint = std::conditional_t<sizeof ( value_type ) == 8, std::uint16_t,
+                                    std::conditional_t<sizeof ( value_type ) == 16, std::uint32_t, std::uint64_t>>;
+
+    public:
     [[nodiscard]] bool operator< ( Move const & rhs_ ) const noexcept {
-        return -1 == std::memcmp ( this, std::addressof ( rhs_ ), sizeof ( Move ) );
+        uint l;
+        std::memcpy ( std::addressof ( l ), this, sizeof ( uint ) );
+        uint r;
+        std::memcpy ( std::addressof ( r ), std::addressof ( rhs_ ), sizeof ( uint ) );
+        return l < r;
     }
     [[nodiscard]] bool operator> ( Move const & rhs_ ) const noexcept {
-        return 1 == std::memcmp ( this, std::addressof ( rhs_ ), sizeof ( Move ) );
+        uint l;
+        std::memcpy ( std::addressof ( l ), this, sizeof ( uint ) );
+        uint r;
+        std::memcpy ( std::addressof ( r ), std::addressof ( rhs_ ), sizeof ( uint ) );
+        return l > r;
     }
     [[nodiscard]] bool operator<= ( Move const & rhs_ ) const noexcept { return not operator> ( rhs_ ); }
     [[nodiscard]] bool operator>= ( Move const & rhs_ ) const noexcept { return not operator< ( rhs_ ); }
-    [[nodiscard]] bool operator!= ( Move const & rhs_ ) const noexcept {
-        return std::memcmp ( this, std::addressof ( rhs_ ), sizeof ( Move ) );
+    [[nodiscard]] bool operator== ( Move const & rhs_ ) const noexcept {
+        uint l;
+        std::memcpy ( std::addressof ( l ), this, sizeof ( uint ) );
+        uint r;
+        std::memcpy ( std::addressof ( r ), std::addressof ( rhs_ ), sizeof ( uint ) );
+        return l == r;
     }
-    [[nodiscard]] bool operator== ( Move const & rhs_ ) const noexcept { return not operator!= ( rhs_ ); }
+    [[nodiscard]] bool operator!= ( Move const & rhs_ ) const noexcept { return not operator== ( rhs_ ); }
 
     constexpr Move ( ) noexcept :
         to{ std::numeric_limits<value_type>::lowest ( ) }, from{ std::numeric_limits<value_type>::lowest ( ) } {}
