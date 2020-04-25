@@ -297,7 +297,7 @@ class Mcts {
 
     [[nodiscard]] Link selectChildUCT ( NodeID const parent_ ) const noexcept {
         COutIt a ( m_tree, parent_ );
-        using children_static_vector = std::experimental::fixed_capacity_vector<Link, State::max_no_moves>;
+        using children_static_vector = std::experimental::fixed_capacity_vector<Link, 512>;
         children_static_vector best_children ( 1, m_tree.link ( a ) );
         float best_UCT_score = getUCTFromNode ( parent_, best_children.back ( ).target );
         ++a;

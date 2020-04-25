@@ -31,6 +31,7 @@
 #include <sax/iostream.hpp>
 #include <string>
 #include <random>
+#include <utility>
 
 #include <cereal/cereal.hpp>
 #include <cereal/archives/binary.hpp>
@@ -68,7 +69,7 @@ struct Player {
 
     [[nodiscard]] Type opponent ( ) const noexcept { return static_cast<Type> ( -static_cast<value_type> ( value ) ); }
 
-    void next ( ) noexcept { value = opponent ( ); }
+    Type next ( ) noexcept { return std::exchange ( value, opponent ( ) ); }
 
     [[nodiscard]] Type get ( ) const noexcept { return value; }
 

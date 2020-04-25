@@ -120,13 +120,10 @@ class Mado {
     Move m_last_move;
 
     public:
-    static constexpr int const max_no_moves                 = 4096;
     static constexpr ZobristHash const zobrist_hash_default = 0xb735a0f5839e4e22;
     static constexpr Move no_move;
 
     int move_no = 0;
-
-    static int max_moves_size;
 
     Mado ( ) noexcept : m_generator ( Rng::generator ( ) ) { reset ( ); }
     Mado ( Mado const & m_ ) noexcept :
@@ -178,49 +175,46 @@ class Mado {
         }
     }
 
-    void moveHash ( Move const move_ ) noexcept {
+    void moveHash ( Move move_ ) noexcept {
         assert ( m_pos.m_board[ move_.to ] == value::vacant );
         m_last_move = move_;
         moveHashImpl ( move_ );
-        // writePositionData ( );
         m_pos.m_player_to_move.next ( );
     }
 
-    void moveWinner ( Move const move_ ) noexcept {
+    void moveWinner ( Move move_ ) noexcept {
         assert ( m_pos.m_board[ move_.to ] == value::vacant );
         m_last_move = move_;
         moveImpl ( move_ );
-        checkForWinner ( );
-        // writePositionData ( );
+        checkForWinner ( move_ );
         m_pos.m_player_to_move.next ( );
     }
-    void do_move ( Move const move_ ) noexcept { moveWinner ( move_ ); }
+    void do_move ( Move move_ ) noexcept { moveWinner ( move_ ); }
 
-    void moveHashWinner ( Move const move_ ) noexcept {
+    void moveHashWinner ( Move move_ ) noexcept {
         assert ( m_pos.m_board[ move_.to ] == value::vacant );
         m_last_move = move_;
         moveHashImpl ( move_ );
-        checkForWinner ( );
-        // writePositionData ( );
+        checkForWinner ( move_ );
         m_pos.m_player_to_move.next ( );
     }
 
-    template<typename MovesContainerPtr>
-    [[nodiscard]] int availableMoves ( MovesContainerPtr moves_ ) const noexcept {
+    template<typename MovesContainer>
+    [[nodiscard]] int availableMoves ( MovesContainer & moves_ ) const noexcept {
         for ( int s = static_cast<int> ( Board::size ( ) ), i = 0; i < s; ++i ) {
             // Find placements.
             if ( m_pos.m_board[ i ].vacant ( ) ) {
-                moves_->emplace_back ( i );
+                moves_.emplace_back ( i );
                 continue;
             }
             // Find slides.
             if ( m_pos.m_player_to_move == m_pos.m_board[ i ] ) {
                 for ( auto const to : Board::neighbors[ i ] )
                     if ( m_pos.m_board[ to ].vacant ( ) )
-                        moves_->emplace_back ( i, to );
+                        moves_.emplace_back ( i, to );
             }
         }
-        return static_cast<int> ( moves_->size ( ) );
+        return static_cast<int> ( moves_.size ( ) );
     }
 
     [[nodiscard]] Moves availableMoves ( ) const noexcept {
@@ -244,9 +238,8 @@ class Mado {
 
     [[nodiscard]] Move randomMove ( ) const noexcept {
         std::experimental::fixed_capacity_vector<Move, std::size_t{ Board::size ( ) } * std::size_t{ 2 }> available_moves;
-        return nonterminal ( ) and availableMoves ( &available_moves )
-                   ? available_moves[ bounded_integer ( available_moves.size ( ) ) ]
-                   : Move{ };
+        std::size_t s;
+        return nonterminal ( ) and ( s = availableMoves ( available_moves ) ) ? available_moves[ bounded_integer ( s ) ] : Move{ };
     }
 
     [[nodiscard]] Move randomMoveDelayed ( ) noexcept {
@@ -256,15 +249,11 @@ class Mado {
 
     [[maybe_unused]] value_type simulate ( ) noexcept {
         std::experimental::fixed_capacity_vector<Move, std::size_t{ Board::size ( ) } * std::size_t{ 2 }> available_moves;
-        while ( nonterminal ( ) and availableMoves ( &available_moves ) ) {
-            // std::cout << *this << nl;
-            auto const s = available_moves.size ( );
+        std::size_t s;
+        while ( nonterminal ( ) and ( s = availableMoves ( available_moves ) ) ) {
             moveWinner ( available_moves[ bounded_integer ( s ) ] );
-            if ( max_moves_size < s )
-                max_moves_size = s;
             available_moves.clear ( );
         }
-        // std::cout << *this << nl;
         return m_winner;
     }
 
@@ -341,7 +330,7 @@ class Mado {
     }
 
     // To be called before the player swap, but after m_player_to_move made his Move.
-    void checkForWinner ( ) noexcept {
+    void checkForWinner ( Move move_ ) noexcept {
         // If both players slide three turns in a row (three slides for each player makes
         // six total), the game is a draw.
         if ( 6 == m_pos.m_slides ) {
@@ -354,11 +343,11 @@ class Mado {
         // board. But be careful; if one of your stones is surrounded on your own turn
         // (even if you surround one of your opponent's stones at the same time), you lose
         // the game!
-        if ( isSurrounded ( m_last_move.to ) ) {
+        if ( isSurrounded ( move_.to ) ) {
             m_winner = m_pos.m_player_to_move.opponent ( );
             return;
         }
-        for ( auto const neighbor : Board::neighbors[ m_last_move.to ] ) {
+        for ( auto const neighbor : Board::neighbors[ move_.to ] ) {
             if ( m_pos.m_board[ neighbor ].occupied ( ) and isSurrounded ( neighbor ) ) {
                 if ( m_pos.m_player_to_move == m_pos.m_board[ neighbor ] ) {
                     m_winner = m_pos.m_player_to_move.opponent ( );
@@ -441,6 +430,3 @@ class Mado {
         ar_ ( m_pos );
     }
 };
-
-template<int R>
-int Mado<R>::max_moves_size = 0;

@@ -250,7 +250,6 @@ int main67567 ( ) {
     }
 
     std::cout << ( ( int ) ( timer.get_elapsed_us ( ) ) / 1'000'000 ) << " usecs/sim" << nl;
-    std::cout << Mado<4>::max_moves_size << nl;
     std::cout << c[ 0 ] << " " << c[ 1 ] << " " << c[ 2 ] << nl;
 
     return EXIT_SUCCESS;
@@ -274,7 +273,7 @@ int main786786 ( ) {
 
     Moves<4, Mado<4>::Board::size ( )> moves;
 
-    bool N = mado.availableMoves ( &moves );
+    bool N = mado.availableMoves ( moves );
 
     print_moves ( moves );
 
