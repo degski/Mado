@@ -55,7 +55,7 @@
 #include <plf/plf_nanotimer.h>
 
 #include "../../MCTSSearchTree/include/flat_search_tree.hpp"
-#include "MonteCarlo-3.hpp"
+#include "MonteCarlo.hpp"
 
 #if 1
 
@@ -164,50 +164,6 @@ int main ( ) {
                 state.moveWinner ( Mcts::compute_move ( state, Mcts::ComputeOptions{ } ) );
                 std::cout << nl << state << nl;
             } while ( state.nonterminal ( ) );
-            winner = state.winner ( );
-        }
-        elapsed += since ( match_start );
-        ++matches;
-        switch ( winner.as_index ( ) ) {
-            case ( int ) Player::Type::agent: ++agent_wins; break;
-            case ( int ) Player::Type::human: ++human_wins; break;
-        }
-        float a = ( 1000.0f * agent_wins ) / float ( agent_wins + human_wins );
-        a       = ( ( int ) a ) / 10.0f;
-        float h = ( 1000.0f * human_wins ) / float ( agent_wins + human_wins );
-        h       = ( ( int ) h ) / 10.0f;
-        printf ( "\r Match %i: Agent%6.1f%% - Human%6.1f%% (%.1f Sec./Match - %.1f Sec.)\n", matches, a, h,
-                 std::chrono::duration_cast<std::chrono::milliseconds> ( elapsed ).count ( ) / ( ( float ) matches * 1'000.0f ),
-                 std::chrono::duration_cast<std::chrono::milliseconds> ( elapsed ).count ( ) / 1'000.0f );
-    }
-
-    return EXIT_SUCCESS;
-}
-
-#    include "Mcts-2.hpp"
-
-int main68768 ( ) {
-    sax::enable_virtual_terminal_sequences ( );
-    using State  = Mado<2>;
-    using Player = typename State::value_type;
-    using Mcts   = mcts::Mcts<State>;
-    Player winner;
-    std::uint32_t matches = 0u, agent_wins = 0u, human_wins = 0u;
-    putchar ( '\n' );
-    sf::HrClock::duration elapsed;
-    sf::HrTimePoint match_start;
-    for ( int i = 0; i < 100; ++i ) {
-        {
-            State state;
-
-            match_start = Clock::instance ( ).now ( );
-            do {
-                Mcts mcts_agent, mcts_human;
-                state.moveHashWinner ( state.playerToMove ( ) == Player::Type::agent ? mcts_agent.compute ( state, 10'000 )
-                                                                                     : mcts_human.compute ( state, 50'000 ) );
-                // std::cout << state << nl;
-            } while ( state.nonterminal ( ) );
-
             winner = state.winner ( );
         }
         elapsed += since ( match_start );

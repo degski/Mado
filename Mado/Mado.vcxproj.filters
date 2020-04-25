@@ -45,25 +45,10 @@
     <ClInclude Include="Hexcontainer.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Mcts.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Application.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Mcts-2.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="connect_four.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="MonteCarlo.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="MonteCarlo-2.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="MonteCarlo-3.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
