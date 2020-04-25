@@ -42,10 +42,10 @@ template<int R>
 struct Player {
 
     private:
-    using IdxType = typename Hex<R, true>::IdxType;
+    using value_type = typename Hex<R, true>::IdxType;
 
     public:
-    enum class Type : IdxType {
+    enum class Type : value_type {
         invalid = -2,
         agent   = -1,
         vacant  = 0,
@@ -54,27 +54,27 @@ struct Player {
 
     Type value = Type::vacant;
 
-    Player ( ) noexcept                   = default;
-    Player ( Player const & p_ ) noexcept = default;
-    Player ( Player && p_ ) noexcept      = default;
+    Player ( ) noexcept                = default;
+    Player ( Player const & ) noexcept = default;
+    Player ( Player && ) noexcept      = default;
 
     [[maybe_unused]] Player & operator= ( Player const & ) noexcept = default;
     [[maybe_unused]] Player & operator= ( Player && ) noexcept = default;
 
-    Player ( const Type & p_ ) noexcept : value ( p_ ) {}
+    Player ( Type const & p_ ) noexcept : value ( p_ ) {}
     Player ( Type && p_ ) noexcept : value ( std::move ( p_ ) ) {}
 
-    ~Player ( ) noexcept = default;
+    ~Player ( ) = default;
 
-    [[nodiscard]] Type opponent ( ) const noexcept { return static_cast<Type> ( -static_cast<IdxType> ( value ) ); }
+    [[nodiscard]] Type opponent ( ) const noexcept { return static_cast<Type> ( -static_cast<value_type> ( value ) ); }
 
     void next ( ) noexcept { value = opponent ( ); }
 
     [[nodiscard]] Type get ( ) const noexcept { return value; }
 
-    [[nodiscard]] IdxType as_index ( ) const noexcept { return static_cast<IdxType> ( value ); }
+    [[nodiscard]] value_type as_index ( ) const noexcept { return static_cast<value_type> ( value ); }
 
-    [[nodiscard]] IdxType as_01index ( ) const noexcept { return ( as_index ( ) + 1 ) / 2; }
+    [[nodiscard]] value_type as_01index ( ) const noexcept { return ( as_index ( ) + 1 ) / 2; }
 
     template<typename Rng>
     [[nodiscard]] static Type random ( ) noexcept {

@@ -100,11 +100,14 @@ struct Move {
 
     template<typename Stream>
     [[maybe_unused]] friend Stream & operator<< ( Stream & out_, Move const & m_ ) noexcept {
-        if ( is_placement ( ) )
-            std::cout << std::dec << '<' << static_cast<std::uint64_t> ( m_.to ) << '>';
+        out_ << std::dec;
+        if ( m_.is_invalid ( ) )
+            if ( m_.is_placement ( ) )
+                out_ << '<' << static_cast<std::uint64_t> ( m_.to ) << '>';
+            else
+                out_ << '<' << static_cast<std::uint64_t> ( m_.from ) << ' ' << static_cast<std::uint64_t> ( m_.to ) << '>';
         else
-            std::cout << std::dec << '<' << static_cast<std::uint64_t> ( m_.from ) << ' ' << static_cast<std::uint64_t> ( m_.to )
-                      << '>';
+            out_ << "<*>";
         return out_;
     }
 
