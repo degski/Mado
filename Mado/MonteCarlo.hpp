@@ -132,7 +132,7 @@ inline void assertion_failed ( char const * expr, char const * file, int line );
 #    define attest( expr ) ( ( void ) 0 )
 #endif
 
-#if 0
+#if 1
 #    define NODEID_INVALID_VALUE ( 0 )
 
 struct NodeID {
