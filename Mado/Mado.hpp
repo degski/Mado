@@ -151,10 +151,6 @@ class Mado {
         piece_no               = 0;
     }
 
-    [[nodiscard]] static constexpr ZobristHash hash ( value_type p_, IdxType const i_ ) noexcept {
-        return iu_mix64 ( static_cast<std::uint64_t> ( p_.as_index ( ) ) ^ static_cast<std::uint64_t> ( i_ ) );
-    }
-
     [[nodiscard]] ZobristHash zobrist ( ) const noexcept { return m_zobrist_hash; }
 
     [[nodiscard]] value_type playerToMove ( ) const noexcept { return m_pos.m_player_to_move; }
@@ -177,19 +173,19 @@ class Mado {
 
     void move ( Move move_ ) noexcept {
         assert ( m_pos.m_board[ move_.to ] == value::vacant );
-        moveImpl ( move_ );
+        moveImplementation ( move_ );
         m_last_move[ value_type{ m_pos.m_player_to_move.next ( ) }.as_01index ( ) ] = std::move ( move_ );
     }
 
     void moveHash ( Move move_ ) noexcept {
         assert ( m_pos.m_board[ move_.to ] == value::vacant );
-        moveHashImpl ( move_ );
+        moveHashImplementation ( move_ );
         m_last_move[ value_type{ m_pos.m_player_to_move.next ( ) }.as_01index ( ) ] = std::move ( move_ );
     }
 
     void moveWinner ( Move move_ ) noexcept {
         assert ( m_pos.m_board[ move_.to ] == value::vacant );
-        moveImpl ( move_ );
+        moveImplementation ( move_ );
         checkForWinner ( move_ );
         m_last_move[ value_type{ m_pos.m_player_to_move.next ( ) }.as_01index ( ) ] = std::move ( move_ );
     }
@@ -197,7 +193,7 @@ class Mado {
 
     void moveHashWinner ( Move move_ ) noexcept {
         assert ( m_pos.m_board[ move_.to ] == value::vacant );
-        moveHashImpl ( move_ );
+        moveHashImplementation ( move_ );
         checkForWinner ( move_ );
         m_last_move[ value_type{ m_pos.m_player_to_move.next ( ) }.as_01index ( ) ] = std::move ( move_ );
     }
@@ -242,11 +238,11 @@ class Mado {
         alignas ( 64 ) std::experimental::fixed_capacity_vector<Move, std::size_t{ Board::size ( ) } * std::size_t{ 2 }>
             available_moves;
         std::size_t s;
-        return nonterminal ( ) and ( s = availableMoves ( available_moves ) ) ? available_moves[ bounded_integer ( s ) ] : Move{ };
+        return nonterminal ( ) and ( s = availableMoves ( available_moves ) ) ? available_moves[ boundInt ( s ) ] : Move{ };
     }
 
     [[nodiscard]] Move randomMoveDelayed ( ) noexcept {
-        sf::sleep ( sf::milliseconds ( bounded_integer ( std::size_t{ 500 }, std::size_t{ 1'500 } ) ) );
+        sf::sleep ( sf::milliseconds ( boundInt ( std::size_t{ 500 }, std::size_t{ 1'500 } ) ) );
         return randomMove ( );
     }
 
@@ -255,7 +251,7 @@ class Mado {
             available_moves;
         std::size_t s;
         while ( nonterminal ( ) and ( s = availableMoves ( available_moves ) ) ) {
-            moveWinner ( available_moves[ bounded_integer ( s ) ] );
+            moveWinner ( available_moves[ boundInt ( s ) ] );
             available_moves.clear ( );
         }
         return m_winner;
@@ -282,7 +278,7 @@ class Mado {
     [[nodiscard]] Move lastMovePlayerToMove ( ) const noexcept { return moveBeforeLastMove ( ); }
 
     private:
-    void update_board_colors ( ) const noexcept {
+    void updateBoardColors ( ) const noexcept {
         std::transform ( std::begin ( m_pos.m_board ), std::end ( m_pos.m_board ), std::begin ( Board::color_codes ),
                          [] ( value_type field ) noexcept {
                              constexpr sax::string_literal_t const code[ 3 ]{ sax::fg::blue, sax::fg::white, sax::fg::red };
@@ -298,7 +294,7 @@ class Mado {
     public:
     template<typename Stream>
     [[maybe_unused]] friend Stream & operator<< ( Stream & out_, Mado const & b_ ) noexcept {
-        b_.update_board_colors ( );
+        b_.updateBoardColors ( );
         out_ << b_.m_pos.m_board << "  move " << b_.move_no << " hash 0x" << std::hex << b_.m_zobrist_hash << " slides "
              << static_cast<int> ( b_.m_pos.m_slides ) << " last move "
              << ( b_.playerJustMoved ( ).agent ( ) ? sax::fg::bright_blue : sax::fg::bright_red ) << b_.lastMove ( ) << sax::reset
@@ -311,24 +307,6 @@ class Mado {
     }
 
     private:
-    // From SplitMix64, the mixer.
-    [[nodiscard]] static constexpr std::uint64_t sm_mix64 ( std::uint64_t k_ ) noexcept {
-        k_ = ( k_ ^ ( k_ >> 30 ) ) * std::uint64_t{ 0xbf58476d1ce4e5b9 };
-        k_ = ( k_ ^ ( k_ >> 27 ) ) * std::uint64_t{ 0x94d049bb133111eb };
-        return k_ ^ ( k_ >> 31 );
-    }
-    // My mixer.
-    [[nodiscard]] static constexpr std::uint64_t iu_mix64 ( std::uint64_t k_ ) noexcept {
-        k_ = ( k_ ^ ( k_ >> 32 ) ) * std::uint64_t{ 0xd6e8feb86659fd93 };
-        return k_ ^ ( k_ >> 32 );
-    }
-    // From MurMurHash, the mixer.
-    [[nodiscard]] static constexpr std::uint64_t mm_mix64 ( std::uint64_t k_ ) noexcept {
-        k_ = ( k_ ^ ( k_ >> 33 ) ) * std::uint64_t{ 0xff51afd7ed558ccd };
-        // k_ = ( k_ ^ ( k_ >> 33 ) ) * std::uint64_t { 0xc4ceb9fe1a85ec53 };
-        return k_ ^ ( k_ >> 33 );
-    }
-
     // To be called before the player swap, but after m_player_to_move made his Move.
     void checkForWinner ( Move move_ ) noexcept {
         // If both players slide three turns in a row (three slides for each player makes
@@ -361,17 +339,28 @@ class Mado {
     }
 
     // Move and update zobrist-hash.
-    void moveHashImpl ( Move const move_ ) noexcept {
+    void moveHashImplementation ( Move const move_ ) noexcept {
+        // From SplitMix64, the mixer.
+        auto mix = [] ( std::uint64_t k ) -> std::uint64_t {
+            k = ( k ^ ( k >> 30 ) ) * std::uint64_t{ 0xbf58476d1ce4e5b9 };
+            k = ( k ^ ( k >> 27 ) ) * std::uint64_t{ 0x94d049bb133111eb };
+            return k ^ ( k >> 31 );
+        };
+        // Hash.
+        auto hash = [ mix ] ( auto p, auto i ) -> std::uint64_t {
+            return mix ( static_cast<std::uint64_t> ( p.as_index ( ) ) ^ static_cast<std::uint64_t> ( i ) );
+        };
+        // The start of the function, proper.
         if ( move_.is_placement ( ) ) { // Place.
             if ( m_pos.m_slides )
-                m_zobrist_hash ^= mm_mix64 ( static_cast<std::uint64_t> ( m_pos.m_slides ) );
+                m_zobrist_hash ^= mix ( static_cast<std::uint64_t> ( m_pos.m_slides ) );
             m_pos.m_slides = 0;
             ++piece_no;
         }
         else { // Slide.
             if ( m_pos.m_slides )
-                m_zobrist_hash ^= mm_mix64 ( static_cast<std::uint64_t> ( m_pos.m_slides ) );
-            m_zobrist_hash ^= mm_mix64 ( static_cast<std::uint64_t> ( ++m_pos.m_slides ) );
+                m_zobrist_hash ^= mix ( static_cast<std::uint64_t> ( m_pos.m_slides ) );
+            m_zobrist_hash ^= mix ( static_cast<std::uint64_t> ( ++m_pos.m_slides ) );
             m_zobrist_hash ^= hash ( m_pos.m_player_to_move, move_.from );
             m_pos.m_board[ move_.from ] = value::vacant;
         }
@@ -384,7 +373,7 @@ class Mado {
     }
 
     // Move (no update zobrist-hash).
-    void moveImpl ( Move const move_ ) noexcept {
+    void moveImplementation ( Move const move_ ) noexcept {
         if ( move_.is_placement ( ) ) { // Place.
             m_pos.m_slides = 0;
             ++piece_no;
@@ -406,11 +395,11 @@ class Mado {
     }
 
     template<typename T>
-    [[nodiscard]] inline T bounded_integer ( T const u_ ) const noexcept {
+    [[nodiscard]] inline T boundInt ( T const u_ ) const noexcept {
         return sax::uniform_int_distribution<T> ( 0, u_ - T{ 1 } ) ( m_generator );
     }
     template<typename T>
-    [[nodiscard]] inline T bounded_integer ( T const l_, T const u_ ) const noexcept {
+    [[nodiscard]] inline T boundInt ( T const l_, T const u_ ) const noexcept {
         return sax::uniform_int_distribution<T> ( l_, u_ - T{ 1 } ) ( m_generator );
     }
 

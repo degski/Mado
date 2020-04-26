@@ -29,6 +29,7 @@
 
 #include <algorithm>
 #include <array>
+#include <atomic>
 #include <exception>
 #include <filesystem>
 #include <fstream>
@@ -56,6 +57,39 @@
 
 #include "../../MCTSSearchTree/include/flat_search_tree.hpp"
 #include "MonteCarlo.hpp"
+
+#include <emmintrin.h>
+
+#define ever ;;
+
+void pause_core ( ) noexcept {
+    #ifdef __clang__
+    __builtin_ia32_pause ( );
+    #else
+    _mm_pause ( );
+    #endif
+}
+
+// https://rigtorp.se/spinlock/
+
+struct spinlock {
+
+    void lock ( ) noexcept {
+        for ( ever ) {
+            if ( not m_lock.exchange ( true, std::memory_order_acquire ) )
+                return;
+            while ( m_lock.load ( std::memory_order_relaxed ) )
+                pause_core ( );
+        }
+    }
+
+    [[nodiscard]] bool try_lock ( ) noexcept { return not m_lock.exchange ( true, std::memory_order_acquire ); }
+
+    void unlock ( ) noexcept { m_lock.store ( false, std::memory_order_release ); }
+
+    private:
+    std::atomic<bool> m_lock = { 0 };
+};
 
 #if 1
 
