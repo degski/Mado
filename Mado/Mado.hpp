@@ -346,7 +346,7 @@ class Mado {
             k = ( k ^ ( k >> 27 ) ) * std::uint64_t{ 0x94d049bb133111eb };
             return k ^ ( k >> 31 );
         };
-        // Hash.kitty-van-loon@home.nl
+        // Hash.
         auto hash = [ mix ] ( auto p, auto i ) -> std::uint64_t {
             return mix ( static_cast<std::uint64_t> ( p.as_index ( ) ) ^ static_cast<std::uint64_t> ( i ) );
         };

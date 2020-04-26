@@ -93,6 +93,8 @@
 #include <cereal/archives/binary.hpp>
 #include <cereal/types/vector.hpp>
 
+#include "Globals.hpp"
+
 // #include <pector/malloc_allocator.h>
 // #include <pector/mimalloc_allocator.h>
 #include <pector/pector.h>
@@ -101,6 +103,7 @@ template<typename T>
 using pector = pt::pector<T, std::allocator<T>, int, pt::default_recommended_size, false>;
 
 #include <sax/prng_sfc.hpp>
+
 #include <sax/uniform_int_distribution.hpp>
 
 #include "../../compact_vector/include/compact_vector.hpp"
@@ -118,6 +121,12 @@ struct ComputeOptions {
         number_of_threads ( 1 ), max_iterations ( 1'000'000 ), max_time ( 30.0 ), // default is no time limit.
         verbose ( true ) {}
 };
+
+#ifdef NDEBUG
+auto seed ( ) noexcept { return sax::os_seed ( ); }
+#else
+auto seed ( ) noexcept { return sax::fixed_seed ( ); }
+#endif
 
 inline double wall_time ( ) noexcept;
 inline void check ( bool expr, char const * message );
@@ -391,12 +400,11 @@ void flatten ( Tree<State> & tree_ ) {
 }
 
 template<typename State>
-Results<State> compute_tree ( std::reference_wrapper<Tree<State>> tree_, State const root_state_, ComputeOptions const options_,
-                              sax::Rng::result_type seed_ ) {
+Results<State> compute_tree ( std::reference_wrapper<Tree<State>> tree_, State const root_state_, ComputeOptions const options_ ) {
     static_assert ( std::is_copy_assignable<Node<State>>::value, "Node<State> is not copy-assignable" );
     static_assert ( std::is_move_assignable<Node<State>>::value, "Node<State> is not move-assignable" );
     Tree<State> & tree = tree_.get ( );
-    sax::Rng random_engine ( seed_ );
+    sax::Rng & random_engine = Rng::generator ( );
     attest ( options_.max_iterations >= 0 or options_.max_time >= 0 );
     double start_time = wall_time ( ), print_time = start_time;
     for ( int iter = 1; iter <= options_.max_iterations or options_.max_iterations < 0; ++iter ) {
@@ -444,6 +452,12 @@ Results<State> compute_tree ( std::reference_wrapper<Tree<State>> tree_, State c
 
 template<typename State>
 typename State::Move compute_move ( State const root_state_, ComputeOptions const options_ ) {
+    {
+        typename State::Moves moves = root_state_.availableMoves ( );
+        attest ( moves.size ( ) > 0 );
+        if ( 1 == moves.size ( ) )
+            return moves[ 0 ];
+    }
     std::vector<Tree<State>> trees;
     trees.reserve ( options_.number_of_threads );
     for ( int t = 0; t < options_.number_of_threads; ++t ) {
@@ -454,22 +468,16 @@ typename State::Move compute_move ( State const root_state_, ComputeOptions cons
         trees.emplace_back ( std::move ( tree ) );
     }
     assert ( trees.size ( ) >= options_.number_of_threads );
-    {
-        typename State::Moves moves = root_state_.availableMoves ( );
-        attest ( moves.size ( ) > 0 );
-        if ( moves.size ( ) == 1 )
-            return moves[ 0 ];
-    }
-    double start_time = wall_time ( );
     // Start all jobs to compute trees.
     std::vector<std::future<Results<State>>> results_futures;
     results_futures.reserve ( options_.number_of_threads );
     ComputeOptions job_options = options_;
     job_options.verbose        = false;
+    ThreadID::set ( options_.number_of_threads );
+    double start_time          = wall_time ( );
     for ( int t = 0; t < options_.number_of_threads; ++t ) {
         auto func = [ t, &trees, &root_state_, &job_options ] ( ) -> Results<State> {
-            return compute_tree ( std::ref ( trees[ t ] ), root_state_, job_options,
-                                  18'446'744'073'709'551'557ull * t + 0x0fce58188743146dull );
+            return compute_tree ( std::ref ( trees[ t ] ), root_state_, job_options );
         };
         results_futures.push_back ( std::async ( std::launch::async, func ) );
     }

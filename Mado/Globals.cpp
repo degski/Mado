@@ -29,6 +29,8 @@
 #include <string>
 #include <thread>
 
+#include "Globals.hpp"
+
 namespace fs = std::filesystem;
 
 [[nodiscard]] fs::path appDataPath ( std::string && name_ ) {
@@ -51,3 +53,28 @@ fs::path const & g_app_data_path = app_data_path_;
 
 fs::path app_path_          = getExePath ( );
 fs::path const & g_app_path = app_path_;
+
+
+void ThreadID::set ( int n_ ) {
+    ids.clear ( );
+    while ( n_ )
+        ids.emplace_back ( n_-- );
+}
+
+int ThreadID::get ( ) noexcept {
+    static thread_local int tl_id = get_id ( );
+    return tl_id;
+}
+
+int ThreadID::get_id ( ) noexcept {
+    std::lock_guard<std::mutex> guard ( mutex );
+    if ( ids.size ( ) ) {
+        int n = ids.back ( );
+        ids.pop_back ( );
+        return n;
+    }
+    return 0;
+}
+
+std::vector<int> ThreadID::ids;
+std::mutex ThreadID::mutex;

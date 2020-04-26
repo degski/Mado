@@ -31,6 +31,7 @@
 
 #include <filesystem>
 #include <limits>
+#include <numeric>
 #include <random>
 
 #include <SFML/Extensions.hpp>
@@ -53,6 +54,20 @@
 #else
 #    define RANDOM 1
 #endif
+
+#include <mutex>
+#include <vector>
+
+struct ThreadID {
+
+    static void set ( int n_ );
+    [[nodiscard]] static int get ( ) noexcept;
+
+    private:
+    [[nodiscard]] static int get_id ( ) noexcept;
+    static std::vector<int> ids;
+    static std::mutex mutex;
+};
 
 struct Rng final {
 
@@ -85,7 +100,7 @@ struct Rng final {
             return generator;
         }
         else {
-            static thread_local sax::Rng generator ( sax::fixed_seed ( ) );
+            static thread_local sax::Rng generator ( sax::fixed_seed ( ) + ThreadID::get ( ) );
             return generator;
         }
     }
