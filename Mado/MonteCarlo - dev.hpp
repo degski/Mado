@@ -107,6 +107,7 @@ using pector = pt::pector<T, std::allocator<T>, int, pt::default_recommended_siz
 #include <sax/uniform_int_distribution.hpp>
 
 #include "../../compact_vector/include/compact_vector.hpp"
+#include "../../rooted_tree/include/rooted_tree.hpp"
 
 namespace Mcts {
 
@@ -141,49 +142,7 @@ inline void assertion_failed ( char const * expr, char const * file, int line );
 #    define attest( expr ) ( ( void ) 0 )
 #endif
 
-#if 1
-#    define NODEID_INVALID_VALUE ( 0 )
-
-struct NodeID {
-
-    int id;
-
-    static constexpr NodeID invalid ( ) noexcept { return NodeID{ }; }
-
-    constexpr explicit NodeID ( ) noexcept : id{ NODEID_INVALID_VALUE } {}
-    constexpr explicit NodeID ( int && v_ ) noexcept : id{ std::move ( v_ ) } {}
-    constexpr explicit NodeID ( int const & v_ ) noexcept : id{ v_ } {}
-    constexpr explicit NodeID ( std::size_t && v_ ) noexcept : id{ std::move ( static_cast<int> ( v_ ) ) } {}
-
-    [[nodiscard]] constexpr int operator( ) ( ) const noexcept { return id; }
-
-    [[nodiscard]] bool operator== ( NodeID const rhs_ ) const noexcept { return id == rhs_.id; }
-    [[nodiscard]] bool operator!= ( NodeID const rhs_ ) const noexcept { return id != rhs_.id; }
-
-    template<typename Stream>
-    [[maybe_unused]] friend Stream & operator<< ( Stream & out_, NodeID const id_ ) noexcept {
-        if ( NODEID_INVALID_VALUE == id_.id ) {
-            if constexpr ( std::is_same<typename Stream::char_type, wchar_t>::id ) {
-                out_ << L'*';
-            }
-            else {
-                out_ << '*';
-            }
-        }
-        else {
-            out_ << static_cast<std::uint64_t> ( id_.id );
-        }
-        return out_;
-    }
-
-    private:
-    friend class cereal::access;
-
-    template<class Archive>
-    void serialize ( Archive & ar_ ) {
-        ar_ ( id );
-    }
-};
+#if 0
 
 template<typename Move>
 struct Result {
@@ -196,75 +155,37 @@ template<typename State>
 using Results = pector<Result<typename State::Move>>;
 
 template<typename State>
-struct Node {
+struct Node : sax::rooted_tree_node {
 
     using Moves = typename State::Moves;
     // using Hash   = typename State::ZobristHash;
     using Move   = typename State::Move;
     using Player = typename State::value_type;
 
-    NodeID up, prev, tail; // 12
-    int size = 0;          // 16 number of children
+    int visits = 0;    // 20
+    float wins = 0.0f; // 24
+    Moves moves;       // 32
+    // Hash hash;
+    Move move;     // 34
+    Player player; // 35
 
-    struct Data {
-
-        int visits = 0;    // 20
-        float wins = 0.0f; // 24
-        Moves moves;       // 32
-        // Hash hash;
-        Move move;     // 34
-        Player player; // 35
-
-        private:
-        friend class cereal::access;
-
-        template<class Archive>
-        void save ( Archive & ar_ ) const {
-            ar_ ( visits, wins );
-            int s = moves.size ( );
-            ar_ ( s );
-            for ( int i = 0; i < s; ++i )
-                ar_ ( moves[ i ] );
-            // ar_ ( hash );
-            ar_ ( move, player );
-        }
-
-        template<class Archive>
-        void load ( Archive & ar_ ) {
-            ar_ ( visits, wins );
-            int s = 0;
-            ar_ ( s );
-            if ( s ) {
-                moves.resize ( s );
-                for ( int i = 0; i < s; ++i )
-                    ar_ ( moves[ i ] );
-            }
-            // ar_ ( hash );
-            ar_ ( move, player );
-        }
-    };
-
-    Data data;
-
-    explicit Node ( ) noexcept {
+    explicit Node ( ) noexcept : sax::rooted_tree_node{ } {
         // data.hash   = 0u;
-        data.move   = State::no_move;
-        data.player = Player::Type::invalid;
+        move   = State::no_move;
+        player = Player::Type::invalid;
     }
-    Node ( State const & state ) {
-        data.moves = state.availableMoves ( );
-        // data.hash   = state.zobrist ( );
-        data.move   = State::no_move;
-        data.player = state.playerToMove ( );
+    Node ( State const & state ) : sax::rooted_tree_node{ } {
+        moves = state.availableMoves ( );
+        // hash   = state.zobrist ( );
+        move   = State::no_move;
+        player = state.playerToMove ( );
     }
-    Node ( State const & state, Move const & move_ ) {
-        data.moves = state.availableMoves ( );
-        // data.hash   = state.zobrist ( );
-        data.move   = move_;
-        data.player = state.playerToMove ( );
+    Node ( State const & state, Move const & move_ ) : sax::rooted_tree_node{ } {
+        moves = state.availableMoves ( );
+        // hash   = state.zobrist ( );
+        move   = move_;
+        player = state.playerToMove ( );
     }
-    Node ( Data && data_ ) noexcept : data{ std::move ( data_ ) } {}
-    Node ( Data const & data_ ) : data{ data_ } {}
 
     explicit Node ( Node const & )     = default;
     explicit Node ( Node && ) noexcept = default;
@@ -273,34 +194,34 @@ struct Node {
     [[maybe_unused]] Node & operator= ( Node const & ) = default;
     [[maybe_unused]] Node & operator= ( Node && ) noexcept = default;
 
-    [[nodiscard]] bool has_untried_moves ( ) const noexcept { return not data.moves.is_released ( ); }
+    [[nodiscard]] bool has_untried_moves ( ) const noexcept { return not moves.is_released ( ); }
 
     template<typename RandomEngine>
     [[nodiscard]] Move get_untried_move ( RandomEngine & engine_ ) noexcept { // removes move
-        attest ( not data.moves.empty ( ) );
-        if ( 1 == data.moves.size ( ) ) {
-            Move m = data.moves.front ( );
-            data.moves.reset ( );
+        attest ( not moves.empty ( ) );
+        if ( 1 == moves.size ( ) ) {
+            Move m = moves.front ( );
+            moves.reset ( );
             return m;
         }
-        return data.moves.unordered_erase (
-            sax::uniform_int_distribution<typename Moves::size_type> ( 0, data.moves.size ( ) - 1 ) ( engine_ ) );
+        return moves.unordered_erase (
+            sax::uniform_int_distribution<typename Moves::size_type> ( 0, moves.size ( ) - 1 ) ( engine_ ) );
     }
 
     [[nodiscard]] bool has_children ( ) const noexcept { return size; }
 
     void update ( float result_ ) noexcept {
-        data.visits += 1;
-        data.wins += result_;
+        visits += 1;
+        wins += result_;
     }
 
     std::string to_string ( ) const {
         std::stringstream ss;
         ss << "["
-           << "P" << data.player.opponent ( ) << " "
-           << "M:" << data.move << " "
-           << "W/V: " << ( data.wins / 2.0f ) << "/" << data.visits << " "
-           << "U: " << data.moves.size ( ) << "]\n";
+           << "P" << player.opponent ( ) << " "
+           << "M:" << move << " "
+           << "W/V: " << ( wins / 2.0f ) << "/" << visits << " "
+           << "U: " << moves.size ( ) << "]\n";
         return ss.str ( );
     }
 
@@ -308,36 +229,46 @@ struct Node {
     friend class cereal::access;
 
     template<class Archive>
-    void serialize ( Archive & ar_ ) {
-        ar_ ( up, prev, tail, size, data );
+    void save ( Archive & ar_ ) const {
+        sax::rooted_tree_node & nd = *reinterpret_cast<sax::rooted_tree_node *> ( this );
+        ar_ ( nd.up, nd.prev, nd.tail, nd.size, visits, wins );
+        int s = moves.size ( );
+        ar_ ( s );
+        for ( int i = 0; i < s; ++i )
+            ar_ ( moves[ i ] );
+        // ar_ ( hash );
+        ar_ ( move, player );
+    }
+
+    template<class Archive>
+    void load ( Archive & ar_ ) {
+        sax::rooted_tree_node & nd = *reinterpret_cast<sax::rooted_tree_node *> ( this );
+        ar_ ( nd.up, nd.prev, nd.tail, nd.size, visits, wins );
+        int s = 0;
+        ar_ ( s );
+        if ( s ) {
+            moves.resize ( s );
+            for ( int i = 0; i < s; ++i )
+                ar_ ( moves[ i ] );
+        }
+        // ar_ ( hash );
+        ar_ ( move, player );
     }
 };
 
+using NodeID = sax::NodeID;
 template<typename State>
-using Tree                              = pector<Node<State>>;
-inline constexpr NodeID const root_node = NodeID{ 1 };
-
-template<typename State, typename... Args>
-[[maybe_unused]] NodeID add_child ( Tree<State> & tree_, NodeID parent_, Args &&... args_ ) {
-    NodeID child{ tree_.size ( ) };
-    Node<State> & c = tree_.emplace_back ( std::forward<Args> ( args_ )... );
-    c.up            = parent_;
-    Node<State> & p = tree_[ c.up ( ) ];
-    c.prev          = p.tail;
-    p.tail          = child;
-    ++p.size;
-    return child;
-}
+using Tree = sax::rooted_tree<Node<State>, pector<Node<State>>, pector<NodeID>>;
 
 template<typename State>
 [[nodiscard]] NodeID select_child_uct ( Tree<State> const & tree_, NodeID parent_ ) noexcept {
     attest ( tree_[ parent_ ( ) ].size );
     NodeID best_child;
     float best_utc_score = std::numeric_limits<float>::lowest ( );
-    for ( NodeID child = tree_[ parent_ ( ) ].tail; NodeID::invalid ( ) != child; child = tree_[ child ( ) ].prev ) {
-        auto & c        = tree_[ child ( ) ].data;
+    for ( NodeID child = tree_[ parent_ ( ) ].tail; child.is_valid ( ); child = tree_[ child ( ) ].prev ) {
+        auto & c        = tree_[ child ( ) ];
         float utc_score = ( c.wins / 2.0f ) / static_cast<float> ( c.visits ) +
-                          std::sqrtf ( 2.0f * std::logf ( static_cast<float> ( tree_[ parent_ ( ) ].data.visits ) ) /
+                          std::sqrtf ( 2.0f * std::logf ( static_cast<float> ( tree_[ parent_ ( ) ].visits ) ) /
                                        static_cast<float> ( c.visits ) );
         if ( utc_score > best_utc_score ) {
             best_child     = child;
@@ -359,44 +290,9 @@ std::string tree_to_string ( Tree<State> const & tree_, NodeID parent_, int max_
     if ( indent_ >= max_depth_ )
         return "";
     std::string s = indent_string ( indent_ ) + tree_[ parent_ ( ) ].to_string ( );
-    for ( NodeID child = tree_[ parent_ ( ) ].tail; NodeID::invalid ( ) != child; child = tree_[ child ( ) ].prev )
+    for ( NodeID child = tree_[ parent_ ( ) ].tail; child.is_valid ( ); child = tree_[ child ( ) ].prev )
         s += tree_[ child ( ) ].tree_to_string ( tree_, child, max_depth_, indent_ + 1 );
     return s;
-}
-
-template<typename State>
-void root ( Tree<State> & tree_, NodeID root_ ) {
-    assert ( NodeID::invalid ( ) != root_ );
-    Tree<State> sub_tree;
-    sub_tree.reserve ( 64 );
-    sub_tree.emplace_back ( );
-    add_child ( sub_tree, NodeID{ 0 }, std::move ( tree_[ root_ ( ) ].data ) ); // add root state data
-    std::vector<NodeID> visited ( tree_.size ( ) );
-    visited[ root_ ( ) ] = root_node;
-    std::vector<NodeID> stack;
-    stack.reserve ( 64u );
-    stack.push_back ( root_ );
-    while ( stack.size ( ) ) {
-        NodeID parent = stack.back ( );
-        stack.pop_back ( );
-        for ( NodeID child = tree_[ parent ( ) ].tail; NodeID::invalid ( ) != child; child = tree_[ child ( ) ].prev )
-            if ( NodeID::invalid ( ) == visited[ child ( ) ] ) {
-                visited[ child ( ) ] = add_child ( sub_tree, visited[ parent ( ) ], std::move ( tree_[ child ( ) ].data ) );
-                stack.push_back ( child );
-            }
-    }
-    std::swap ( tree_, sub_tree );
-}
-
-template<typename State>
-void flatten ( Tree<State> & tree_ ) {
-    Tree<State> sub_tree;
-    sub_tree.reserve ( 64 );
-    sub_tree.emplace_back ( );
-    add_child ( sub_tree, NodeID{ 0 }, std::move ( tree_[ root_ ( ) ].data ) ); // add root state data
-    for ( NodeID child = tree_[ root_node ( ) ].tail; NodeID::invalid ( ) != child; child = tree_[ child ( ) ].prev )
-        add_child ( sub_tree, root_node, std::move ( tree_[ child ( ) ].data ) );
-    std::swap ( tree_, sub_tree );
 }
 
 template<typename State>
@@ -408,27 +304,27 @@ Results<State> compute_tree ( std::reference_wrapper<Tree<State>> tree_, State c
     attest ( options_.max_iterations >= 0 or options_.max_time >= 0 );
     double start_time = wall_time ( ), print_time = start_time;
     for ( int iter = 1; iter <= options_.max_iterations or options_.max_iterations < 0; ++iter ) {
-        NodeID node = root_node;
+        NodeID node = Tree<State>::root_node;
         State state = root_state_;
         // Select a path through the tree to a leaf node.
-        while ( not tree[ node ( ) ].has_untried_moves ( ) and tree[ node ( ) ].has_children ( ) ) {
+        while ( not tree[ node.id ].has_untried_moves ( ) and tree[ node.id ].has_children ( ) ) {
             node = select_child_uct ( tree, node );
-            state.move ( tree[ node ( ) ].data.move );
+            state.move ( tree[ node.id ].move );
         }
-        // If we are not already at the final state, expand the tree with a new node ( ) and Move there.
-        if ( tree[ node ( ) ].has_untried_moves ( ) ) {
-            auto move = tree[ node ( ) ].get_untried_move ( random_engine );
+        // If we are not already at the final state, expand the tree with a new node.id and Move there.
+        if ( tree[ node.id ].has_untried_moves ( ) ) {
+            auto move = tree[ node.id ].get_untried_move ( random_engine );
             state.moveWinner ( move );
-            node = add_child ( tree, node, state, move );
+            node = tree.add_node ( node, state, move );
         }
         for ( int i = 0; i < 1; ++i ) {
             State sim_state = state;
             // We now play randomly until the game ends.
             sim_state.simulate ( );
-            // We have now reached a final state. Backpropagate the result up the tree to the root node ( ).
+            // We have now reached a final state. Backpropagate the result up the tree to the root node.id.
             while ( NodeID::invalid ( ) != node ) {
-                tree[ node ( ) ].update ( sim_state.result ( tree[ node ( ) ].data.player ) );
-                node = tree[ node ( ) ].up;
+                tree[ node.id ].update ( sim_state.result ( tree[ node.id ].player ) );
+                node = tree[ node.id ].up;
             }
         }
         if ( options_.verbose or options_.max_time >= 0 ) {
@@ -443,10 +339,9 @@ Results<State> compute_tree ( std::reference_wrapper<Tree<State>> tree_, State c
     }
     // Collect and return the results.
     Results<State> r;
-    r.reserve ( tree[ root_node ( ) ].size );
-    for ( NodeID child = tree[ root_node ( ) ].tail; NodeID::invalid ( ) != child; child = tree[ child ( ) ].prev )
-        r.emplace_back ( Result<typename State::Move>{ tree[ child ( ) ].data.visits, tree[ child ( ) ].data.wins,
-                                                       tree[ child ( ) ].data.move } );
+    r.reserve ( tree[ Tree<State>::root_node ].size );
+    for ( NodeID child = tree[ Tree<State>::root_node ].tail; child.is_valid ( ); child = tree[ child.id ].prev )
+        r.emplace_back ( Result<typename State::Move>{ tree[ child.id ].visits, tree[ child ( ) ].wins, tree[ child.id ].move } );
     return r;
 }
 
@@ -463,8 +358,7 @@ typename State::Move compute_move ( State const root_state_, ComputeOptions cons
     for ( int t = 0; t < options_.number_of_threads; ++t ) {
         Tree<State> tree;
         tree.reserve ( 64 );
-        tree.emplace_back ( );
-        add_child ( tree, NodeID{ 0 }, root_state_, State::no_move ); // add root states
+        tree.add_root ( root_state_, State::no_move ); // add root states
         trees.emplace_back ( std::move ( tree ) );
     }
     assert ( trees.size ( ) >= options_.number_of_threads );

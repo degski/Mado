@@ -55,19 +55,19 @@
 #    define RANDOM 1
 #endif
 
-#include <mutex>
-#include <vector>
+#include <atomic>
 
-struct ThreadID {
+namespace ThreadID {
 
-    static void set ( int n_ );
-    [[nodiscard]] static int get ( ) noexcept;
-
-    private:
-    [[nodiscard]] static int get_id ( ) noexcept;
-    static std::vector<int> ids;
-    static std::mutex mutex;
-};
+[[nodiscard]] inline int get_new_id ( ) noexcept {
+    static std::atomic<int> id = 0;
+    return id++;
+}
+[[nodiscard]] inline int get ( ) noexcept {
+    static thread_local int tl_id = get_new_id ( );
+    return tl_id;
+}
+} // namespace ThreadID
 
 struct Rng final {
 

@@ -56,18 +56,20 @@
 #include <plf/plf_nanotimer.h>
 
 #include "../../MCTSSearchTree/include/flat_search_tree.hpp"
-#include "MonteCarlo.hpp"
+#include "MonteCarlo - dev.hpp"
 
 #include <emmintrin.h>
 
-#define ever ;;
+#define ever                                                                                                                       \
+    ;                                                                                                                              \
+    ;
 
 void pause_core ( ) noexcept {
-    #ifdef __clang__
+#ifdef __clang__
     __builtin_ia32_pause ( );
-    #else
+#else
     _mm_pause ( );
-    #endif
+#endif
 }
 
 // https://rigtorp.se/spinlock/
@@ -385,9 +387,9 @@ int main8768678 ( ) {
 #    define MIN( x, y ) ( ( x ) < ( y ) ? ( x ) : ( y ) )
 
 enum {
-    BLOCK_BYTES      = 1024, /* 1 KiB of uncompressed data in a block */
+    BLOCK_BYTES = 1024,      /* 1 KiB of uncompressed data in a block */
     DICTIONARY_BYTES = 1024, /* Load a 1 KiB dictionary */
-    MAX_BLOCKS       = 1024  /* For simplicity of implementation */
+    MAX_BLOCKS = 1024        /* For simplicity of implementation */
 };
 
 /**
@@ -487,7 +489,7 @@ void test_decompress ( FILE * outFp, FILE * inpFp, const char * dict, int dictSi
 
     /* The blocks [currentBlock, endBlock) contain the data we want */
     int currentBlock = offset / BLOCK_BYTES;
-    int endBlock     = ( ( offset + length - 1 ) / BLOCK_BYTES ) + 1;
+    int endBlock = ( ( offset + length - 1 ) / BLOCK_BYTES ) + 1;
 
     char decBuf[ BLOCK_BYTES ];
     int offsets[ MAX_BLOCKS ];
@@ -582,9 +584,9 @@ int compare ( FILE * fp0, FILE * fp1, int length ) {
 }
 
 int main869689 ( int argc, char * argv[] ) {
-    char inpFilename[ 256 ]  = { 0 };
-    char lz4Filename[ 256 ]  = { 0 };
-    char decFilename[ 256 ]  = { 0 };
+    char inpFilename[ 256 ] = { 0 };
+    char lz4Filename[ 256 ] = { 0 };
+    char decFilename[ 256 ] = { 0 };
     char dictFilename[ 256 ] = { 0 };
     int offset;
     int length;
@@ -613,7 +615,7 @@ int main869689 ( int argc, char * argv[] ) {
     /* Load dictionary */
     {
         FILE * dictFp = fopen ( dictFilename, "rb" );
-        dictSize      = ( int ) read_bin ( dictFp, dict, DICTIONARY_BYTES );
+        dictSize = ( int ) read_bin ( dictFp, dict, DICTIONARY_BYTES );
         fclose ( dictFp );
     }
 
