@@ -265,11 +265,11 @@ template<typename State>
 [[nodiscard]] NodeID select_child_uct ( Tree<State> const & tree_, NodeID parent_ ) noexcept {
     attest ( tree_[ parent_.id ].size );
     NodeID best_child;
-    float parent_visits  = 2.0f * std::logf ( static_cast<float> ( tree_[ parent_.id ].visits ) ),
+    float parent_visits  = 4.0f * std::logf ( static_cast<float> ( tree_[ parent_.id ].visits ) ),
           best_utc_score = std::numeric_limits<float>::lowest ( );
     for ( NodeID child = tree_[ parent_.id ].tail; child.is_valid ( ); child = tree_[ child.id ].prev ) {
-        float child_visits = static_cast<float> ( tree_[ child.id ].visits ),
-              utc_score    = ( tree_[ child.id ].wins / 2.0f ) / child_visits + std::sqrtf ( parent_visits / child_visits );
+        float child_visits = static_cast<float> ( tree_[ child.id ].visits * 2 ),
+              utc_score    = tree_[ child.id ].wins / child_visits + std::sqrtf ( parent_visits / child_visits );
         if ( utc_score > best_utc_score ) {
             best_child     = child;
             best_utc_score = utc_score;
