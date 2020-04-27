@@ -142,7 +142,7 @@ inline void assertion_failed ( char const * expr, char const * file, int line );
 #    define attest( expr ) ( ( void ) 0 )
 #endif
 
-#if 0
+#if 1
 
 template<typename Move>
 struct Result {
@@ -262,14 +262,14 @@ using Tree = sax::rooted_tree<Node<State>, pector<Node<State>>, pector<NodeID>>;
 
 template<typename State>
 [[nodiscard]] NodeID select_child_uct ( Tree<State> const & tree_, NodeID parent_ ) noexcept {
-    attest ( tree_[ parent_ ( ) ].size );
+    attest ( tree_[ parent_.id ].size );
     NodeID best_child;
     float best_utc_score = std::numeric_limits<float>::lowest ( );
-    for ( NodeID child = tree_[ parent_ ( ) ].tail; child.is_valid ( ); child = tree_[ child ( ) ].prev ) {
-        auto & c        = tree_[ child ( ) ];
-        float utc_score = ( c.wins / 2.0f ) / static_cast<float> ( c.visits ) +
-                          std::sqrtf ( 2.0f * std::logf ( static_cast<float> ( tree_[ parent_ ( ) ].visits ) ) /
-                                       static_cast<float> ( c.visits ) );
+    for ( NodeID child = tree_[ parent_.id ].tail; child.is_valid ( ); child = tree_[ child.id ].prev ) {
+        auto & c = tree_[ child.id ];
+        float utc_score =
+            ( c.wins / 2.0f ) / static_cast<float> ( c.visits ) +
+            std::sqrtf ( 2.0f * std::logf ( static_cast<float> ( tree_[ parent_.id ].visits ) ) / static_cast<float> ( c.visits ) );
         if ( utc_score > best_utc_score ) {
             best_child     = child;
             best_utc_score = utc_score;
@@ -286,12 +286,12 @@ std::string tree_to_string ( Tree<State> const & tree_, NodeID parent_, int max_
             s += "| ";
         return s;
     };
-    attest ( tree_[ parent_ ( ) ].size );
+    attest ( tree_[ parent_.id ].size );
     if ( indent_ >= max_depth_ )
         return "";
-    std::string s = indent_string ( indent_ ) + tree_[ parent_ ( ) ].to_string ( );
-    for ( NodeID child = tree_[ parent_ ( ) ].tail; child.is_valid ( ); child = tree_[ child ( ) ].prev )
-        s += tree_[ child ( ) ].tree_to_string ( tree_, child, max_depth_, indent_ + 1 );
+    std::string s = indent_string ( indent_ ) + tree_[ parent_.id ].to_string ( );
+    for ( NodeID child = tree_[ parent_.id ].tail; child.is_valid ( ); child = tree_[ child.id ].prev )
+        s += tree_[ child.id ].tree_to_string ( tree_, child, max_depth_, indent_ + 1 );
     return s;
 }
 
@@ -341,7 +341,7 @@ Results<State> compute_tree ( std::reference_wrapper<Tree<State>> tree_, State c
     Results<State> r;
     r.reserve ( tree[ Tree<State>::root_node ].size );
     for ( NodeID child = tree[ Tree<State>::root_node ].tail; child.is_valid ( ); child = tree[ child.id ].prev )
-        r.emplace_back ( Result<typename State::Move>{ tree[ child.id ].visits, tree[ child ( ) ].wins, tree[ child.id ].move } );
+        r.emplace_back ( Result<typename State::Move>{ tree[ child.id ].visits, tree[ child.id ].wins, tree[ child.id ].move } );
     return r;
 }
 
