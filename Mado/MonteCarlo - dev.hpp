@@ -304,7 +304,7 @@ Results<State> compute_tree ( std::reference_wrapper<Tree<State>> tree_, State c
     sax::Rng & random_engine = Rng::generator ( );
     attest ( options_.max_iterations >= 0 or options_.max_time >= 0 );
     double start_time = wall_time ( ), print_time = start_time;
-    for ( int iter = 1; iter <= options_.max_iterations or options_.max_iterations < 0; ++iter ) {
+    for ( int iteration = 1; iteration <= options_.max_iterations; ++iteration ) {
         NodeID node = Tree<State>::root_node;
         State state = root_state_;
         // Select a path through the tree to a leaf node.
@@ -323,15 +323,16 @@ Results<State> compute_tree ( std::reference_wrapper<Tree<State>> tree_, State c
             // We now play randomly until the game ends.
             sim_state.simulate ( );
             // We have now reached a final state. Backpropagate the result up the tree to the root node.id.
-            while ( NodeID::invalid ( ) != node ) {
+            while ( node.id ) {
                 tree[ node.id ].update ( sim_state.result ( tree[ node.id ].player ) );
                 node = tree[ node.id ].up;
             }
         }
         if ( options_.verbose or options_.max_time >= 0 ) {
             double time = wall_time ( );
-            if ( options_.verbose and ( time - print_time >= 1.0 or iter == options_.max_iterations ) ) {
-                std::cerr << iter << " games played (" << double ( iter ) / ( time - start_time ) << " / second)." << std::endl;
+            if ( options_.verbose and ( time - print_time >= 1.0 or iteration == options_.max_iterations ) ) {
+                std::cerr << iteration << " games played (" << double ( iteration ) / ( time - start_time ) << " / second)."
+                          << std::endl;
                 print_time = time;
             }
             if ( time - start_time >= options_.max_time )
@@ -548,7 +549,7 @@ std::unique_ptr<Node<State>> compute_tree ( State const root_state, ComputeOptio
     auto root         = std::unique_ptr<Node<State>> ( new Node<State> ( root_state ) );
     double start_time = wall_time ( );
     double print_time = start_time;
-    for ( int iter = 1; iter <= options.max_iterations or options.max_iterations < 0; ++iter ) {
+    for ( int iteration = 1; iteration <= options.max_iterations or options.max_iterations < 0; ++iteration ) {
         auto node   = root.get ( );
         State state = root_state;
         while ( not node->has_untried_moves ( ) and node->has_children ( ) ) {
@@ -567,8 +568,9 @@ std::unique_ptr<Node<State>> compute_tree ( State const root_state, ComputeOptio
         }
         if ( options.verbose or options.max_time >= 0 ) {
             double time = wall_time ( );
-            if ( options.verbose && ( time - print_time >= 1.0 or iter == options.max_iterations ) ) {
-                std::cerr << iter << " games played (" << double ( iter ) / ( time - start_time ) << " / second)." << std::endl;
+            if ( options.verbose && ( time - print_time >= 1.0 or iteration == options.max_iterations ) ) {
+                std::cerr << iteration << " games played (" << double ( iteration ) / ( time - start_time ) << " / second)."
+                          << std::endl;
                 print_time = time;
             }
 
