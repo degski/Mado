@@ -156,7 +156,7 @@ template<typename State>
 using Results = pector<Result<typename State::Move>>;
 
 template<typename State>
-struct Node : sax::rooted_tree_node {
+struct Node : sax::rt_meta_data {
 
     using Moves = typename State::Moves;
     // using Hash   = typename State::ZobristHash;
@@ -170,18 +170,18 @@ struct Node : sax::rooted_tree_node {
     Move move;     // 34
     Player player; // 35
 
-    explicit Node ( ) noexcept : sax::rooted_tree_node{ } {
+    explicit Node ( ) noexcept : sax::rt_meta_data{ } {
         // data.hash   = 0u;
         move   = State::no_move;
         player = Player::Type::invalid;
     }
-    Node ( State const & state ) : sax::rooted_tree_node{ } {
+    Node ( State const & state ) : sax::rt_meta_data{ } {
         moves = state.availableMoves ( );
         // hash   = state.zobrist ( );
         move   = State::no_move;
         player = state.playerToMove ( );
     }
-    Node ( State const & state, Move const & move_ ) : sax::rooted_tree_node{ } {
+    Node ( State const & state, Move const & move_ ) : sax::rt_meta_data{ } {
         moves = state.availableMoves ( );
         // hash   = state.zobrist ( );
         move   = move_;
@@ -231,7 +231,7 @@ struct Node : sax::rooted_tree_node {
 
     template<class Archive>
     void save ( Archive & ar_ ) const {
-        sax::rooted_tree_node & nd = *reinterpret_cast<sax::rooted_tree_node *> ( this );
+        sax::rt_meta_data & nd = *reinterpret_cast<sax::rt_meta_data *> ( this );
         ar_ ( nd.up, nd.prev, nd.tail, nd.size, visits, wins );
         int s = moves.size ( );
         ar_ ( s );
@@ -243,7 +243,7 @@ struct Node : sax::rooted_tree_node {
 
     template<class Archive>
     void load ( Archive & ar_ ) {
-        sax::rooted_tree_node & nd = *reinterpret_cast<sax::rooted_tree_node *> ( this );
+        sax::rt_meta_data & nd = *reinterpret_cast<sax::rt_meta_data *> ( this );
         ar_ ( nd.up, nd.prev, nd.tail, nd.size, visits, wins );
         int s = 0;
         ar_ ( s );
@@ -315,7 +315,7 @@ Results<State> compute_tree ( std::reference_wrapper<Tree<State>> tree_, State c
         if ( tree[ node.id ].has_untried_moves ( ) ) {
             auto move = tree[ node.id ].get_untried_move ( random_engine );
             state.moveWinner ( move );
-            node = tree.add_node ( node, state, move );
+            node = tree.emplace_node ( node, state, move );
         }
         for ( int i = 0; i < 1; ++i ) {
             State sim_state = state;
@@ -359,7 +359,7 @@ typename State::Move compute_move ( State const root_state_, ComputeOptions cons
     for ( int t = 0; t < options_.number_of_threads; ++t ) {
         Tree<State> tree;
         tree.reserve ( 64 );
-        tree.add_root ( root_state_, State::no_move ); // add root states
+        tree.emplace_root ( root_state_, State::no_move ); // add root states
         trees.emplace_back ( std::move ( tree ) );
     }
     assert ( trees.size ( ) >= options_.number_of_threads );

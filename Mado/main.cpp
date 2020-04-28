@@ -47,7 +47,6 @@
 #include <vector>
 
 #include <cereal/cereal.hpp>
-#include <cereal/archives/binary.hpp>
 
 #include <SFML/System.hpp>
 #include <SFML/Graphics.hpp>

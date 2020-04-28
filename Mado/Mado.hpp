@@ -77,9 +77,7 @@ struct PositionData {
 
     template<class Archive>
     void serialize ( Archive & ar_ ) {
-        ar_ ( m_board );
-        ar_ ( m_slides );
-        ar_ ( m_player_to_move );
+        ar_ ( m_board, m_slides, m_player_to_move );
     }
 };
 
